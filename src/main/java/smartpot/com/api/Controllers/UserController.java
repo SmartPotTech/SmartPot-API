@@ -1,7 +1,7 @@
-package smarpot.com.api.Controllers;
+package smartpot.com.api.Controllers;
 
-import smarpot.com.api.Models.DAO.RUser;
-import smarpot.com.api.Models.Entity.User;
+import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

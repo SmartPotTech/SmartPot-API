@@ -1,4 +1,4 @@
-package smarpot.com.api.Models.Entity;
+package smartpot.com.api.Models.Entity;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;

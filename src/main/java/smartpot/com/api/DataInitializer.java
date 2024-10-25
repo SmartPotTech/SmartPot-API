@@ -1,18 +1,18 @@
-package smarpot.com.api;
+package smartpot.com.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import smarpot.com.api.Models.DAO.RCrop;
-import smarpot.com.api.Models.DAO.RHistory;
-import smarpot.com.api.Models.DAO.RSession;
-import smarpot.com.api.Models.DAO.RUser;
-import smarpot.com.api.Models.Entity.Crop;
-import smarpot.com.api.Models.Entity.History;
-import smarpot.com.api.Models.Entity.Session;
-import smarpot.com.api.Models.Entity.User;
+import smartpot.com.api.Models.DAO.RCrop;
+import smartpot.com.api.Models.DAO.RHistory;
+import smartpot.com.api.Models.DAO.RSession;
+import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.Entity.Crop;
+import smartpot.com.api.Models.Entity.History;
+import smartpot.com.api.Models.Entity.Session;
+import smartpot.com.api.Models.Entity.User;
 
 import java.io.InputStream;
 import java.util.List;
