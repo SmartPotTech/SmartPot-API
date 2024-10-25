@@ -22,7 +22,7 @@ import java.util.Date;
 public class User implements Serializable {
 
     @Id
-    private String id; // Cambiado a String para MongoDB
+    private String id;
 
     @NotEmpty(message = "El nombre no puede estar vacío")
     @Size(min = 4, max = 15, message = "El nombre debe tener entre 4 y 15 caracteres")
