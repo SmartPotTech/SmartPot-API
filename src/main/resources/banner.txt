@@ -1,0 +1,12 @@
+ ,---.                            ,--.  ,------.         ,--.           ,---.  ,------. ,--.
+'   .-',--,--,--. ,--,--.,--.--.,-'  '-.|  .--. ',---. ,-'  '-.,-----. /  O  \ |  .--. '|  |
+`.  `-.|        |' ,-.  ||  .--''-.  .-'|  '--' | .-. |'-.  .-''-----'|  .-.  ||  '--' ||  |
+.-'    |  |  |  |\ '-'  ||  |     |  |  |  | --'' '-' '  |  |         |  | |  ||  | --' |  |
+`-----'`--`--`--' `--`--'`--'     `--'  `--'     `---'   `--'         `--' `--'`--'     `--'
+
+Author: ${application.author}
+Application: ${application.title} ${application.version}
+Technologies Used:
+ - Spring Boot (Java 17)
+ - MongoDB
+Powered by Spring Boot ${spring-boot.version}
