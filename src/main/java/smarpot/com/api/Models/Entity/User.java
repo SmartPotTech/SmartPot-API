@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -35,6 +36,7 @@ public class User implements Serializable {
     @NotEmpty(message = "El email no puede estar vacío")
     @Size(min = 14, max = 60, message = "El email debe tener entre 14 y 60 caracteres")
     @Email(message = "El email debe ser válido")
+    @Indexed(unique = true)
     private String email;
 
     private Date createAt;
