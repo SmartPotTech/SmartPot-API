@@ -8,10 +8,10 @@
 - Ejecuta el comando:
 
   ```bash
-  mvn clean package -DskipTests -f pom.xml
+  mvn clean package -DskipTests -P docker -f pom.xml
   ```
 
-    - Esto limpiará el proyecto, compilará el código y empaquetará la aplicación en un archivo JAR. El uso de `-DskipTests` omite las pruebas durante la construcción, esto con la finalidad de que no genere error, dado que se cambia las properties por variables de entorno.
+    - Esto limpiará el proyecto, compilará el código y empaquetará la aplicación en un archivo JAR. El uso de `-DskipTests` omite las pruebas durante la construcción, esto con la finalidad de que no genere error, dado que se cambia las properties por variables de entorno. El uso de `-P docker` es porque se definió un perfil de build especifico donde no se compila en credentials.propierties
 
 ### 2. Creación de la Imagen Docker
 
@@ -38,7 +38,7 @@
   docker push sebastian190030/api-smarpot:latest
   ```
 
-    - Esto hace que tu imagen esté disponible públicamente (o según la configuración de tu cuenta).
+    - Esto hace que tu imagen esté disponible públicamente
 
 ### 4. Despliegue en Render.com
 
