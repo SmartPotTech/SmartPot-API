@@ -1,5 +1,3 @@
-LABEL authors="SmartPot Developers"
-
 #  Uso de imagen base con Java 17
 FROM openjdk:17-slim
 
