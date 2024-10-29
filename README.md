@@ -19,7 +19,7 @@
 - **Ejecuta el siguiente comando** para construir la imagen:
 
   ```bash
-  docker build --platform linux/amd64 -t sebastian190030/api-smarpot:latest .
+  docker build --platform linux/amd64 -t sebastian190030/api-smartpot:latest .
   ```
 
     - Esto crea una imagen basada en tu aplicación.
@@ -35,7 +35,7 @@
 - **Sube la imagen** a tu repositorio (cambiando sebastian190030 por tu usuario) en Docker Hub:
 
   ```bash
-  docker push sebastian190030/api-smarpot:latest
+  docker push sebastian190030/api-smartpot:latest
   ```
 
     - Esto hace que tu imagen esté disponible en linea públicamente

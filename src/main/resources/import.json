@@ -30,7 +30,7 @@
   ],
   "registros": [
     {
-      "date": "2023-10-02",
+      "date": "2023-10-02T00:00:00Z",
       "measures": {
         "atmosphere": 20.5,
         "brightness": 300,
