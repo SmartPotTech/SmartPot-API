@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,7 +20,7 @@ public class History {
     private String id;
 
     @NotEmpty(message = "La fecha no puede estar vacía")
-    private String date;
+    private Date date;
 
     private Measures measures;
 
