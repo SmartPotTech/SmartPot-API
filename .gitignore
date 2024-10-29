@@ -33,3 +33,4 @@ build/
 .vscode/
 
 credentials.properties
+deploy.render.cmd

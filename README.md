@@ -32,15 +32,17 @@
   docker login
   ```
 
-- **Sube la imagen** a tu repositorio en Docker Hub:
+- **Sube la imagen** a tu repositorio (cambiando sebastian190030 por tu usuario) en Docker Hub:
 
   ```bash
   docker push sebastian190030/api-smarpot:latest
   ```
 
-    - Esto hace que tu imagen esté disponible públicamente
+    - Esto hace que tu imagen esté disponible en linea públicamente
 
 ### 4. Despliegue en Render.com
+
+#### 4.1 Creación de Web Service
 
 - **Inicia sesión en tu cuenta de Render.com**.
 - **Crea un nuevo servicio** seleccionando "New" y luego "Web Service".
@@ -48,3 +50,11 @@
 - **Proporciona el nombre de tu repositorio** de Docker Hub: `sebastian190030/api-smarpot`.
 - **Configura las variables de entorno** necesarias para tu aplicación.
 - **Haz clic en "Crear"** para iniciar el despliegue.
+
+#### 4.2 Despliegue
+- **Usa el Deploy hook** para hacer deploy automatico
+
+  ```bash
+  deploy.render.cmd
+  ```
+  - Esto ejecuta un CURL POST a https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key={key}
