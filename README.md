@@ -54,8 +54,8 @@
 #### 4.2 Despliegue
 - **Usa el Deploy hook** para hacer deploy automatico
 
-  ```bash 
-  cmd
+  ```bash
   deploy.render.cmd
+  cmd
   ```
   - Esto ejecuta un CURL -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key={key}
