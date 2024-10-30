@@ -24,5 +24,6 @@ public class Session implements Serializable {
     private Date registration;
 
     @DBRef
+    @NotNull(message = "La sesion debe estar asociada a un usuario")
     private User user;
 }

@@ -29,5 +29,6 @@ public class Command {
     private String response;          // Respuesta después de la ejecución (ej. éxito, error)
 
     @DBRef
+    @NotNull(message = "El comando debe ejecutarse en un cultivo")
     private Crop crop;
 }

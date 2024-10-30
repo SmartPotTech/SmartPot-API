@@ -27,5 +27,6 @@ public class Notification implements Serializable {
     private Date date;
 
     @DBRef
+    @NotNull(message = "La notificacion debe ir dirigida a un usuario")
     private User user;
 }

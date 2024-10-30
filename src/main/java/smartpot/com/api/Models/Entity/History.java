@@ -27,6 +27,7 @@ public class History implements Serializable {
     private Measures measures;
 
     @DBRef
+    @NotNull(message = "El registro debe estar asociado a un cultivo")
     private Crop crop;
 
     @Data

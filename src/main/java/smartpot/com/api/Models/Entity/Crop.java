@@ -25,8 +25,6 @@ public class Crop implements Serializable {
     private String type;
 
     @DBRef
+    @NotNull(message = "El cultivo debe pertenecer a un usuario")
     private User user;
-
-    @DBRef
-    private Crop crop;
 }
