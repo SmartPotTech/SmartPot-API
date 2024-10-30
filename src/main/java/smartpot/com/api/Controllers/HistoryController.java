@@ -40,7 +40,7 @@ public class HistoryController {
                 .map(history -> {
                     history.setDate(historyDetails.getDate());
                     history.setMeasures(historyDetails.getMeasures());
-                    history.setCultivation(historyDetails.getCultivation());
+                    history.setCrop(historyDetails.getCrop());
                     History updatedHistory = repositoryHistory.save(history);
                     return ResponseEntity.ok(updatedHistory);
                 })

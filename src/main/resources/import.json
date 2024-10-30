@@ -1,6 +1,7 @@
 {
   "usuarios": [
     {
+      "_id": { "$oid": "60c72b2f9f1b2c001f1c1d1a" },
       "name": "Juan",
       "lastname": "Pérez",
       "email": "juan.perez@example.com",
@@ -8,6 +9,7 @@
       "role": "USER"
     },
     {
+      "_id": { "$oid": "60c72b2f9f1b2c001f1c1d1b" },
       "name": "María",
       "lastname": "González",
       "email": "maria.gonzalez@example.com",
@@ -18,14 +20,15 @@
   "sesiones": [
     {
       "registration": "2023-10-01T10:00:00Z",
-      "user": "user_id_1"
+      "user": { "$oid": "60c72b2f9f1b2c001f1c1d1a" }
     }
   ],
   "cultivos": [
     {
+      "_id": { "$oid": "60c72b2f9f1b2c001f1c1d1c" },
       "status": "Activo",
       "type": "Hortaliza",
-      "user": "user_id_1"
+      "user": { "$oid": "60c72b2f9f1b2c001f1c1d1a" }
     }
   ],
   "registros": [
@@ -39,7 +42,31 @@
         "tds": 500,
         "humidity": 60
       },
-      "cultivation": "cultivo_id_1"
+      "cultivation": { "$oid": "60c72b2f9f1b2c001f1c1d1c" }
+    }
+  ],
+  "notificaciones": [
+    {
+      "_id": { "$oid": "60c72b2f9f1b2c001f1c1d1d" },
+      "message": "El cultivo ha sido regado.",
+      "dateCreated": "2023-10-02T10:00:00Z",
+      "read": false,
+      "user": { "$oid": "60c72b2f9f1b2c001f1c1d1a" }
+    }
+  ],
+  "comandos": [
+    {
+      "_id": { "$oid": "60c72b2f9f1b2c001f1c1d1e" },
+      "commandType": "ACTIVATE_WATER_PUMP",
+      "status": "PENDING",
+      "dateCreated": "2023-10-02T09:00:00Z",
+      "dateExecuted": null,
+      "parameters": {
+        "duration": "30",
+        "intensity": "high"
+      },
+      "response": null,
+      "crop": { "$oid": "60c72b2f9f1b2c001f1c1d1c" }
     }
   ]
 }

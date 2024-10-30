@@ -1,5 +1,6 @@
 package smartpot.com.api.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,8 +23,9 @@ public class Session implements Serializable {
     private String id;
 
     @NotNull(message = "La fecha de registro no puede estar vacía")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date registration;
 
     @DBRef
-    private String user;
+    private User user;
 }

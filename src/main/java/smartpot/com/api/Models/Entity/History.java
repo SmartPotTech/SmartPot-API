@@ -1,6 +1,6 @@
 package smartpot.com.api.Models.Entity;
 
-import jakarta.validation.constraints.NotEmpty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,12 +23,13 @@ public class History implements Serializable {
     private String id;
 
     @NotNull(message = "La fecha no puede estar vacía")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date date;
 
     private Measures measures;
 
     @DBRef
-    private String cultivation;
+    private Crop crop;
 
     @Data
     @Builder

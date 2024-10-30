@@ -1,5 +1,6 @@
 package smartpot.com.api.Models.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,9 @@ public class Command {
     private String id;
     private String commandType;       // Tipo de comando (ej. "ACTIVATE_WATER_PUMP", "TURN_ON_UV_LIGHT")
     private String status;            // Estado del comando (ej. "PENDING", "EXECUTED", "FAILED")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date dateCreated;         // Fecha de creación del comando
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date dateExecuted;        // Fecha en la que se ejecutó el comando (si corresponde)
     private Map<String, String> parameters;  // Parámetros adicionales del comando (ej. duración, intensidad)
     private String response;          // Respuesta después de la ejecución (ej. éxito, error)
