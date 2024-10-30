@@ -39,6 +39,7 @@ public class CropController {
                     crop.setStatus(cropDetails.getStatus());
                     crop.setType(cropDetails.getType());
                     crop.setUser(cropDetails.getUser());
+                    crop.setCultivation(cropDetails.getCultivation());
                     Crop updatedCrop = repositoryCrop.save(crop);
                     return ResponseEntity.ok(updatedCrop);
                 })

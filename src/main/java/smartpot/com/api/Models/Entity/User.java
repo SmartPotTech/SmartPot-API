@@ -1,6 +1,5 @@
 package smartpot.com.api.Models.Entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -40,7 +39,6 @@ public class User implements Serializable {
     @Indexed(unique = true)
     private String email;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date createAt;
 
     @NotEmpty(message = "La contraseña no puede estar vacío")

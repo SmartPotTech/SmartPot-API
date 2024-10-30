@@ -29,7 +29,6 @@ public class NotificationController {
 
     @PostMapping
     public Notification createNotification(@RequestBody Notification newNotification) {
-        newNotification.setDate(new java.util.Date());  // Asigna la fecha actual
         return repositoryNotification.save(newNotification);
     }
 
@@ -40,7 +39,8 @@ public class NotificationController {
                     notification.setMessage(notificationDetails.getMessage());
                     notification.setType(notificationDetails.getType());
                     notification.setUser(notificationDetails.getUser());
-                    notification.setDate(new java.util.Date());  // Actualiza la fecha a la actual
+                    // Actualiza la fecha a la actual
+                    notification.setDate(new java.util.Date());
                     Notification updatedNotification = repositoryNotification.save(notification);
                     return ResponseEntity.ok(updatedNotification);
                 })

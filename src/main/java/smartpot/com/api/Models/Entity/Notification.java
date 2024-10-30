@@ -24,9 +24,7 @@ public class Notification implements Serializable {
     private String message;
     private String type;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date date;
 
-    @DBRef
-    private User user;
+    private String user;
 }

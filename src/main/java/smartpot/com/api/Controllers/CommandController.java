@@ -27,13 +27,6 @@ public class CommandController {
         return repositoryCommand.findAll();
     }
 
-    @GetMapping("/crop/{cropId}")
-    public List<Command> getCommandsByCrop(@PathVariable String cropId) {
-        return repositoryCommand.findAll().stream()
-                .filter(command -> command.getCrop() != null && cropId.equals(command.getCrop().getId()))
-                .toList();
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<Command> getCommand(@PathVariable String id) {
         return repositoryCommand.findById(id)
@@ -45,7 +38,7 @@ public class CommandController {
     public Command createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
         Optional<Crop> crop = repositoryCrop.findById(cropId);
         if (crop.isPresent()) {
-            newCommand.setCrop(crop.get());
+            newCommand.setCrop(crop.get().getId());
             newCommand.setDateCreated(new Date());
             newCommand.setStatus("PENDING");
             return repositoryCommand.save(newCommand);
