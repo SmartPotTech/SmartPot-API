@@ -23,5 +23,6 @@ public class Session implements Serializable {
     @NotNull(message = "La fecha de registro no puede estar vacía")
     private Date registration;
 
-    private String user;
+    @DBRef
+    private User user;
 }

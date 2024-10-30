@@ -28,5 +28,6 @@ public class Command {
     private Map<String, String> parameters;  // Parámetros adicionales del comando (ej. duración, intensidad)
     private String response;          // Respuesta después de la ejecución (ej. éxito, error)
 
-    private String crop;
+    @DBRef
+    private Crop crop;
 }

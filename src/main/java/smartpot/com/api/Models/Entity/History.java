@@ -26,7 +26,8 @@ public class History implements Serializable {
 
     private Measures measures;
 
-    private String cultivation;
+    @DBRef
+    private Crop crop;
 
     @Data
     @Builder

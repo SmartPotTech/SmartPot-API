@@ -26,5 +26,6 @@ public class Notification implements Serializable {
 
     private Date date;
 
-    private String user;
+    @DBRef
+    private User user;
 }

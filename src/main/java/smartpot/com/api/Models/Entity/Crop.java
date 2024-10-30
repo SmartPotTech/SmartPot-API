@@ -24,7 +24,9 @@ public class Crop implements Serializable {
     @NotEmpty(message = "El tipo no puede estar vacío")
     private String type;
 
-    private String user;
+    @DBRef
+    private User user;
 
-    private String cultivation;
+    @DBRef
+    private Crop crop;
 }
