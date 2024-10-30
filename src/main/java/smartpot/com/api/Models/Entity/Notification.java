@@ -1,6 +1,5 @@
 package smartpot.com.api.Models.Entity;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,14 +15,15 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "sesiones")
-public class Session implements Serializable {
+@Document(collection = "notificaciones")
+public class Notification implements Serializable {
+
     @Id
     private String id;
-
-    @NotNull(message = "La fecha de registro no puede estar vacía")
-    private Date registration;
+    private String message;
+    private String type;
+    private Date date;
 
     @DBRef
-    private String user;
+    private User user;
 }
