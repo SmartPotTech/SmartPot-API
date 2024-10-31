@@ -1,6 +1,6 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.RNotification;
+import smartpot.com.api.Models.DAO.Repository.RNotification;
 import smartpot.com.api.Models.Entity.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +25,16 @@ public class UserController {
         return repositoryUser.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new RuntimeException("Usuario con id " + id + " no encontrado"));
+    }
+
+    @GetMapping("/email/{email}")
+    public List<User> getUsersByEmail(@PathVariable String email) {
+        return repositoryUser.findByEmail(email);
+    }
+
+    @GetMapping("/name/{name}")
+    public List<User> getUsersByName(@PathVariable String name) {
+        return repositoryUser.findByName(name);
     }
 
     @PostMapping
