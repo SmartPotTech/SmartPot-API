@@ -1,7 +1,7 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.RCommand;
-import smartpot.com.api.Models.DAO.RCrop;
+import smartpot.com.api.Models.DAO.Repository.RCommand;
+import smartpot.com.api.Models.DAO.Repository.RCrop;
 import smartpot.com.api.Models.Entity.Command;
 import smartpot.com.api.Models.Entity.Crop;
 import org.springframework.beans.factory.annotation.Autowired;

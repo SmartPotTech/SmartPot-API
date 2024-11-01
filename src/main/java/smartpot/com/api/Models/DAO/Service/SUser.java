@@ -1,17 +1,17 @@
-package smartpot.com.api.Models.DAO;
+package smartpot.com.api.Models.DAO.Service;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
 
-import java.util.Collections;
 import java.util.List;
 
 @Service
-public class RUserImp  {
+public class SUser {
     @Autowired
     private RUser userService;
 

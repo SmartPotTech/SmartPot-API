@@ -1,14 +1,11 @@
 package smartpot.com.api.Controllers;
 
 import org.springframework.http.HttpStatus;
-import smartpot.com.api.Models.DAO.RUser;
-import smartpot.com.api.Models.DAO.RUserImp;
-import smartpot.com.api.Models.Entity.History;
+import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.bson.types.ObjectId;
+
 import java.util.List;
 
 @RestController
@@ -16,7 +13,7 @@ import java.util.List;
 public class UserController {
 
     @Autowired
-    private RUserImp userService; // Cambia aquí a RUserImp
+    private SUser userService; // Cambia aquí a RUserImp
 
     // Crear un nuevo usuario
     @PostMapping

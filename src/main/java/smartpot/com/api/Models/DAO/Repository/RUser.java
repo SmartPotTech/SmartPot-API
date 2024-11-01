@@ -1,6 +1,5 @@
-package smartpot.com.api.Models.DAO;
+package smartpot.com.api.Models.DAO.Repository;
 
-import org.springframework.data.mongodb.repository.Query;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
