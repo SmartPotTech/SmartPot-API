@@ -23,6 +23,14 @@ import java.util.Date;
 @Document(collection = "notificaciones")
 public class Notification implements Serializable {
 
+    /**
+     * Representa una notificación en el sistema.
+     * * Esta clase se utiliza para informar al usuario sobre eventos importantes
+     * * relacionados con sus cultivos, como alertas sobre condiciones ambientales
+     * * o estados de comandos. Incluye un mensaje, tipo de notificación y
+     * * el usuario destinatario.
+     */
+
     @Id
     @Field("id")
     private String id;

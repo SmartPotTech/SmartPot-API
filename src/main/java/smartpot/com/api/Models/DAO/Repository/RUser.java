@@ -10,12 +10,12 @@ import java.util.List;
 
 @Repository
 public interface RUser extends MongoRepository<User, String> {
-    //@Query("{ 'email' : ?0 }")
-    //List<User> findByEmail(String email);
+    @Query("{ 'email' : ?0 }")
+    List<User> findByEmail(String email);
+
+    @Query("{ 'role' : ?0 }")
+    List<User> findByRole(String role);
 
     @Query("{ 'name' : ?0 }")
     List<User> findByName(String name);
-    List<User> findByEmail(String email);
-    List<User> findByRole(String role);
-
 }

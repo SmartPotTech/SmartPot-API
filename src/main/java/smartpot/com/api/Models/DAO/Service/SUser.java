@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
@@ -23,30 +21,45 @@ import java.util.List;
 @Service
 public class SUser {
     @Autowired
-    private RUser userService;
+    private RUser repositoryUser;
 
-    // Método para guardar/crear un usuario
-    public User save(User usuario) {
-        return userService.save(usuario);
+    /**
+     * Guarda o crea un nuevo user.
+     *
+     * @param user El objeto User que contiene los datos del user a guardar.
+     * @return El user que ha sido guardado, incluyendo cualquier información generada por el sistema (como un ID).
+     */
+    public User saveUser(User user) {
+        return repositoryUser.save(user);
     }
 
-    // Método para obtener todos los usuarios
-    public List<User> findAll() {
-        return userService.findAll();
+    /**
+     * Obtiene todos los usuarios registrados.
+     *
+     * @return Una lista de todos los usuarios.
+     */
+    public List<User> getAllUsers() {
+        return repositoryUser.findAll();
     }
 
-
-    // se debe manejar como objectId porque asi lo maneja Mongo si lo usamos como string no lo encontrara
-    public User findById(String id) {
+    /**
+     * Busca un usuario por su identificador.
+     * Este método maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
+     * se convierte a String para la búsqueda. Si no, intenta buscar directamente con el ID como String.
+     *
+     * @param id El identificador del usuario a buscar, puede ser un ObjectId o un String.
+     * @return El usuario correspondiente al ID proporcionado.
+     * @throws ResponseStatusException Si no se encuentra un usuario con el ID especificado.
+     */
+    public User getUserById(String id) {
         if (ObjectId.isValid(id)) {
-            return userService.findById(new ObjectId(id).toString()) // convertir ObjectId a String
+            return repositoryUser.findById(new ObjectId(id).toString())
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.NOT_FOUND,
                             "Usuario no encontrado con ID: " + id
                     ));
         } else {
-            // Si el ID no es un ObjectId, intenta buscar directamente con el String
-            return userService.findById(id)
+            return repositoryUser.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.NOT_FOUND,
                             "Usuario no encontrado con ID: " + id
@@ -54,43 +67,91 @@ public class SUser {
         }
     }
 
-    // Método para buscar por email
-    public List<User> findByEmail(String email) {
-        List<User> usuarios = userService.findByEmail(email);
-        if (usuarios.isEmpty()) {
+    /**
+     * Busca usuarios por su dirección de correo electrónico.
+     *
+     * @param email La dirección de correo electrónico por la que filtrar.
+     * @return Una lista de usuarios que coinciden con el correo electrónico proporcionado.
+     * @throws ResponseStatusException Si no se encuentran usuarios con el correo electrónico especificado.
+     */
+    public List<User> getUsersByEmail(String email) {
+        /*
+        List<User> Users = repositoryUser.findByEmail(email);
+        if (Users.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Usuario no encontrado con email: " + email
             );
         }
-        return usuarios;
+        return Users;
+        */
+        return repositoryUser.findByEmail(email);
     }
 
-    // Método para buscar por role
-    public List<User> findByRole(String role) {
-        List<User> usuarios = userService.findByRole(role);
-        if (usuarios.isEmpty()) {
+    /**
+     * Recupera una lista de usuarios por su nombre.
+     *
+     * @param name El nombre por el que filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el nombre proporcionado.
+     * @throws ResponseStatusException Si no se encuentran usuarios con el nombre especificado.
+     */
+    public List<User> getUsersByName(String name) {
+        /*
+        List<User> users = repositoryUser.findByName(name);
+        if (users.isEmpty()) {
             throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Usuarios no encontrados con role: " + role
+                HttpStatus.NOT_FOUND,
+                "No users found with name: " + name
             );
         }
-        return usuarios;
+        return users;
+        */
+        return repositoryUser.findByName(name);
     }
 
-    // Método para actualizar usuario
-    public User  updateUser(String id, User usuarioActualizado) {
-        User usuarioExistente = findById(id);
-        usuarioExistente.setName(usuarioActualizado.getName());
-        usuarioExistente.setLastname(usuarioActualizado.getLastname());
-        usuarioExistente.setEmail(usuarioActualizado.getEmail());
-        usuarioExistente.setRole(usuarioActualizado.getRole());
-        return userService.save(usuarioExistente);
+    /**
+     * Busca usuarios según su rol.
+     *
+     * @param role El rol por el cual filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el rol especificado.
+     * @throws ResponseStatusException Si no se encuentran usuarios con el rol dado.
+     */
+    public List<User> getUsersByRole(String role) {
+        List<User> Users = repositoryUser.findByRole(role);
+        if (Users.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Usuarios no encontrados con rol: " + role
+            );
+        }
+        return Users;
     }
 
-    // Método para eliminar usuario
-    public void delete(String id) {
-        User usuarioExistente = findById(id);
-        userService.delete(usuarioExistente);
+    /**
+     * Actualiza la información de un usuario existente.
+     *
+     * @param id El identificador del usuario a actualizar.
+     * @param updatedUser Un objeto User que contiene los nuevos datos del usuario.
+     * @return El usuario actualizado después de guardarlo en el servicio.
+     * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
+     */
+    public User updateUser(String id, User updatedUser) {
+        User existingUser = getUserById(id);
+        existingUser.setName(updatedUser.getName());
+        existingUser.setLastname(updatedUser.getLastname());
+        existingUser.setEmail(updatedUser.getEmail());
+        existingUser.setRole(updatedUser.getRole());
+        return repositoryUser.save(existingUser);
+    }
+
+    /**
+     * Elimina un usuario existente por su identificador.
+     *
+     * @param id El identificador del usuario que se desea eliminar.
+     * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
+     */
+    public void deleteUser(String id) {
+        User existingUser = getUserById(id);
+        repositoryUser.delete(existingUser);
     }
 }

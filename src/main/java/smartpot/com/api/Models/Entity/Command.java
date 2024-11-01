@@ -20,6 +20,12 @@ import java.util.Map;
 @AllArgsConstructor
 @Document(collection = "comandos")
 public class Command {
+    /**
+     * Representa un comando que puede ser ejecutado en un cultivo específico.
+     * * Esta clase contiene información sobre el tipo de comando, su estado,
+     * * fechas de creación y ejecución, parámetros adicionales, respuesta
+     * * tras la ejecución y el cultivo al que está asociado.
+     */
 
     @Id
     @Field("id")

@@ -20,6 +20,13 @@ import java.io.Serializable;
 @Document(collection = "cultivos")
 public class Crop implements Serializable {
 
+    /**
+     * Representa un cultivo en el sistema.
+     * * Esta clase contiene información sobre un cultivo, incluyendo su estado,
+     * * tipo y el usuario al que pertenece. Se utiliza en la colección "cultivos"
+     * * de MongoDB.
+     */
+
     @Id
     @Field("id")
     private String id;

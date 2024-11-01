@@ -21,6 +21,13 @@ import java.util.Date;
 @Document(collection = "registros")
 public class History implements Serializable {
 
+    /**
+     * Representa un registro histórico en el sistema.
+     * * Esta clase contiene información sobre un registro relacionado con un cultivo,
+     * * incluyendo la fecha del registro y las medidas asociadas. Se utiliza en la
+     * * colección "registros" de MongoDB.
+     */
+
     @Id
     @Field("id")
     private String id;

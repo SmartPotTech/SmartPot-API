@@ -22,6 +22,12 @@ import java.util.Date;
 @Document(collection = "sesiones")
 public class Session implements Serializable {
 
+    /**
+     * Representa una sesión de usuario en el sistema.
+     * * Esta clase contiene información sobre una sesión, incluyendo la fecha de registro
+     * * y la asociación con un usuario. Se utiliza en la colección "sesiones" de MongoDB.
+     */
+
     @Id
     @Field("id")
     private String id;

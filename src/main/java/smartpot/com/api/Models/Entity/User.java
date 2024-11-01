@@ -14,12 +14,19 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.io.Serializable;
 import java.util.Date;
 
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "usuarios")
 public class User implements Serializable {
+    /**
+     * Representa un usuario en el sistema.
+     * * Esta clase contiene la información básica de un usuario, incluyendo
+     * * atributos como nombre, apellido, correo electrónico, fecha de registro,
+     * * contraseña y rol. Se utiliza en la colección "usuarios" de MongoDB.
+     */
 
     @Id
     @Field("id")
