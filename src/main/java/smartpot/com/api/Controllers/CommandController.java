@@ -16,11 +16,14 @@ import java.util.Optional;
 @RequestMapping("/Comandos")
 public class CommandController {
 
-    @Autowired
-    private RCommand repositoryCommand;
+    private final RCommand repositoryCommand;
+    private final RCrop repositoryCrop;
 
     @Autowired
-    private RCrop repositoryCrop;
+    public CommandController(RCommand repositoryCommand, RCrop repositoryCrop) {
+        this.repositoryCommand = repositoryCommand;
+        this.repositoryCrop = repositoryCrop;
+    }
 
     @GetMapping
     public List<Command> getAllCommands() {
@@ -31,19 +34,20 @@ public class CommandController {
     public ResponseEntity<Command> getCommand(@PathVariable String id) {
         return repositoryCommand.findById(id)
                 .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Comando con id " + id + " no encontrado"));
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/crop/{cropId}")
-    public Command createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
+    public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
         Optional<Crop> crop = repositoryCrop.findById(cropId);
         if (crop.isPresent()) {
-            newCommand.setCrop(crop.get().getId());
+            newCommand.setCrop(crop.get());
             newCommand.setDateCreated(new Date());
             newCommand.setStatus("PENDING");
-            return repositoryCommand.save(newCommand);
+            Command savedCommand = repositoryCommand.save(newCommand);
+            return ResponseEntity.ok(savedCommand);
         } else {
-            throw new RuntimeException("Jardín con id " + cropId + " no encontrado");
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -57,16 +61,16 @@ public class CommandController {
                     Command updatedCommand = repositoryCommand.save(command);
                     return ResponseEntity.ok(updatedCommand);
                 })
-                .orElseThrow(() -> new RuntimeException("Comando con id " + id + " no encontrado"));
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCommand(@PathVariable String id) {
+    public ResponseEntity<Object> deleteCommand(@PathVariable String id) {
         return repositoryCommand.findById(id)
                 .map(command -> {
                     repositoryCommand.delete(command);
-                    return ResponseEntity.ok().<Void>build();
+                    return ResponseEntity.ok().build();
                 })
-                .orElseThrow(() -> new RuntimeException("Comando con id " + id + " no encontrado"));
+                .orElse(ResponseEntity.notFound().build());
     }
 }

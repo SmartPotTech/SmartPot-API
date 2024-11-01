@@ -1,7 +1,4 @@
 package smartpot.com.api.Controllers;
-
-import org.springframework.http.HttpStatus;
-import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +31,19 @@ public class UserController {
         return userService.findById(id);
     }
 
+    @GetMapping("/email/{email}")
+    public List<User> getUsersByEmail(@PathVariable String email) {
+        return repositoryUser.findByEmail(email);
+    }
+
+    @GetMapping("/name/{name}")
+    public List<User> getUsersByName(@PathVariable String name) {
+        return repositoryUser.findByName(name);
+    }
+
+    @PostMapping
+    public User createUser(@RequestBody User newUser) {
+        return repositoryUser.save(newUser);
 
     // Buscar usuarios por email
     @GetMapping("/email/{email}")
@@ -63,6 +73,5 @@ public class UserController {
     public void deleteUser(@PathVariable String id) {
         userService.delete(id);
     }
-
-
 }
+
