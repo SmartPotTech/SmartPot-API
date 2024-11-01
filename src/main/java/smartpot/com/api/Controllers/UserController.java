@@ -1,9 +1,6 @@
 package smartpot.com.api.Controllers;
-
-import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,18 +10,25 @@ import java.util.List;
 public class UserController {
 
     @Autowired
-    private RUser repositoryUser;
+    private SUser userService; // Cambia aquí a RUserImp
 
-    @GetMapping
-    public List<User> getAllUsers() {
-        return repositoryUser.findAll();
+    // Crear un nuevo usuario
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public User createUser(@RequestBody User usuario) {
+        return userService.save(usuario);
     }
 
+    // Obtener todos los usuarios
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userService.findAll();
+    }
+
+    // Buscar usuario por ID
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable String id) {
-        return repositoryUser.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Usuario con id " + id + " no encontrado"));
+    public User getUserById(@PathVariable String id) {
+        return userService.findById(id);
     }
 
     @GetMapping("/email/{email}")
@@ -40,19 +44,34 @@ public class UserController {
     @PostMapping
     public User createUser(@RequestBody User newUser) {
         return repositoryUser.save(newUser);
+
+    // Buscar usuarios por email
+    @GetMapping("/email/{email}")
+    public List<User> getUsersByEmail(@PathVariable String email) {
+        return userService.findByEmail(email);
     }
 
+    // Buscar usuarios por rol
+    @GetMapping("/role/{role}")
+    public List<User> getUsersByRole(@PathVariable String role) {
+        return userService.findByRole(role);
+    }
+
+    // Actualizar usuario completo (PUT)
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody User userDetails) {
-        return repositoryUser.findById(id)
-                .map(user -> {
-                    user.setName(userDetails.getName());
-                    user.setPassword(userDetails.getPassword());
-                    user.setEmail(userDetails.getEmail());
-                    user.setRole(userDetails.getRole());
-                    User updatedUser = repositoryUser.save(user);
-                    return ResponseEntity.ok(updatedUser);
-                })
-                .orElseThrow(() -> new RuntimeException("Usuario con id " + id + " no encontrado"));
+    public User updateUser(
+            @PathVariable String id,
+            @RequestBody User usuarioActualizado
+    ) {
+        return userService.updateUser(id, usuarioActualizado);
+    }
+
+
+    // Eliminar usuario
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable String id) {
+        userService.delete(id);
     }
 }
+
