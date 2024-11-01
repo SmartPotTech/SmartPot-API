@@ -26,6 +26,9 @@ public class User implements Serializable {
      * * Esta clase contiene la información básica de un usuario, incluyendo
      * * atributos como nombre, apellido, correo electrónico, fecha de registro,
      * * contraseña y rol. Se utiliza en la colección "usuarios" de MongoDB.
+     * TODO: Considerar implementar un método para hacer hash de la contraseña antes de almacenarla.
+     * ! Asegurarse de que los datos sensibles como contraseñas estén protegidos.
+     * ? ¿Qué medidas se tomarán si un usuario olvida su contraseña?
      */
 
     @Id

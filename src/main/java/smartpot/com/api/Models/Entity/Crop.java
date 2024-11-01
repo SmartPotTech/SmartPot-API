@@ -25,6 +25,8 @@ public class Crop implements Serializable {
      * * Esta clase contiene información sobre un cultivo, incluyendo su estado,
      * * tipo y el usuario al que pertenece. Se utiliza en la colección "cultivos"
      * * de MongoDB.
+     * TODO: Considerar usar un enum para los estados del cultivo (ej. GROWING, HARVESTED).
+     * ? ¿Cómo manejar cambios de estado del cultivo en la aplicación?
      */
 
     @Id

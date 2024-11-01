@@ -26,6 +26,9 @@ public class Session implements Serializable {
      * Representa una sesión de usuario en el sistema.
      * * Esta clase contiene información sobre una sesión, incluyendo la fecha de registro
      * * y la asociación con un usuario. Se utiliza en la colección "sesiones" de MongoDB.
+     * TODO: Considerar establecer una duración de la sesión y gestionarla.
+     * ! Asegurarse de que la fecha de registro sea válida y esté en el formato correcto.
+     * ? ¿Qué sucede si un usuario tiene múltiples sesiones activas?
      */
 
     @Id
