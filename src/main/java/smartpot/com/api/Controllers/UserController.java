@@ -31,7 +31,7 @@ public class UserController {
      *
      * @return Una lista de todos los usuarios.
      */
-    @GetMapping
+    @GetMapping({"/",""})
     public List<User> getAllUsers() {
         return serviceUser.getAllUsers();
     }

@@ -1,6 +1,7 @@
 package smartpot.com.api.Models.DAO.Repository;
 
 
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.Query;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface RUser extends MongoRepository<User, String> {
+public interface RUser extends MongoRepository<User, ObjectId> {
     @Query("{ 'email' : ?0 }")
     List<User> findByEmail(String email);
 

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.utilitys.Exception;
+import smartpot.com.api.utilitys.ErrorResponse;
 
 import java.util.List;
 
@@ -52,19 +54,21 @@ public class SUser {
      * @throws ResponseStatusException Si no se encuentra un usuario con el ID especificado.
      */
     public User getUserById(String id) {
-        if (ObjectId.isValid(id)) {
-            return repositoryUser.findById(new ObjectId(id).toString())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Usuario no encontrado con ID: " + id
-                    ));
-        } else {
-            return repositoryUser.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Usuario no encontrado con ID: " + id
-                    ));
+        if (!ObjectId.isValid(id)) {
+            throw new Exception
+                    (new ErrorResponse(
+                            "El ID " + id + " no es valido.",
+                            HttpStatus.BAD_REQUEST.value()
+                    )
+                    );
         }
+        return repositoryUser.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse(
+                                "Usuario con ID " + id + " no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value()
+                        )
+                ));
     }
 
     /**
