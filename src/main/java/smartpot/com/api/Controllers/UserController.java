@@ -1,4 +1,5 @@
 package smartpot.com.api.Controllers;
+import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.Entity.User;
@@ -6,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/Users")
@@ -43,7 +45,7 @@ public class UserController {
      * @return El objeto Usuario correspondiente al ID proporcionado.
      */
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable String id) {
+    public Optional<User> getUserById(@PathVariable ObjectId id) {
         return serviceUser.getUserById(id);
     }
 
@@ -88,7 +90,7 @@ public class UserController {
      * @return El objeto Usuario actualizado.
      */
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable String id, @RequestBody User updatedUser) {
+    public User updateUser(@PathVariable ObjectId id, @RequestBody User updatedUser) {
         return serviceUser.updateUser(id, updatedUser);
     }
 
@@ -99,7 +101,7 @@ public class UserController {
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable String id) {
+    public void deleteUser(@PathVariable ObjectId id) {
         serviceUser.deleteUser(id);
     }
 }
