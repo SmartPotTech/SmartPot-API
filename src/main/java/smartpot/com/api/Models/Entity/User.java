@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -26,11 +27,14 @@ public class User implements Serializable {
      * * Esta clase contiene la información básica de un usuario, incluyendo
      * * atributos como nombre, apellido, correo electrónico, fecha de registro,
      * * contraseña y rol. Se utiliza en la colección "usuarios" de MongoDB.
+     * TODO: Considerar implementar un método para hacer hash de la contraseña antes de almacenarla.
+     * ! Asegurarse de que los datos sensibles como contraseñas estén protegidos.
+     * ? ¿Qué medidas se tomarán si un usuario olvida su contraseña?
      */
 
     @Id
     @Field("id")
-    private String id;
+    private ObjectId id;
 
     @NotEmpty(message = "El nombre no puede estar vacío")
     @Size(min = 4, max = 15, message = "El nombre debe tener entre 4 y 15 caracteres")

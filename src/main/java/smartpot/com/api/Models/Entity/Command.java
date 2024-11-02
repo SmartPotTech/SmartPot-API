@@ -25,6 +25,9 @@ public class Command {
      * * Esta clase contiene información sobre el tipo de comando, su estado,
      * * fechas de creación y ejecución, parámetros adicionales, respuesta
      * * tras la ejecución y el cultivo al que está asociado.
+     * TODO: Considerar usar enums para commandType y status para evitar valores incorrectos.
+     * ! Asegurarse de que dateExecuted solo se establezca al ejecutar el comando.
+     * ? ¿Qué pasa si se envía un comando inválido o mal formado?
      */
 
     @Id
@@ -59,7 +62,7 @@ public class Command {
 }
 
 /*
- * TODO: Clase Command
+ * Command
  *
  * Descripción: Esta clase representa un comando que puede ser ejecutado en un cultivo específico.
  *

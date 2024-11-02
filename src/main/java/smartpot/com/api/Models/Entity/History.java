@@ -26,6 +26,9 @@ public class History implements Serializable {
      * * Esta clase contiene información sobre un registro relacionado con un cultivo,
      * * incluyendo la fecha del registro y las medidas asociadas. Se utiliza en la
      * * colección "registros" de MongoDB.
+     * TODO: Considerar establecer la fecha por defecto al crear un registro si no se proporciona.
+     * ! Asegurarse de que las validaciones de medidas se ajusten a los rangos esperados (ej. pH).
+     * ? ¿Qué hacer si las medidas están fuera de los rangos aceptables?
      */
 
     @Id

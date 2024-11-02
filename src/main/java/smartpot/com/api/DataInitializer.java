@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        /*
         ObjectMapper mapper = new ObjectMapper();
         InputStream inputStream = TypeReference.class.getResourceAsStream("/import.json");
 
@@ -68,6 +69,6 @@ public class DataInitializer implements CommandLineRunner {
             });
             historyRepository.saveAll(historiales);
         }
-    */
 
-}
+         */
+    }

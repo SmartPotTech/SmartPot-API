@@ -29,6 +29,9 @@ public class Notification implements Serializable {
      * * relacionados con sus cultivos, como alertas sobre condiciones ambientales
      * * o estados de comandos. Incluye un mensaje, tipo de notificación y
      * * el usuario destinatario.
+     * TODO: Considerar usar un enum para los tipos de notificación para mayor claridad.
+     * ! Asegurarse de que la fecha esté correctamente establecida y sea válida.
+     * ? ¿Qué pasa si un usuario no puede recibir la notificación?
      */
 
     @Id

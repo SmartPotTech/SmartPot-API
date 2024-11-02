@@ -11,8 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.utilitys.Exception;
 
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -47,24 +49,12 @@ public class SUser {
      * Este método maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
      * se convierte a String para la búsqueda. Si no, intenta buscar directamente con el ID como String.
      *
-     * @param id El identificador del usuario a buscar, puede ser un ObjectId o un String.
+     * @param id El identificador del usuario a buscar
      * @return El usuario correspondiente al ID proporcionado.
-     * @throws ResponseStatusException Si no se encuentra un usuario con el ID especificado.
+     * @throws Exception Si no se encuentra un usuario con el ID especificado.
      */
-    public User getUserById(String id) {
-        if (ObjectId.isValid(id)) {
-            return repositoryUser.findById(new ObjectId(id).toString())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Usuario no encontrado con ID: " + id
-                    ));
-        } else {
-            return repositoryUser.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND,
-                            "Usuario no encontrado con ID: " + id
-                    ));
-        }
+    public Optional<User> getUserById(ObjectId id) {
+        return repositoryUser.findById(id);
     }
 
     /**
@@ -75,16 +65,6 @@ public class SUser {
      * @throws ResponseStatusException Si no se encuentran usuarios con el correo electrónico especificado.
      */
     public List<User> getUsersByEmail(String email) {
-        /*
-        List<User> Users = repositoryUser.findByEmail(email);
-        if (Users.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Usuario no encontrado con email: " + email
-            );
-        }
-        return Users;
-        */
         return repositoryUser.findByEmail(email);
     }
 
@@ -96,16 +76,6 @@ public class SUser {
      * @throws ResponseStatusException Si no se encuentran usuarios con el nombre especificado.
      */
     public List<User> getUsersByName(String name) {
-        /*
-        List<User> users = repositoryUser.findByName(name);
-        if (users.isEmpty()) {
-            throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "No users found with name: " + name
-            );
-        }
-        return users;
-        */
         return repositoryUser.findByName(name);
     }
 
@@ -135,13 +105,17 @@ public class SUser {
      * @return El usuario actualizado después de guardarlo en el servicio.
      * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
      */
-    public User updateUser(String id, User updatedUser) {
-        User existingUser = getUserById(id);
-        existingUser.setName(updatedUser.getName());
-        existingUser.setLastname(updatedUser.getLastname());
-        existingUser.setEmail(updatedUser.getEmail());
-        existingUser.setRole(updatedUser.getRole());
-        return repositoryUser.save(existingUser);
+    public User updateUser(ObjectId id, User updatedUser) {
+        Optional<User> users = getUserById(id);
+        User existingUser = users.stream().findFirst().orElse(null);
+        if (existingUser != null) {
+            existingUser.setName(updatedUser.getName());
+            existingUser.setLastname(updatedUser.getLastname());
+            existingUser.setEmail(updatedUser.getEmail());
+            existingUser.setRole(updatedUser.getRole());
+            return repositoryUser.save(existingUser);
+        }
+        return null;
     }
 
     /**
@@ -150,8 +124,12 @@ public class SUser {
      * @param id El identificador del usuario que se desea eliminar.
      * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
      */
-    public void deleteUser(String id) {
-        User existingUser = getUserById(id);
-        repositoryUser.delete(existingUser);
+    public void deleteUser(ObjectId id) {
+        Optional<User> users = getUserById(id);
+        User existingUser = users.stream().findFirst().orElse(null);
+        if (existingUser != null) {
+            repositoryUser.delete(existingUser);
+        }
+
     }
 }
