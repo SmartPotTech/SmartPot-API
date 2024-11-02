@@ -22,7 +22,7 @@ public class UserController {
      * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
      * @return El objeto Usuario creado.
      */
-    @PostMapping
+    @PostMapping("/Save")
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody User newUser) {
         return serviceUser.saveUser(newUser);
@@ -33,7 +33,7 @@ public class UserController {
      *
      * @return Una lista de todos los usuarios.
      */
-    @GetMapping({"/",""})
+    @GetMapping("/All")
     public List<User> getAllUsers() {
         return serviceUser.getAllUsers();
     }
@@ -89,7 +89,7 @@ public class UserController {
      * @param updatedUser El objeto Usuario que contiene los nuevos datos.
      * @return El objeto Usuario actualizado.
      */
-    @PutMapping("/{id}")
+    @PutMapping("/Update/{id}")
     public User updateUser(@PathVariable ObjectId id, @RequestBody User updatedUser) {
         return serviceUser.updateUser(id, updatedUser);
     }
@@ -99,7 +99,7 @@ public class UserController {
      *
      * @param id El ID del usuario a eliminar.
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable ObjectId id) {
         serviceUser.deleteUser(id);

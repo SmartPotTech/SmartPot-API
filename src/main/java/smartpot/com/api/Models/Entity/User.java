@@ -33,8 +33,8 @@ public class User implements Serializable {
      */
 
     @Id
-    @Field("id")
-    private ObjectId id;
+    @Field("_id")
+    private String id;
 
     @NotEmpty(message = "El nombre no puede estar vacío")
     @Size(min = 4, max = 15, message = "El nombre debe tener entre 4 y 15 caracteres")
@@ -54,7 +54,7 @@ public class User implements Serializable {
     private String email;
 
     @NotNull(message = "La fecha de registro no puede estar vacía")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     @Field("create_at")
     private Date createAt;
 
