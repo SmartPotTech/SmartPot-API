@@ -34,7 +34,7 @@ public class User implements Serializable {
 
     @Id
     @Field("_id")
-    private String id;
+    private ObjectId id;
 
     @NotEmpty(message = "El nombre no puede estar vacío")
     @Size(min = 4, max = 15, message = "El nombre debe tener entre 4 y 15 caracteres")
