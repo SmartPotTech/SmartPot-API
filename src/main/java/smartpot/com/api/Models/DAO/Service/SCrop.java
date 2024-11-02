@@ -1,4 +1,4 @@
-package smartpot.com.api.Models.Service;
+package smartpot.com.api.Models.DAO.Service;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +31,11 @@ public class SCrop {
     public long countCropsByUser(User user) {
         return repositoryCrop.countByUser(user);
     }
+
+    public List<Crop> getCropsByStatus(String status) {
+        return repositoryCrop.findByStatus(status);
+    }
+
 
     public Crop createCrop(Crop newCrop) {
         return repositoryCrop.save(newCrop);

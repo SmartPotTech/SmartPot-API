@@ -32,18 +32,21 @@ public class SessionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+ /*   @PostMapping
     public ResponseEntity<Session> createSession(@RequestBody Session newSession) {
         newSession.setRegistration(new Date()); // Asigna la fecha actual
         Session savedSession = repositorySession.save(newSession);
         return ResponseEntity.ok(savedSession);
-    }
+    }*/
 
     @PutMapping("/{id}")
     public ResponseEntity<Session> updateSession(@PathVariable String id, @RequestBody Session sessionDetails) {
         return repositorySession.findById(id)
                 .map(session -> {
-                    session.setRegistration(sessionDetails.getRegistration());
+
+//                    session.setRegistration(sessionDetails.getRegistration());
+
+                    
                     session.setUser(sessionDetails.getUser());
                     Session updatedSession = repositorySession.save(session);
                     return ResponseEntity.ok(updatedSession);

@@ -32,11 +32,11 @@ public class Session implements Serializable {
     @Field("id")
     private String id;
 
-    @NotNull(message = "La fecha de registro no puede estar vacía")
+   /* @NotNull(message = "La fecha de registro no puede estar vacía")
     @FutureOrPresent(message = "La fecha de registro debe ser hoy o en el futuro")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     @Field("registration")
-    private Date registration;
+    private Date registration;*/
 
     @DBRef
     @NotNull(message = "La sesión debe estar asociada a un usuario")

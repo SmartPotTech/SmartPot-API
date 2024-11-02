@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface RSession extends MongoRepository<Session, String> {
     List<Session> findByUser(User user);
-    List<Session> findByRegistrationBetween(Date startDate, Date endDate);
+//    List<Session> findByRegistrationBetween(Date startDate, Date endDate);
     long countByUser(User user);
-    List<Session> findByRegistrationAfter(Date currentDate);
+//    List<Session> findByRegistrationAfter(Date currentDate);
 }

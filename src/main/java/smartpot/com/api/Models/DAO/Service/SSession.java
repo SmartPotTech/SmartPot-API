@@ -26,17 +26,17 @@ public class SSession {
         return repositorySession.findByUser(user);
     }
 
-    public List<Session> getSessionsInRange(Date startDate, Date endDate) {
+   /* public List<Session> getSessionsInRange(Date startDate, Date endDate) {
         return repositorySession.findByRegistrationBetween(startDate, endDate);
-    }
+    }*/
 
     public long countSessionsByUser(User user) {
         return repositorySession.countByUser(user);
     }
-
+/*
     public List<Session> getFutureSessions(Date currentDate) {
         return repositorySession.findByRegistrationAfter(currentDate);
-    }
+    }*/
 
     public Session createSession(Session newSession) {
         return repositorySession.save(newSession);
