@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/Users")
@@ -45,8 +44,9 @@ public class UserController {
      * @return El objeto Usuario correspondiente al ID proporcionado.
      */
     @GetMapping("/{id}")
-    public Optional<User> getUserById(@PathVariable ObjectId id) {
+    public User getUserById(@PathVariable String id) {
         return serviceUser.getUserById(id);
+
     }
 
     /**
@@ -56,8 +56,8 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el correo electrónico proporcionado.
      */
     @GetMapping("/email/{email}")
-    public List<User> getUsersByEmail(@PathVariable String email) {
-        return serviceUser.getUsersByEmail(email);
+    public User getUsersByEmail(@PathVariable String email) {
+        return serviceUser.getUserByEmail(email);
     }
 
     /**
