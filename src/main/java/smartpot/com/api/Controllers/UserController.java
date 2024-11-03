@@ -43,7 +43,7 @@ public class UserController {
      * @param id El ID del usuario a recuperar.
      * @return El objeto Usuario correspondiente al ID proporcionado.
      */
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public User getUserById(@PathVariable String id) {
         return serviceUser.getUserById(id);
 
@@ -69,6 +69,29 @@ public class UserController {
     @GetMapping("/name/{name}")
     public List<User> getUsersByName(@PathVariable String name) {
         return serviceUser.getUsersByName(name);
+    }
+
+    /**
+     * Encuentra usuarios por su apellido.
+     *
+     * @param lastname El apellido por el que filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el apellido proporcionado.
+     */
+    @GetMapping("/lastname/{lastname}")
+    public List<User> getUsersByLastname(@PathVariable String lastname) {
+        return serviceUser.getUsersByLastname(lastname);
+    }
+
+    /**
+     * Encuentra usuarios por su nombre y apellido.
+     *
+     * @param name El nombre por el que filtrar los usuarios.
+     * @param lastname El apellido por el que filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionado.
+     */
+    @GetMapping("/fullname/{name}/{lastname}")
+    public List<User> getUsersByFullname(@PathVariable String name, @PathVariable String lastname) {
+        return serviceUser.getUsersByFullName(name, lastname);
     }
 
     /**
