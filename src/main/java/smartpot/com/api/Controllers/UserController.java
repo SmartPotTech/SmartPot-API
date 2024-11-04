@@ -21,18 +21,6 @@ public class UserController {
      * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
      * @return El objeto Usuario creado.
      */
-    @PostMapping("/Edit")
-    @ResponseStatus(HttpStatus.CREATED)
-    public User editUser(@RequestBody User newUser) {
-        return serviceUser.CreateUser(newUser);
-    }
-
-    /**
-     * Crea un nuevo usuario.
-     *
-     * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
-     * @return El objeto Usuario creado.
-     */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody User newUser) {
@@ -125,7 +113,7 @@ public class UserController {
      * @return El objeto Usuario actualizado.
      */
     @PutMapping("/Update/{id}")
-    public User updateUser(@PathVariable ObjectId id, @RequestBody User updatedUser) {
+    public User updateUser(@PathVariable String id, @RequestBody User updatedUser) {
         return serviceUser.updateUser(id, updatedUser);
     }
 
@@ -134,9 +122,9 @@ public class UserController {
      *
      * @param id El ID del usuario a eliminar.
      */
-    @DeleteMapping("/Delete/{id}")
+    @PostMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable ObjectId id) {
+    public void deleteUser(@PathVariable String id) {
         serviceUser.deleteUser(id);
     }
 }

@@ -12,7 +12,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.utilitys.ObjectIdSerializer;
+import smartpot.com.api.Validation.ObjectIdSerializer;
 
 import java.util.Date;
 import java.util.Map;
@@ -61,8 +61,9 @@ public class Command {
 
     @DBRef
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
-    private Crop crop;
+    private ObjectId crop;
 }
 
 /*

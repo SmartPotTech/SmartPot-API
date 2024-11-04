@@ -12,7 +12,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.utilitys.ObjectIdSerializer;
+import smartpot.com.api.Validation.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -50,8 +50,9 @@ public class History implements Serializable {
 
     @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
-    private Crop crop;
+    private ObjectId crop;
 
     @Data
     @Builder

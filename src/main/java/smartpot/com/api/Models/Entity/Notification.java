@@ -14,7 +14,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.utilitys.ObjectIdSerializer;
+import smartpot.com.api.Validation.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -58,6 +58,7 @@ public class Notification implements Serializable {
 
     @DBRef
     @NotNull(message = "La notificación debe ir dirigida a un usuario")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")
-    private User user;
+    private ObjectId user;
 }

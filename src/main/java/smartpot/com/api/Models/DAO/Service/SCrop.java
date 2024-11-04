@@ -10,15 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.utilitys.ErrorResponse;
-import smartpot.com.api.utilitys.Exception;
+import smartpot.com.api.Validation.ErrorResponse;
+import smartpot.com.api.Validation.Exception;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Data
 @Builder

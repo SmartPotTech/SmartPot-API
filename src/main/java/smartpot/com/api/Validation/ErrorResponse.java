@@ -1,4 +1,4 @@
-package smartpot.com.api.utilitys;
+package smartpot.com.api.Validation;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

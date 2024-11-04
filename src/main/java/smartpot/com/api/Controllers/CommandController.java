@@ -1,5 +1,6 @@
 package smartpot.com.api.Controllers;
 
+import org.bson.types.ObjectId;
 import smartpot.com.api.Models.DAO.Repository.RCommand;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
 import smartpot.com.api.Models.Entity.Command;
@@ -12,10 +13,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/Comandos")
+//@RestController
+//@RequestMapping("/Comandos")
 public class CommandController {
-
+    /*
     private final RCommand repositoryCommand;
     private final RCrop repositoryCrop;
 
@@ -41,7 +42,7 @@ public class CommandController {
     public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
         Optional<Crop> crop = repositoryCrop.findById(cropId);
         if (crop.isPresent()) {
-            newCommand.setCrop(crop.get());
+            newCommand.setCrop(new ObjectId(cropId));
             newCommand.setDateCreated(new Date());
             newCommand.setStatus("PENDING");
             Command savedCommand = repositoryCommand.save(newCommand);
@@ -73,4 +74,6 @@ public class CommandController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+     */
 }

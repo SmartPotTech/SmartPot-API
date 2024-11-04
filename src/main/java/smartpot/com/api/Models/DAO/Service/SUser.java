@@ -5,18 +5,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
+import smartpot.com.api.Models.Entity.Role;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.utilitys.ErrorResponse;
-import smartpot.com.api.utilitys.Exception;
-import smartpot.com.api.utilitys.RegexPatterns;
+import smartpot.com.api.Validation.ErrorResponse;
+import smartpot.com.api.Validation.Exception;
+import smartpot.com.api.Validation.RegexPatterns;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Data
 @Builder
@@ -32,6 +35,46 @@ public class SUser {
     }
 
     public User CreateUser(User user) {
+        if (!user.getName().matches(RegexPatterns.NAME_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El nombre '" + user.getName() + "' no es válido. Debe tener entre 4 y 15 caracteres.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (!user.getLastname().matches(RegexPatterns.LASTNAME_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El apellido '" + user.getLastname() + "' no es válido. Debe tener entre 4 y 30 caracteres.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (!user.getEmail().matches(RegexPatterns.EMAIL_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El email '" + user.getEmail() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (repositoryUser.findByEmail(user.getEmail()) != null) {
+            throw new Exception(new ErrorResponse(
+                    "El email '" + user.getEmail() + "' ya está en uso.",
+                    HttpStatus.CONFLICT.value()
+            ));
+        }
+
+        boolean isValidRole = Stream.of(Role.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(user.getRole().name()));
+        if (!isValidRole) {
+            throw new Exception(new ErrorResponse(
+                    "El Rol '" + user.getRole().name() + "' no válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
+
         return repositoryUser.save(user);
     }
 
@@ -136,14 +179,110 @@ public class SUser {
     }
 
     public List<User> getUsersByRole(String role) {
-        return repositoryUser.findByRole(role);
+        if (role == null || role.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "El rol no puede estar vacío",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        boolean isValidRole = Stream.of(Role.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(role));
+
+        if (!isValidRole) {
+            throw new Exception(new ErrorResponse(
+                    "El Rol '" + role + "' no válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+
+        List<User> users = repositoryUser.findByRole(role);
+
+        if (users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontraron usuarios con el rol '" + role + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+
+        return users;
     }
-    public User updateUser(ObjectId id, User updatedUser) {
-        return repositoryUser.updateUser(id, updatedUser);
+    public User updateUser(String  id, User updatedUser) {
+        if (!ObjectId.isValid(id)) {
+            throw new Exception(new ErrorResponse(
+                    "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        User existingUser = repositoryUser.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse("El usuario con ID '" + id + "' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+
+        if (!updatedUser.getName().matches(RegexPatterns.NAME_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El nombre '" + updatedUser.getName() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (!updatedUser.getLastname().matches(RegexPatterns.LASTNAME_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El apellido '" + updatedUser.getLastname() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (!updatedUser.getEmail().matches(RegexPatterns.EMAIL_PATTERN)) {
+            throw new Exception(new ErrorResponse(
+                    "El correo electrónico '" + updatedUser.getEmail() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (repositoryUser.findByEmail(updatedUser.getEmail()) != null &&
+                !existingUser.getEmail().equals(updatedUser.getEmail())) {
+            throw new Exception(new ErrorResponse(
+                    "El correo electrónico '" + updatedUser.getEmail() + "' ya está en uso.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (updatedUser.getRole() == null || !Stream.of(Role.values()).anyMatch(r -> r.equals(updatedUser.getRole()))) {
+            throw new Exception(new ErrorResponse(
+                    "El rol '" + updatedUser.getRole() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            if (!new BCryptPasswordEncoder().matches(updatedUser.getPassword(), existingUser.getPassword())) {
+                updatedUser.setPassword(new BCryptPasswordEncoder().encode(updatedUser.getPassword()));
+            }
+        } else {
+            updatedUser.setPassword(existingUser.getPassword());
+        }
+
+        updatedUser.setCreateAt(existingUser.getCreateAt());
+
+        updatedUser.setId(existingUser.getId());
+        return repositoryUser.updateUser(new ObjectId(id), updatedUser);
     }
 
-    public void deleteUser(ObjectId id) {
-        repositoryUser.deleteUserById(id);
+    public void deleteUser(String id) {
+        if (!ObjectId.isValid(id)) {
+            throw new Exception(new ErrorResponse(
+                    "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
 
+        User existingUser = repositoryUser.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse("El usuario con ID '" + id + "' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+
+        repositoryUser.deleteUserById(new ObjectId(id));
     }
 }
