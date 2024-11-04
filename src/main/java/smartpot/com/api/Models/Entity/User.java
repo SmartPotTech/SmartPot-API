@@ -3,10 +3,7 @@ package smartpot.com.api.Models.Entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -22,6 +19,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "password")
 @Document(collection = "usuarios")
 public class User implements Serializable {
     /**
@@ -59,7 +57,7 @@ public class User implements Serializable {
     @NotNull(message = "La fecha de registro no puede estar vacía")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     @Field("create_at")
-    private Date createAt;
+    private Date createAt = new Date();
 
     @NotEmpty(message = "La contraseña no puede estar vacío")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
@@ -71,5 +69,5 @@ public class User implements Serializable {
 
     @NotEmpty(message = "El rol no puede estar vacío")
     @Field("role")
-    private String role;
+    private Role role;
 }

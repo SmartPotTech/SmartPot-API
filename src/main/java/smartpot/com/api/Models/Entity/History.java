@@ -1,15 +1,18 @@
 package smartpot.com.api.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import smartpot.com.api.utilitys.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -32,8 +35,9 @@ public class History implements Serializable {
      */
 
     @Id
-    @Field("id")
-    private String id;
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    @Field("_id")
+    private ObjectId id;
 
     @NotNull(message = "La fecha no puede estar vacía")
     @PastOrPresent(message = "La fecha del registro debe ser anterior o igual a hoy")
