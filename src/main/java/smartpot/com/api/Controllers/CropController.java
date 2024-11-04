@@ -36,7 +36,7 @@ public class CropController {
      * @return Optional que contiene el cultivo si existe, vacío si no se encuentra
      */
     @GetMapping("/{id}")
-    public Optional<Crop> getCrop(@PathVariable ObjectId id) {
+    public Crop getCrop(@PathVariable String id) {
         return serviceCrop.getCropById(id);
     }
 
@@ -54,12 +54,12 @@ public class CropController {
     /**
      * Busca todos los cultivos asociados a un usuario específico.
      *
-     * @param user Usuario propietario de los cultivos
+     * @param id del Usuario propietario de los cultivos
      * @return Lista de cultivos pertenecientes al usuario
      */
     @GetMapping("/User/{user}")
-    public List<Crop> getCropByUser(@PathVariable User user) {
-        return serviceCrop.getCropsByUser(user);
+    public List<Crop> getCropByUser(@PathVariable String id) {
+        return serviceCrop.getCropsByUser(id);
     }
 
     /**
@@ -76,12 +76,12 @@ public class CropController {
     /**
      * Cuenta el número total de cultivos que tiene un usuario.
      *
-     * @param user Usuario del que se quieren contar los cultivos
+     * @param id Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
     @GetMapping("/count")
-    public long countCropsByUser(User user) {
-        return serviceCrop.countCropsByUser(user);
+    public long countCropsByUser(String id) {
+        return serviceCrop.countCropsByUser(id);
     }
 
     /**

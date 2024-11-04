@@ -6,11 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
+import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.utilitys.ErrorResponse;
+import smartpot.com.api.utilitys.Exception;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,13 +35,26 @@ public class SCrop {
     private RCrop repositoryCrop;
 
     /**
-     * Busca un cultivo por su identificador único.
+     * Este metodo maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
+     * se utiliza en la búsqueda como tal.
      *
-     * @param id Identificador ObjectId del cultivo
-     * @return Optional que contiene el cultivo si existe, vacío si no se encuentra
+     * @param id El identificador del cultivo a buscar. Se recibe como String para evitar errores de conversion.
+     * @return El cultivo correspondiente al id proporcionado.
+     * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el cultivo.
+     * @throws Exception Si no se encuentra el cultivo con el id proporcionado.
      */
-    public Optional<Crop> getCropById(ObjectId id) {
-        return repositoryCrop.findById(id);
+    public Crop getCropById(String id) {
+        if(!ObjectId.isValid(id)) {
+            throw new Exception(new ErrorResponse(
+                    "El cultivo con id '"+ id +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return repositoryCrop.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse("El cultivo con id '"+ id +"' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
     }
     /**
      * Obtiene todos los cultivos almacenados en el sistema.
@@ -51,13 +68,18 @@ public class SCrop {
     /**
      * Busca todos los cultivos asociados a un usuario específico.
      *
-     * @param user Usuario propietario de los cultivos
+     * @param id del  Usuario propietario de los cultivos
      * @return Lista de cultivos pertenecientes al usuario
      */
-    public List<Crop> getCropsByUser(User user) {
-        return repositoryCrop.findByUser(user);
+    public List<Crop> getCropsByUser(String id) {
+        return repositoryCrop.findByUser(getUser(id));
     }
 
+    public User getUser(String id){
+        SUser sUser = null;
+        User user = sUser.getUserById(id);
+        return user;
+    }
     /**
      * Busca cultivos por su tipo .
      *
@@ -74,7 +96,7 @@ public class SCrop {
      * @param user Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
-    public long countCropsByUser(User user) {return repositoryCrop.countByUser(user);}
+    public long countCropsByUser(String id) {return repositoryCrop.countByUser(getUser(id));}
 
     /**
      * Busca cultivos por su estado actual.
@@ -102,18 +124,10 @@ public class SCrop {
      * @param id El identificador del Crop a actualizar.
      * @param updatedCrop Un objeto Crop que contiene los nuevos datos del Cultivo.
      * @return El Crop actualizado después de guardarlo en el servicio.
-     * @throws ResponseStatusException Si no se encuentra un Crop con el ID proporcionado.
+     *
      */
     public Crop updatedCrop(ObjectId id, Crop updatedCrop) {
-        Optional<Crop> crops = getCropById(id);
-        Crop existingCrop = crops.stream().findFirst().orElse(null);
-        if (existingCrop != null) {
-            existingCrop.setStatus(updatedCrop.getStatus());
-            existingCrop.setType(updatedCrop.getType());
-            existingCrop.setUser(updatedCrop.getUser());
-            return repositoryCrop.save(existingCrop);
-        }
-        return null;
+      return repositoryCrop.updateUser(id,updatedCrop);
     }
 
 
@@ -121,15 +135,11 @@ public class SCrop {
      * Elimina un cultivo existente por su identificador.
      *
      * @param id Es el  identificador del cultivo que se desea eliminar.
-     * @throws ResponseStatusException Si no se encuentra el cultivo con el ID proporcionado.
      */
     public void deleteCrop(ObjectId id) {
-        Optional<Crop> crops = getCropById(id);
-        Crop existingCrop = crops.stream().findFirst().orElse(null);
-        if (existingCrop != null) {
-            repositoryCrop.delete(existingCrop);
+            repositoryCrop.deleteCropById(id);
         }
 
     }
 
-}
+
