@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/Users")
@@ -22,7 +21,7 @@ public class UserController {
      * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
      * @return El objeto Usuario creado.
      */
-    @PostMapping
+    @PostMapping("/Save")
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody User newUser) {
         return serviceUser.saveUser(newUser);
@@ -33,7 +32,7 @@ public class UserController {
      *
      * @return Una lista de todos los usuarios.
      */
-    @GetMapping({"/",""})
+    @GetMapping("/All")
     public List<User> getAllUsers() {
         return serviceUser.getAllUsers();
     }
@@ -44,9 +43,10 @@ public class UserController {
      * @param id El ID del usuario a recuperar.
      * @return El objeto Usuario correspondiente al ID proporcionado.
      */
-    @GetMapping("/{id}")
-    public Optional<User> getUserById(@PathVariable ObjectId id) {
+    @GetMapping("/id/{id}")
+    public User getUserById(@PathVariable String id) {
         return serviceUser.getUserById(id);
+
     }
 
     /**
@@ -56,8 +56,8 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el correo electrónico proporcionado.
      */
     @GetMapping("/email/{email}")
-    public List<User> getUsersByEmail(@PathVariable String email) {
-        return serviceUser.getUsersByEmail(email);
+    public User getUsersByEmail(@PathVariable String email) {
+        return serviceUser.getUserByEmail(email);
     }
 
     /**
@@ -69,6 +69,29 @@ public class UserController {
     @GetMapping("/name/{name}")
     public List<User> getUsersByName(@PathVariable String name) {
         return serviceUser.getUsersByName(name);
+    }
+
+    /**
+     * Encuentra usuarios por su apellido.
+     *
+     * @param lastname El apellido por el que filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el apellido proporcionado.
+     */
+    @GetMapping("/lastname/{lastname}")
+    public List<User> getUsersByLastname(@PathVariable String lastname) {
+        return serviceUser.getUsersByLastname(lastname);
+    }
+
+    /**
+     * Encuentra usuarios por su nombre y apellido.
+     *
+     * @param name El nombre por el que filtrar los usuarios.
+     * @param lastname El apellido por el que filtrar los usuarios.
+     * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionado.
+     */
+    @GetMapping("/fullname/{name}/{lastname}")
+    public List<User> getUsersByFullname(@PathVariable String name, @PathVariable String lastname) {
+        return serviceUser.getUsersByFullName(name, lastname);
     }
 
     /**
@@ -89,7 +112,7 @@ public class UserController {
      * @param updatedUser El objeto Usuario que contiene los nuevos datos.
      * @return El objeto Usuario actualizado.
      */
-    @PutMapping("/{id}")
+    @PutMapping("/Update/{id}")
     public User updateUser(@PathVariable ObjectId id, @RequestBody User updatedUser) {
         return serviceUser.updateUser(id, updatedUser);
     }
@@ -99,7 +122,7 @@ public class UserController {
      *
      * @param id El ID del usuario a eliminar.
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable ObjectId id) {
         serviceUser.deleteUser(id);

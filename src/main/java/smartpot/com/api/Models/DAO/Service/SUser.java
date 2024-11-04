@@ -11,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.utilitys.ErrorResponse;
 import smartpot.com.api.utilitys.Exception;
+import smartpot.com.api.utilitys.RegexPatterns;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Data
 @Builder
@@ -25,111 +27,119 @@ public class SUser {
     @Autowired
     private RUser repositoryUser;
 
-    /**
-     * Guarda o crea un nuevo user.
-     *
-     * @param user El objeto User que contiene los datos del user a guardar.
-     * @return El user que ha sido guardado, incluyendo cualquier información generada por el sistema (como un ID).
-     */
     public User saveUser(User user) {
         return repositoryUser.save(user);
     }
 
-    /**
-     * Obtiene todos los usuarios registrados.
-     *
-     * @return Una lista de todos los usuarios.
-     */
     public List<User> getAllUsers() {
         return repositoryUser.findAll();
     }
 
     /**
-     * Busca un usuario por su identificador.
-     * Este método maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
-     * se convierte a String para la búsqueda. Si no, intenta buscar directamente con el ID como String.
+     * Este metodo maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
+     * se utiliza en la búsqueda como tal.
      *
-     * @param id El identificador del usuario a buscar
-     * @return El usuario correspondiente al ID proporcionado.
-     * @throws Exception Si no se encuentra un usuario con el ID especificado.
+     * @param id El identificador del usuario a buscar. Se recibe como String para evitar errores de conversion.
+     * @return El usuario correspondiente al id proporcionado.
+     * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el usuario.
+     * @throws Exception Si no se encuentra el usuario con el id proporcionado.
      */
-    public Optional<User> getUserById(ObjectId id) {
-        return repositoryUser.findById(id);
+    public User getUserById(String id) {
+        if(!ObjectId.isValid(id)) {
+            throw new Exception(new ErrorResponse(
+                    "El usuario con id '"+ id +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return repositoryUser.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse("El usuario con id '"+ id +"' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
     }
 
-    /**
-     * Busca usuarios por su dirección de correo electrónico.
-     *
-     * @param email La dirección de correo electrónico por la que filtrar.
-     * @return Una lista de usuarios que coinciden con el correo electrónico proporcionado.
-     * @throws ResponseStatusException Si no se encuentran usuarios con el correo electrónico especificado.
-     */
-    public List<User> getUsersByEmail(String email) {
-        return repositoryUser.findByEmail(email);
+    public User getUserByEmail(String email) {
+        if (!Pattern.matches(RegexPatterns.EMAIL_PATTERN, email)) {
+            throw new Exception(new ErrorResponse(
+                    "El usuario con correo electrónico '" + email + "' no es válido. Asegúrate de que sigue el formato correcto.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        List<User> users = repositoryUser.findByEmail(email);
+        if (users == null || users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun usuario con el correo electrónico: '" + email + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+
+        return users.get(0);
     }
 
-    /**
-     * Recupera una lista de usuarios por su nombre.
-     *
-     * @param name El nombre por el que filtrar los usuarios.
-     * @return Una lista de usuarios que coinciden con el nombre proporcionado.
-     * @throws ResponseStatusException Si no se encuentran usuarios con el nombre especificado.
-     */
+    public List<User> getUsersByFullName(String name, String lastname) {
+        if (!Pattern.matches(RegexPatterns.NAME_PATTERN,name) || !Pattern.matches(RegexPatterns.LASTNAME_PATTERN,lastname)) {
+            throw new Exception(new ErrorResponse(
+                    "El nombre o apellido no sigue el formato permitido.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        List<User> users = repositoryUser.findByFullName(name, lastname);
+        if (users == null || users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun usuario con el nombre '"+ name +"' y apellido '" + lastname + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return users;
+    }
+
     public List<User> getUsersByName(String name) {
-        return repositoryUser.findByName(name);
+        if (!Pattern.matches(RegexPatterns.NAME_PATTERN, name)) {
+            throw new Exception(new ErrorResponse(
+                    "El nombre '" + name + "' no es válido. Debe tener entre 4 y 15 caracteres y solo letras.",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        List<User> users = repositoryUser.findByName(name);
+        if (users == null || users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun usuario con el nombre '"+ name +"'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return users;
     }
 
-    /**
-     * Busca usuarios según su rol.
-     *
-     * @param role El rol por el cual filtrar los usuarios.
-     * @return Una lista de usuarios que coinciden con el rol especificado.
-     * @throws ResponseStatusException Si no se encuentran usuarios con el rol dado.
-     */
+    public List<User> getUsersByLastname(String lastname) {
+        if (!Pattern.matches(RegexPatterns.LASTNAME_PATTERN,lastname)) {
+            throw new Exception(new ErrorResponse(
+                    "El apellido '" + lastname + "' no es valido. El apellido debe tener entre 4 y 30 caracteres",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        List<User> users = repositoryUser.findByLastname(lastname);
+        if (users == null || users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun usuario con el apellido '" + lastname + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return users;
+    }
+
     public List<User> getUsersByRole(String role) {
-        List<User> Users = repositoryUser.findByRole(role);
-        if (Users.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Usuarios no encontrados con rol: " + role
-            );
-        }
-        return Users;
+        return repositoryUser.findByRole(role);
     }
-
-    /**
-     * Actualiza la información de un usuario existente.
-     *
-     * @param id El identificador del usuario a actualizar.
-     * @param updatedUser Un objeto User que contiene los nuevos datos del usuario.
-     * @return El usuario actualizado después de guardarlo en el servicio.
-     * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
-     */
     public User updateUser(ObjectId id, User updatedUser) {
-        Optional<User> users = getUserById(id);
-        User existingUser = users.stream().findFirst().orElse(null);
-        if (existingUser != null) {
-            existingUser.setName(updatedUser.getName());
-            existingUser.setLastname(updatedUser.getLastname());
-            existingUser.setEmail(updatedUser.getEmail());
-            existingUser.setRole(updatedUser.getRole());
-            return repositoryUser.save(existingUser);
-        }
-        return null;
+        return repositoryUser.updateUser(id, updatedUser);
     }
 
-    /**
-     * Elimina un usuario existente por su identificador.
-     *
-     * @param id El identificador del usuario que se desea eliminar.
-     * @throws ResponseStatusException Si no se encuentra un usuario con el ID proporcionado.
-     */
     public void deleteUser(ObjectId id) {
-        Optional<User> users = getUserById(id);
-        User existingUser = users.stream().findFirst().orElse(null);
-        if (existingUser != null) {
-            repositoryUser.delete(existingUser);
-        }
+        repositoryUser.deleteUserById(id);
 
     }
 }
