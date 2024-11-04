@@ -1,4 +1,4 @@
-package smartpot.com.api.utilitys;
+package smartpot.com.api.Validation;
 
 public class RegexPatterns {
     /* * Patrón para nombres y apellidos (mínimo 4, máximo 15 caracteres) */

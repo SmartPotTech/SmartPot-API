@@ -1,4 +1,4 @@
-package smartpot.com.api.utilitys;
+package smartpot.com.api.Validation;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
