@@ -46,6 +46,7 @@ public class Crop implements Serializable {
 
     @DBRef
     @NotNull(message = "El cultivo debe pertenecer a un usuario")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")
-    private User user;
+    private ObjectId user;
 }

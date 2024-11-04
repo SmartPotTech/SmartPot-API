@@ -16,6 +16,7 @@ import smartpot.com.api.Models.Entity.User;
 import smartpot.com.api.utilitys.ErrorResponse;
 import smartpot.com.api.utilitys.Exception;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +34,9 @@ public class SCrop {
 
     @Autowired
     private RCrop repositoryCrop;
+    @Autowired
+    private SUser serviceUser;
+
 
     /**
      * Este metodo maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,
@@ -72,14 +76,23 @@ public class SCrop {
      * @return Lista de cultivos pertenecientes al usuario
      */
     public List<Crop> getCropsByUser(String id) {
-        return repositoryCrop.findByUser(getUser(id));
+        User user = serviceUser.getUserById(id);
+            List<Crop> crops = repositoryCrop.findAll();
+            List<Crop> cropsUser = new ArrayList<>();
+            for(Crop crop : crops){
+                if(crop.getUser().equals(user.getId())){
+                    cropsUser.add(crop);
+                }
+            }
+            if (cropsUser.isEmpty()) {
+                throw new Exception(new ErrorResponse(
+                        "No se encuentra ningun Cultivo perteneciente al usuario con el id: '" + id + "'.",
+                        HttpStatus.NOT_FOUND.value()
+                ));
+            }
+            return cropsUser;
     }
 
-    public User getUser(String id){
-        SUser sUser = null;
-        User user = sUser.getUserById(id);
-        return user;
-    }
     /**
      * Busca cultivos por su tipo .
      *
@@ -96,7 +109,9 @@ public class SCrop {
      * @param id del Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
-    public long countCropsByUser(String id) {return repositoryCrop.countByUser(getUser(id));}
+    public long countCropsByUser(String id) { return getCropsByUser(id).size();
+
+    }
 
     /**
      * Busca cultivos por su estado actual.
@@ -137,9 +152,9 @@ public class SCrop {
      * @param id Es el  identificador del cultivo que se desea eliminar.
      */
     public void deleteCrop(ObjectId id) {
-            repositoryCrop.deleteCropById(id);
-        }
+            repositoryCrop.deleteById(String.valueOf(id));
 
+    }
     }
 
 

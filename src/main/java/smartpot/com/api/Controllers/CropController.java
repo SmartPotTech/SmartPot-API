@@ -51,16 +51,7 @@ public class CropController {
         return serviceCrop.getCropsByStatus(status);
     }
 
-    /**
-     * Busca todos los cultivos asociados a un usuario específico.
-     *
-     * @param id del Usuario propietario de los cultivos
-     * @return Lista de cultivos pertenecientes al usuario
-     */
-    @GetMapping("/User/{user}")
-    public List<Crop> getCropByUser(@PathVariable String id) {
-        return serviceCrop.getCropsByUser(id);
-    }
+
 
     /**
      * Busca cultivos por su tipo .
@@ -73,6 +64,16 @@ public class CropController {
         return serviceCrop.getCropsByType(type);
     }
 
+    /**
+     * Busca todos los cultivos asociados a un usuario específico.
+     *
+     * @param id del Usuario propietario de los cultivos
+     * @return Lista de cultivos pertenecientes al usuario
+     */
+    @GetMapping("/User/{id}")
+    public List<Crop> getCropByUser(@PathVariable String id) {
+        return serviceCrop.getCropsByUser(id);
+    }
     /**
      * Cuenta el número total de cultivos que tiene un usuario.
      *
@@ -96,17 +97,7 @@ public class CropController {
         return serviceCrop.createCrop(newCrop);
     }
 
-    /**
-     * Actualiza un cultivo existente.
-     *
-     * @param id El ID del cultivo a actualizar.
-     * @param cropDetails El objeto Crop que contiene los nuevos datos.
-     * @return El objeto Crop actualizado.
-     */
-    @PutMapping("/Update/{id}")
-    public Crop updateCrop(@PathVariable ObjectId id, @RequestBody Crop cropDetails) {
-        return serviceCrop.updatedCrop(id,cropDetails);
-    }
+
 
     /**
      * Elimina un cultivo existente por su ID.
@@ -115,7 +106,19 @@ public class CropController {
      */
     @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable ObjectId id) {
+    public void deleteCultivo(@PathVariable ObjectId id) {
         serviceCrop.deleteCrop(id);
+    }
+
+    /**
+     * Actualiza un cultivo existente.
+     *
+     * @param id El ID del cultivo a actualizar.
+     * @param cropDetails El objeto Crop que contiene los nuevos datos.
+     * @return El objeto Crop actualizado.
+     */
+    @PutMapping("/Update/{id}")
+    public Crop updateCrop(@PathVariable String id, @RequestBody Crop cropDetails) {
+        return serviceCrop.updatedCrop(new ObjectId(id),cropDetails);
     }
 }

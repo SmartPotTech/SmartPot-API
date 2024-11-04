@@ -17,22 +17,16 @@ public interface RCrop extends MongoRepository<Crop, String> {
     @Query("{ '_id' : ?0 }")
     Optional<Crop> findById(ObjectId id);
 
-    @Query("{ 'user' : ?0 }")
-    List<Crop> findByUser(User user);
-
     @Query("{ 'type' : ?0 }")
     List<Crop> findByType(String type);
 
     @Query("{ 'status' : ?0 }")
     List<Crop> findByStatus(String status);
 
-    @Query(value = "{ 'user' : ?0 }", count = true)
-    long countByUser(User user);
-
-    @Transactional
+    /*@Transactional
     @Query("{ '_id' : ?0 }")
-    void deleteCropById(ObjectId id);
-
+    void deleteById(ObjectId id);
+*/
     @Transactional
     @Query("{ '_id' : ?0 }")
     Crop updateUser(ObjectId id, Crop crop);
