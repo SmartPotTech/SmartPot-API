@@ -1,5 +1,6 @@
 package smartpot.com.api.Models.Entity;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import smartpot.com.api.utilitys.ObjectIdSerializer;
 
 import java.io.Serializable;
 
@@ -31,7 +33,8 @@ public class Crop implements Serializable {
      */
 
     @Id
-    @Field("id")
+    @Field("_id")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
 
     @Field("status")

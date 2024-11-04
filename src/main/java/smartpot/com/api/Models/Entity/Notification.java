@@ -1,6 +1,7 @@
 package smartpot.com.api.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,10 +9,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import smartpot.com.api.utilitys.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -35,8 +38,9 @@ public class Notification implements Serializable {
      */
 
     @Id
-    @Field("id")
-    private String id;
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    @Field("_id")
+    private ObjectId id;
 
     @NotEmpty(message = "El mensaje no puede estar vacío")
     @Size(max = 250, message = "El mensaje no puede tener más de 250 caracteres")

@@ -1,16 +1,19 @@
 package smartpot.com.api.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import smartpot.com.api.utilitys.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -32,14 +35,15 @@ public class Session implements Serializable {
      */
 
     @Id
-    @Field("id")
-    private String id;
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    @Field("_id")
+    private ObjectId id;
 
-   /* @NotNull(message = "La fecha de registro no puede estar vacía")
+    @NotNull(message = "La fecha de registro no puede estar vacía")
     @FutureOrPresent(message = "La fecha de registro debe ser hoy o en el futuro")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
     @Field("registration")
-    private Date registration;*/
+    private Date registration;
 
     @DBRef
     @NotNull(message = "La sesión debe estar asociada a un usuario")

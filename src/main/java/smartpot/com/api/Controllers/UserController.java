@@ -21,10 +21,22 @@ public class UserController {
      * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
      * @return El objeto Usuario creado.
      */
-    @PostMapping("/Save")
+    @PostMapping("/Edit")
+    @ResponseStatus(HttpStatus.CREATED)
+    public User editUser(@RequestBody User newUser) {
+        return serviceUser.CreateUser(newUser);
+    }
+
+    /**
+     * Crea un nuevo usuario.
+     *
+     * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
+     * @return El objeto Usuario creado.
+     */
+    @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@RequestBody User newUser) {
-        return serviceUser.saveUser(newUser);
+        return serviceUser.CreateUser(newUser);
     }
 
     /**
