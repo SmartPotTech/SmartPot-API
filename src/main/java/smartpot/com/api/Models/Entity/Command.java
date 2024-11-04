@@ -61,8 +61,9 @@ public class Command {
 
     @DBRef
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
-    private Crop crop;
+    private ObjectId crop;
 }
 
 /*

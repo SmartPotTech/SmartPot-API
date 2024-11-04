@@ -50,8 +50,9 @@ public class History implements Serializable {
 
     @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
-    private Crop crop;
+    private ObjectId crop;
 
     @Data
     @Builder

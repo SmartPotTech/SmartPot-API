@@ -47,6 +47,7 @@ public class Session implements Serializable {
 
     @DBRef
     @NotNull(message = "La sesión debe estar asociada a un usuario")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")
-    private User user;
+    private ObjectId user;
 }

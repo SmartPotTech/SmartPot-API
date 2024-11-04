@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface RCommand extends MongoRepository<Command, String> {
-    List<Command> findByStatus(String status);
-    List<Command> findByCrop_Id(String cropId);
+    //List<Command> findByStatus(String status);
+    //List<Command> findByCrop_Id(String cropId);
 }

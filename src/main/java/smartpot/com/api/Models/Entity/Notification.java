@@ -58,6 +58,7 @@ public class Notification implements Serializable {
 
     @DBRef
     @NotNull(message = "La notificación debe ir dirigida a un usuario")
+    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")
-    private User user;
+    private ObjectId user;
 }
