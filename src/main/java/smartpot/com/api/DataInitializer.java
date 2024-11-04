@@ -20,11 +20,15 @@ import java.util.Map;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+    @Override
+    public void run(String... args) throws Exception {
 
-    @Autowired
+    }
+
+  /*   @Autowired
     private RUser userRepository;
 
-    @Autowired
+   @Autowired
     private RSession sessionRepository;
 
     @Autowired
@@ -48,11 +52,11 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.saveAll(usuarios);
         }
 
-        if (data.containsKey("sesiones")) {
+      *//*  if (data.containsKey("sesiones")) {
             List<Session> sessions = mapper.convertValue(data.get("sesiones"), new TypeReference<List<Session>>() {
             });
             sessionRepository.saveAll(sessions);
-        }
+        }*//*
 
         if (data.containsKey("cultivos")) {
             List<Crop> cultivos = mapper.convertValue(data.get("cultivos"), new TypeReference<List<Crop>>() {
@@ -68,4 +72,3 @@ public class DataInitializer implements CommandLineRunner {
 
          */
     }
-}

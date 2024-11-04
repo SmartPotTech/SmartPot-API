@@ -1,57 +1,121 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.Repository.RCrop;
+import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.ErrorResponse;
+import smartpot.com.api.Models.DAO.Service.SCrop;
 import smartpot.com.api.Models.Entity.Crop;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Models.Entity.User;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/Cultivos")
 public class CropController {
 
     @Autowired
-    private RCrop repositoryCrop;
+    private SCrop serviceCrop;
 
+    /**
+     * Obtiene todos los cultivos almacenados en el sistema.
+     *
+     * @return Lista de todos los cultivos existentes
+     */
     @GetMapping
     public List<Crop> getAllCrops() {
-        return repositoryCrop.findAll();
+        return serviceCrop.getCrops();
     }
 
+    /**
+     * Busca un cultivo por su identificador único.
+     *
+     * @param id Identificador ObjectId del cultivo
+     * @return Optional que contiene el cultivo si existe, vacío si no se encuentra
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<Crop> getCrop(@PathVariable String id) {
-        return repositoryCrop.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Cultivo con id " + id + " no encontrado"));
+    public Optional<Crop> getCrop(@PathVariable ObjectId id) {
+        return serviceCrop.getCropById(id);
     }
 
-    @PostMapping
+    /**
+     * Busca cultivos por su estado actual.
+     *
+     * @param status Estado del cultivo a buscar
+     * @return Lista de cultivos que se encuentran en el estado especificado
+     */
+    @GetMapping("/status/{status}")
+    public List<Crop> getCropByStatus(@PathVariable String status) {
+        return serviceCrop.getCropsByStatus(status);
+    }
+
+    /**
+     * Busca todos los cultivos asociados a un usuario específico.
+     *
+     * @param user Usuario propietario de los cultivos
+     * @return Lista de cultivos pertenecientes al usuario
+     */
+    @GetMapping("/User/{user}")
+    public List<Crop> getCropByUser(@PathVariable User user) {
+        return serviceCrop.getCropsByUser(user);
+    }
+
+    /**
+     * Busca cultivos por su tipo .
+     *
+     * @param type Tipo del cultivo
+     * @return Lista de cultivos que coinciden con el tipo especificado
+     */
+    @GetMapping("/type/{type}")
+    public List<Crop> getCropByType(@PathVariable String type) {
+        return serviceCrop.getCropsByType(type);
+    }
+
+    /**
+     * Cuenta el número total de cultivos que tiene un usuario.
+     *
+     * @param user Usuario del que se quieren contar los cultivos
+     * @return Número total de cultivos del usuario
+     */
+    @GetMapping("/count")
+    public long countCropsByUser(User user) {
+        return serviceCrop.countCropsByUser(user);
+    }
+
+    /**
+     * Crea un nuevo cultivo
+     *
+     * @param newCrop El objeto cultivo que contiene los datos del cultivo que se debe guardar
+     * @return El objeto cultivo creado.
+     */
+    @PostMapping("/Create")
+    @ResponseStatus(HttpStatus.CREATED)
     public Crop createCrop(@RequestBody Crop newCrop) {
-        return repositoryCrop.save(newCrop);
+        return serviceCrop.createCrop(newCrop);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Crop> updateCrop(@PathVariable String id, @RequestBody Crop cropDetails) {
-        return repositoryCrop.findById(id)
-                .map(crop -> {
-                    crop.setStatus(cropDetails.getStatus());
-                    crop.setType(cropDetails.getType());
-                    crop.setUser(cropDetails.getUser());
-                    Crop updatedCrop = repositoryCrop.save(crop);
-                    return ResponseEntity.ok(updatedCrop);
-                })
-                .orElseThrow(() -> new RuntimeException("Cultivo con id " + id + " no encontrado"));
+    /**
+     * Actualiza un cultivo existente.
+     *
+     * @param id El ID del cultivo a actualizar.
+     * @param cropDetails El objeto Crop que contiene los nuevos datos.
+     * @return El objeto Crop actualizado.
+     */
+    @PutMapping("/Update/{id}")
+    public Crop updateCrop(@PathVariable ObjectId id, @RequestBody Crop cropDetails) {
+        return serviceCrop.updatedCrop(id,cropDetails);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCrop(@PathVariable String id) {
-        return repositoryCrop.findById(id)
-                .map(crop -> {
-                    repositoryCrop.delete(crop);
-                    return ResponseEntity.ok().<Void>build();
-                })
-                .orElseThrow(() -> new RuntimeException("Cultivo con id " + id + " no encontrado"));
+    /**
+     * Elimina un cultivo existente por su ID.
+     *
+     * @param id El ID del cultivo a eliminar.
+     */
+    @DeleteMapping("/Delete/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable ObjectId id) {
+        serviceCrop.deleteCrop(id);
     }
 }
