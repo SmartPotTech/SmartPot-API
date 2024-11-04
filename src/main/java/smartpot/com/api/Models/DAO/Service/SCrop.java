@@ -93,7 +93,7 @@ public class SCrop {
     /**
      * Cuenta el número total de cultivos que tiene un usuario.
      *
-     * @param user Usuario del que se quieren contar los cultivos
+     * @param id del Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
     public long countCropsByUser(String id) {return repositoryCrop.countByUser(getUser(id));}
