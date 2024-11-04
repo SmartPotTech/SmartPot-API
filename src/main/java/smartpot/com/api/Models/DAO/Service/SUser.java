@@ -27,7 +27,11 @@ public class SUser {
     @Autowired
     private RUser repositoryUser;
 
-    public User saveUser(User user) {
+    public User EditUser(User user) {
+        return repositoryUser.save(user);
+    }
+
+    public User CreateUser(User user) {
         return repositoryUser.save(user);
     }
 
