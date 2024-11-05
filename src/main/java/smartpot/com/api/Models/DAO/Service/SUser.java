@@ -20,6 +20,7 @@ import smartpot.com.api.Validation.ErrorResponse;
 import smartpot.com.api.Validation.Exception;
 import smartpot.com.api.Validation.RegexPatterns;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -71,7 +72,7 @@ public class SUser implements UserDetailsService {
             ));
         }
 
-        if (repositoryUser.findByEmail(user.getEmail()) != null) {
+        if (!repositoryUser.findByEmail(user.getEmail()).isEmpty()) {
             throw new Exception(new ErrorResponse(
                     "El email '" + user.getEmail() + "' ya está en uso.",
                     HttpStatus.CONFLICT.value()
