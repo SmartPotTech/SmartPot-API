@@ -28,8 +28,6 @@ public interface RUser extends MongoRepository<User, ObjectId> {
     @Query("{ 'role' : ?0 }")
     List<User> findByRole(String role);
 
-    @Transactional
-    @Query("{ '_id' : ?0 }")
     void deleteUserById(ObjectId id);
 
     @Transactional

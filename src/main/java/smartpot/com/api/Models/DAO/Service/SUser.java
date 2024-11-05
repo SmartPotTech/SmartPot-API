@@ -295,7 +295,7 @@ public class SUser implements UserDetailsService {
                                 HttpStatus.NOT_FOUND.value())
                 ));
 
-        repositoryUser.deleteUserById(new ObjectId(id));
+        repositoryUser.deleteUserById(existingUser.getId());
     }
 
     @Override
