@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
@@ -26,7 +29,7 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @AllArgsConstructor
 @Service
-public class SUser {
+public class SUser implements UserDetailsService {
 
     @Autowired
     private RUser repositoryUser;
@@ -292,5 +295,18 @@ public class SUser {
                 ));
 
         repositoryUser.deleteUserById(new ObjectId(id));
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user  = (User) repositoryUser.findByEmail(username);
+        if (user != null) {
+            return org.springframework.security.core.userdetails.User.builder()
+                    .username(user.getEmail())
+                    .password(user.getPassword())
+                    .build();
+        } else {
+            throw new UsernameNotFoundException(username);
+        }
     }
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.Entity.User;
 import smartpot.com.api.Security.jwt.JwtService;
 
@@ -14,7 +14,7 @@ import smartpot.com.api.Security.jwt.JwtService;
 public class AuthController {
 
     @Autowired
-    private RUser userRepository;
+    private SUser serviceUser;
 
     @Autowired
     private JwtService jwtService;
@@ -23,7 +23,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public String login(@RequestBody User reqUser) {
-        User user = userRepository.findByEmail(reqUser.getEmail());
+        User user = serviceUser.getUserByEmail(reqUser.getEmail());
         if (user == null) return "Invalid Credentials";
 
         boolean passwordMatch = new BCryptPasswordEncoder().matches(reqUser.getPassword(), user.getPassword());

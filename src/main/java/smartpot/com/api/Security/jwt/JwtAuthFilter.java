@@ -12,8 +12,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import smartpot.com.api.Models.DAO.RUser;
-import smartpot.com.api.Security.UserDetailsImpl;
+import smartpot.com.api.Models.DAO.Repository.RUser;
+import smartpot.com.api.Models.DAO.Service.SUser;
+import smartpot.com.api.Models.Entity.User;
 
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     @Autowired
-    private UserDetailsImpl userDetailsImpl;
+    private SUser serviceUser;
 
     @Override
     protected void doFilterInternal(
@@ -45,9 +46,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String email = jwtService.extractEmail(token);
 
             if (email != null) {
-                UserDetails user = userDetailsImpl.loadUserByUsername(email);
+                User user = serviceUser.getUserByEmail(email);
 
-                if (jwtService.validateToken(token, user)) {
+                if (jwtService.validateToken(token, (UserDetails) user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user, user.getPassword(), null /* user.getAuthorities() */);
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

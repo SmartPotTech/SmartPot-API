@@ -17,7 +17,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.DAO.Repository.RUser;
+import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Security.jwt.JwtAuthFilter;
 
 @Configuration
@@ -32,14 +33,14 @@ public class SecurityConfiguration {
     private final JwtAuthFilter jwtAuthFilter;
 
     @Autowired
-    private UserDetailsImpl userDetails;
+    private SUser serviceUser;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSec) throws Exception {
         return httpSec
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
-                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login").permitAll();
+                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login","/**").permitAll();
                     authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
                 })
                 .httpBasic(Customizer.withDefaults())
@@ -53,7 +54,7 @@ public class SecurityConfiguration {
     @Bean
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetails); // Setting our custom user details service
+        provider.setUserDetailsService(serviceUser); // Setting our custom user details service
         provider.setPasswordEncoder(passwordEncoder()); // Setting the password encoder
         return provider;
     }
