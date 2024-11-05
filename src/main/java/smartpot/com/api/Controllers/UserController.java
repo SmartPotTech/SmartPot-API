@@ -121,7 +121,7 @@ public class UserController {
      *
      * @param id El ID del usuario a eliminar.
      */
-    @PostMapping("/Delete/{id}")
+    @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(@PathVariable String id) {
         serviceUser.deleteUser(id);
