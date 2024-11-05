@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Models.DAO.RCrop;
-import smartpot.com.api.Models.DAO.RHistory;
-import smartpot.com.api.Models.DAO.RSession;
-import smartpot.com.api.Models.DAO.RUser;
+import smartpot.com.api.Models.DAO.Repository.RCrop;
+import smartpot.com.api.Models.DAO.Repository.RHistory;
+import smartpot.com.api.Models.DAO.Repository.RSession;
+import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.History;
 import smartpot.com.api.Models.Entity.Session;
@@ -18,14 +18,17 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-//@Component
-//public class DataInitializer implements CommandLineRunner {
-public class DataInitializer{
-    /*
-    @Autowired
+@Component
+public class DataInitializer implements CommandLineRunner {
+    @Override
+    public void run(String... args) throws Exception {
+
+    }
+
+  /*   @Autowired
     private RUser userRepository;
 
-    @Autowired
+   @Autowired
     private RSession sessionRepository;
 
     @Autowired
@@ -36,6 +39,7 @@ public class DataInitializer{
 
     @Override
     public void run(String... args) throws Exception {
+        /*
         ObjectMapper mapper = new ObjectMapper();
         InputStream inputStream = TypeReference.class.getResourceAsStream("/import.json");
 
@@ -48,11 +52,11 @@ public class DataInitializer{
             userRepository.saveAll(usuarios);
         }
 
-        if (data.containsKey("sesiones")) {
+      *//*  if (data.containsKey("sesiones")) {
             List<Session> sessions = mapper.convertValue(data.get("sesiones"), new TypeReference<List<Session>>() {
             });
             sessionRepository.saveAll(sessions);
-        }
+        }*//*
 
         if (data.containsKey("cultivos")) {
             List<Crop> cultivos = mapper.convertValue(data.get("cultivos"), new TypeReference<List<Crop>>() {
@@ -65,7 +69,6 @@ public class DataInitializer{
             });
             historyRepository.saveAll(historiales);
         }
-    }
 
-     */
-}
+         */
+    }

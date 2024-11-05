@@ -1,6 +1,6 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.RHistory;
+import smartpot.com.api.Models.DAO.Repository.RHistory;
 import smartpot.com.api.Models.Entity.History;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/Historial")
 public class HistoryController {
-
+/*
+ * 
+ 
     @Autowired
     private RHistory repositoryHistory;
 
@@ -40,7 +42,7 @@ public class HistoryController {
                 .map(history -> {
                     history.setDate(historyDetails.getDate());
                     history.setMeasures(historyDetails.getMeasures());
-                    history.setCultivation(historyDetails.getCultivation());
+                    history.setCrop(historyDetails.getCrop());
                     History updatedHistory = repositoryHistory.save(history);
                     return ResponseEntity.ok(updatedHistory);
                 })
@@ -56,4 +58,5 @@ public class HistoryController {
                 })
                 .orElseThrow(() -> new RuntimeException("Historial con id " + id + " no encontrado"));
     }
+                */
 }

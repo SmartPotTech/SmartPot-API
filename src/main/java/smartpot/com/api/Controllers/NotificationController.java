@@ -1,6 +1,6 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.RNotification;
+import smartpot.com.api.Models.DAO.Repository.RNotification;
 import smartpot.com.api.Models.Entity.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +11,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/Notificaciones")
 public class NotificationController {
+/*
+ * 
 
     @Autowired
     private RNotification repositoryNotification;
@@ -56,4 +58,5 @@ public class NotificationController {
                 })
                 .orElseThrow(() -> new RuntimeException("Notificación con id " + id + " no encontrada"));
     }
+                 */
 }
