@@ -40,7 +40,7 @@ public class SecurityConfiguration {
         return httpSec
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
-                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login").permitAll();
+                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login","/**").permitAll();
                     authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
                 })
                 .httpBasic(Customizer.withDefaults())
