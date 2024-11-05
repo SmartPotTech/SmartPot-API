@@ -31,6 +31,17 @@ public class SUser {
     @Autowired
     private RUser repositoryUser;
 
+    public List<User> getAllUsers() {
+        List<User> users = repositoryUser.findAll();
+        if (users == null || users.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun usuario en la db",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return users;
+    }
+
     public User EditUser(User user) {
         return repositoryUser.save(user);
     }
@@ -77,10 +88,6 @@ public class SUser {
         user.setPassword(hashedPassword);
 
         return repositoryUser.save(user);
-    }
-
-    public List<User> getAllUsers() {
-        return repositoryUser.findAll();
     }
 
     /**
