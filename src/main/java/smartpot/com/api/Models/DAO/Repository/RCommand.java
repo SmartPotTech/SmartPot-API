@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Models.Entity.Command;
+import smartpot.com.api.Models.Entity.User;
+
 import java.util.List;
 import java.util.Date;
 
@@ -15,7 +17,6 @@ public interface RCommand extends MongoRepository<Command, ObjectId> {
     // Búsqueda por tipo de comando
     @Query("{ 'commandType' : { $regex: ?0, $options: 'i' } }")
     List<Command> findByCommandType(String commandType);
-
 
     // Búsqueda por estado
     @Query("{ 'status' : ?0 }")
@@ -65,4 +66,8 @@ public interface RCommand extends MongoRepository<Command, ObjectId> {
     // Búsqueda de últimos comandos por cultivo
     @Query(value = "{ 'crop' : ?0 }", sort = "{ 'dateCreated' : -1 }")
     List<Command> findLastCommandsByCropId(ObjectId cropId);
+
+    @Transactional
+    @Query("{ '_id' : ?0 }")
+    Command updateComand(ObjectId  id, Command command);
 }

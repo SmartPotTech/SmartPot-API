@@ -11,6 +11,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.http.ResponseEntity;
 import smartpot.com.api.Validation.ObjectIdSerializer;
@@ -60,8 +61,8 @@ public class Command {
     @Field("response")
     private String response;
 
-    @DBRef
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
+    @DocumentReference(lazy = true)
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
     private ObjectId crop;
