@@ -12,6 +12,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/Sesiones")
 public class SessionController {
+/*
+ * 
 
     private final RSession repositorySession;
 
@@ -37,7 +39,7 @@ public class SessionController {
         newSession.setRegistration(new Date()); // Asigna la fecha actual
         Session savedSession = repositorySession.save(newSession);
         return ResponseEntity.ok(savedSession);
-    }*/
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<Session> updateSession(@PathVariable String id, @RequestBody Session sessionDetails) {
@@ -63,4 +65,5 @@ public class SessionController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+    */
 }

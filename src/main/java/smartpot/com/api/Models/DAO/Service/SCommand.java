@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RCommand;
@@ -12,13 +13,14 @@ import smartpot.com.api.Models.Entity.Command;
 import java.util.Date;
 import java.util.List;
 
-//@Data
-//@Builder
-//@NoArgsConstructor
-//@AllArgsConstructor
-//@Service
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Service
 public class SCommand {
-    /*
+
+
     @Autowired
     private RCommand repositoryCommand;
 
@@ -27,7 +29,7 @@ public class SCommand {
     }
 
     public Command getCommandById(String id) {
-        return repositoryCommand.findById(id).orElse(null);
+        return repositoryCommand.findById(new ObjectId(id)).orElse(null);
     }
 
     public Command createCommand(Command newCommand) {
@@ -35,6 +37,19 @@ public class SCommand {
         newCommand.setStatus("PENDING");
         return repositoryCommand.save(newCommand);
     }
+
+    public Command updateCommand(Command newCommand) {
+        return repositoryCommand.save(newCommand);
+    }
+
+    public void deleteCommand(String id) {
+        repositoryCommand.deleteById(new ObjectId(id));
+    }
+
+/*
+
+
+
 
     public Command executeCommand(String id, String response) {
         Command command = repositoryCommand.findById(id).orElse(null);
@@ -47,9 +62,7 @@ public class SCommand {
         return null;
     }
 
-    public void deleteCommand(String id) {
-        repositoryCommand.deleteById(id);
-    }
+
 
     public List<Command> getCommandsByStatus(String status) {
         return repositoryCommand.findByStatus(status);

@@ -12,7 +12,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/Historial")
 public class HistoryController {
-
+/*
+ * 
+ 
     @Autowired
     private RHistory repositoryHistory;
 
@@ -56,4 +58,5 @@ public class HistoryController {
                 })
                 .orElseThrow(() -> new RuntimeException("Historial con id " + id + " no encontrado"));
     }
+                */
 }

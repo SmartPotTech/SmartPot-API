@@ -150,7 +150,7 @@ public class SCrop {
      * @param id Es el  identificador del cultivo que se desea eliminar.
      */
     public void deleteCrop(ObjectId id) {
-            repositoryCrop.deleteById(String.valueOf(id));
+            //repositoryCrop.deleteById(String.valueOf(id));
 
     }
     }

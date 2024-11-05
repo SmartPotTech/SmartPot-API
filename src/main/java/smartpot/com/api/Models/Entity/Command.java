@@ -12,10 +12,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.http.ResponseEntity;
 import smartpot.com.api.Validation.ObjectIdSerializer;
-
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -45,16 +48,14 @@ public class Command {
     private String status;
 
     @NotNull(message = "La fecha de creación no puede estar vacía")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     @Field("dateCreated")
     private Date dateCreated;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     @Field("dateExecuted")
     private Date dateExecuted;
 
-    @Field("parameters")
-    private Map<String, String> parameters;
 
     @Field("response")
     private String response;
@@ -64,6 +65,7 @@ public class Command {
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
     private ObjectId crop;
+
 }
 
 /*
@@ -77,7 +79,6 @@ public class Command {
  * - status: Estado del comando (ej. "PENDING", "EXECUTED", "FAILED").
  * - dateCreated: Fecha de creación del comando (debe ser proporcionada, no puede ser nula).
  * - dateExecuted: Fecha en la que se ejecutó el comando (opcional, puede ser nula si no se ha ejecutado).
- * - parameters: Mapa de parámetros adicionales del comando (ej. duración, intensidad).
  * - response: Respuesta después de la ejecución (ej. éxito, error).
  * - crop: Referencia al cultivo asociado (debe ser proporcionado, no puede ser nulo).
  */

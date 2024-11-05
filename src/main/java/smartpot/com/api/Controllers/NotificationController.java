@@ -11,6 +11,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/Notificaciones")
 public class NotificationController {
+/*
+ * 
 
     @Autowired
     private RNotification repositoryNotification;
@@ -56,4 +58,5 @@ public class NotificationController {
                 })
                 .orElseThrow(() -> new RuntimeException("Notificación con id " + id + " no encontrada"));
     }
+                 */
 }

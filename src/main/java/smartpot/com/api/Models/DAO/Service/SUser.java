@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @Service
 public class SUser {
+
     @Autowired
     private RUser repositoryUser;
 

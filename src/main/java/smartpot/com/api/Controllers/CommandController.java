@@ -1,51 +1,58 @@
 package smartpot.com.api.Controllers;
 
 import org.bson.types.ObjectId;
-import smartpot.com.api.Models.DAO.Repository.RCommand;
-import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.Entity.Command;
-import smartpot.com.api.Models.Entity.Crop;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import smartpot.com.api.Models.DAO.Service.SCommand;
+import smartpot.com.api.Models.DAO.Service.SCrop;
+import smartpot.com.api.Models.Entity.Command;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Models.Entity.Crop;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-//@RestController
-//@RequestMapping("/Comandos")
+@RestController
+@RequestMapping("/Comandos")
 public class CommandController {
-    /*
-    private final RCommand repositoryCommand;
-    private final RCrop repositoryCrop;
 
     @Autowired
-    public CommandController(RCommand repositoryCommand, RCrop repositoryCrop) {
-        this.repositoryCommand = repositoryCommand;
-        this.repositoryCrop = repositoryCrop;
+    private SCommand sCommand;
+
+    private final SCrop sCrop;
+
+    public CommandController(SCrop sCrop) {
+        this.sCrop = sCrop;
     }
 
-    @GetMapping
-    public List<Command> getAllCommands() {
-        return repositoryCommand.findAll();
+
+    @GetMapping("/All")
+    public List<Command> getAllCommand() {
+        return sCommand.getAllCommands();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Command> getCommand(@PathVariable String id) {
-        return repositoryCommand.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/id/{id}")
+    public Command getUserById(@PathVariable String id) {
+        return sCommand.getCommandById(id);
+    }
+
+    @PostMapping("/Create")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Command createCommand(@RequestBody Command newCommand) {
+        return sCommand.createCommand(newCommand);
     }
 
     @PostMapping("/crop/{cropId}")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
-        Optional<Crop> crop = repositoryCrop.findById(cropId);
+        Optional<Crop> crop = Optional.ofNullable(sCrop.getCropById(cropId));
         if (crop.isPresent()) {
             newCommand.setCrop(new ObjectId(cropId));
             newCommand.setDateCreated(new Date());
             newCommand.setStatus("PENDING");
-            Command savedCommand = repositoryCommand.save(newCommand);
+            Command savedCommand = sCommand.createCommand(newCommand);
             return ResponseEntity.ok(savedCommand);
         } else {
             return ResponseEntity.notFound().build();
@@ -54,26 +61,30 @@ public class CommandController {
 
     @PutMapping("/{id}/ejecutar")
     public ResponseEntity<Command> executeCommand(@PathVariable String id, @RequestBody Command commandDetails) {
-        return repositoryCommand.findById(id)
-                .map(command -> {
-                    command.setStatus("EXECUTED");
-                    command.setDateExecuted(new Date());
-                    command.setResponse(commandDetails.getResponse());
-                    Command updatedCommand = repositoryCommand.save(command);
-                    return ResponseEntity.ok(updatedCommand);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Command command = sCommand.getCommandById(id);
+        if (command != null) {
+            command.setStatus("EXECUTED");
+            command.setDateExecuted(new Date());
+            command.setResponse(commandDetails.getResponse());
+            Command updatedCommand = sCommand.updateCommand(command);
+            return ResponseEntity.ok(updatedCommand);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteCommand(@PathVariable String id) {
-        return repositoryCommand.findById(id)
-                .map(command -> {
-                    repositoryCommand.delete(command);
-                    return ResponseEntity.ok().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+
+        if(sCommand.getCommandById(id) != null) {
+            sCommand.deleteCommand(id);
+            return ResponseEntity.ok().build();
+
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+
     }
 
-     */
+
 }

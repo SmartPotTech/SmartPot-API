@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RCrop extends MongoRepository<Crop, String> {
+public interface RCrop extends MongoRepository<Crop, ObjectId> {
 
     @Query("{ '_id' : ?0 }")
     Optional<Crop> findById(ObjectId id);
