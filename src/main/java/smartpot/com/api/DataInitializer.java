@@ -18,9 +18,10 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-@Component
-public class DataInitializer implements CommandLineRunner {
-
+//@Component
+//public class DataInitializer implements CommandLineRunner {
+public class DataInitializer{
+    /*
     @Autowired
     private RUser userRepository;
 
@@ -65,4 +66,6 @@ public class DataInitializer implements CommandLineRunner {
             historyRepository.saveAll(historiales);
         }
     }
+
+     */
 }
