@@ -12,8 +12,8 @@ import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Validation.ErrorResponse;
-import smartpot.com.api.Validation.Exception;
+import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Validation.Exception.ApiException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,18 +43,18 @@ public class SCrop {
      * @param id El identificador del cultivo a buscar. Se recibe como String para evitar errores de conversion.
      * @return El cultivo correspondiente al id proporcionado.
      * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el cultivo.
-     * @throws Exception Si no se encuentra el cultivo con el id proporcionado.
+     * @throws ApiException Si no se encuentra el cultivo con el id proporcionado.
      */
     public Crop getCropById(String id) {
         if(!ObjectId.isValid(id)) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El cultivo con id '"+ id +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         return repositoryCrop.findById(new ObjectId(id))
-                .orElseThrow(() -> new Exception(
-                        new ErrorResponse("El cultivo con id '"+ id +"' no fue encontrado.",
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("El cultivo con id '"+ id +"' no fue encontrado.",
                                 HttpStatus.NOT_FOUND.value())
                 ));
     }
@@ -83,7 +83,7 @@ public class SCrop {
                 }
             }
             if (cropsUser.isEmpty()) {
-                throw new Exception(new ErrorResponse(
+                throw new ApiException(new ApiResponse(
                         "No se encuentra ningun Cultivo perteneciente al usuario con el id: '" + id + "'.",
                         HttpStatus.NOT_FOUND.value()
                 ));

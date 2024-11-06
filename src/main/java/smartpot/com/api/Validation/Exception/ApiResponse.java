@@ -1,4 +1,4 @@
-package smartpot.com.api.Validation;
+package smartpot.com.api.Validation.Exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class ErrorResponse {
+public class ApiResponse {
     private String message;
     private int status;
 }

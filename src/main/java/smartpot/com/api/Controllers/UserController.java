@@ -1,10 +1,11 @@
 package smartpot.com.api.Controllers;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Validation.Exception.ApiResponse;
 
 import java.util.List;
 
@@ -113,7 +114,7 @@ public class UserController {
      */
     @PutMapping("/Update/{id}")
     public User updateUser(@PathVariable String id, @RequestBody User updatedUser) {
-        return serviceUser.updateUser(id, updatedUser);
+        return serviceUser.updateUser(serviceUser.getUserById(id), updatedUser);
     }
 
     /**
@@ -122,9 +123,8 @@ public class UserController {
      * @param id El ID del usuario a eliminar.
      */
     @DeleteMapping("/Delete/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable String id) {
-        serviceUser.deleteUser(id);
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable String id) {
+        return serviceUser.deleteUser(serviceUser.getUserById(id));
     }
 }
 

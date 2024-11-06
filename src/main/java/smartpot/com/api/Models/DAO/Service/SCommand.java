@@ -10,12 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RCommand;
 import smartpot.com.api.Models.Entity.Command;
-import smartpot.com.api.Validation.ErrorResponse;
-import smartpot.com.api.Validation.Exception;
+import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Validation.Exception.ApiException;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Data
 @Builder
@@ -44,13 +43,13 @@ public class SCommand {
 
     public Command updateCommand(String id, Command upCommand) {
         if (!ObjectId.isValid(id)) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        Command exCommand = repositoryCommand.findById(new ObjectId(id)).orElseThrow(() -> new Exception(
-                new ErrorResponse("El Comando con ID '" + id + "' no fue encontrado.",
+        Command exCommand = repositoryCommand.findById(new ObjectId(id)).orElseThrow(() -> new ApiException(
+                new ApiResponse("El Comando con ID '" + id + "' no fue encontrado.",
                         HttpStatus.NOT_FOUND.value())
         ));
 
