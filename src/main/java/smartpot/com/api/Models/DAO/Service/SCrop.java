@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
 import smartpot.com.api.Models.Entity.*;
-import smartpot.com.api.Validation.ErrorResponse;
-import smartpot.com.api.Validation.Exception;
+import smartpot.com.api.Validation.Exception.ApiException;
+import smartpot.com.api.Validation.Exception.ApiResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,14 +47,14 @@ public class SCrop {
      */
     public Crop getCropById(String id) {
         if(!ObjectId.isValid(id)) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El cultivo con id '"+ id +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         return repositoryCrop.findById(new ObjectId(id))
-                .orElseThrow(() -> new Exception(
-                        new ErrorResponse("El cultivo con id '"+ id +"' no fue encontrado.",
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("El cultivo con id '"+ id +"' no fue encontrado.",
                                 HttpStatus.NOT_FOUND.value())
                 ));
     }
@@ -66,7 +66,7 @@ public class SCrop {
     public List<Crop> getCrops() {
         List<Crop> crops = repositoryCrop.findAll();
         if (crops == null || crops.isEmpty()) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "No se encontro ningun cultivo en la db",
                     HttpStatus.NOT_FOUND.value()
             ));
@@ -90,7 +90,7 @@ public class SCrop {
                 }
             }
             if (cropsUser.isEmpty()) {
-                throw new Exception(new ErrorResponse(
+                throw new ApiException(new ApiResponse(
                         "No se encuentra ningun Cultivo perteneciente al usuario con el id: '" + id + "'.",
                         HttpStatus.NOT_FOUND.value()
                 ));
@@ -105,13 +105,14 @@ public class SCrop {
      * @return Lista de cultivos que coinciden con el tipo especificado
      */
     public List<Crop> getCropsByType(String type) {
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(type));
+        if (!isValidSType) {
+            throw new ApiException(new ApiResponse(
+                    "El Type '" + type + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
         List<Crop> cropsByType = repositoryCrop.findByType(type);
-        if(cropsByType.isEmpty()){
-            throw new Exception(new ErrorResponse(
-                    "No se encuentra ningun Cultivo perteneciente al type: '" + type + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }else
     return repositoryCrop.findByType(type);
     }
 
@@ -132,13 +133,14 @@ public class SCrop {
      * @return Lista de cultivos que se encuentran en el estado especificado
      */
     public List<Crop> getCropsByStatus(String status) {
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(status));
+        if (!isValidStatus) {
+            throw new ApiException(new ApiResponse(
+                    "El Status '" + status + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
         List<Crop> cropsByStatus = repositoryCrop.findByStatus(status);
-        if(cropsByStatus.isEmpty()){
-            throw new Exception(new ErrorResponse(
-                    "No se encuentra ningun Cultivo perteneciente al status: '" + status + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }else
         return cropsByStatus;
     }
 
@@ -149,17 +151,18 @@ public class SCrop {
      * @return Cultivo guardado
      */
     public Crop createCrop(Crop newCrop) {
+       serviceUser.getUserById(newCrop.getId().toString());
         boolean isValidStatus = Stream.of(Status.values())
                 .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
         if (!isValidStatus) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El Status '" + newCrop.getStatus().name() + "' no es válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
         boolean isValidSType = Stream.of(Type.values())
-                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
+                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getType().name()));
         if (!isValidSType) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El Type '" + newCrop.getType().name() + "' no es válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
@@ -175,17 +178,18 @@ public class SCrop {
      *
      */
     public Crop updatedCrop(String id, Crop updatedCrop) {
+        serviceUser.getUserById(updatedCrop.getUser().toString());
         boolean isValidStatus = Stream.of(Status.values())
                 .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getStatus().name()));
         if (!isValidStatus) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El Status '" + updatedCrop.getStatus().name() + "' no es válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
         boolean isValidSType = Stream.of(Type.values())
-                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getStatus().name()));
+                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getType().name()));
         if (!isValidSType) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El Type '" + updatedCrop.getType().name() + "' no es válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
@@ -202,14 +206,14 @@ public class SCrop {
      */
     public void deleteCrop(String id) {
         if (!ObjectId.isValid(id)) {
-            throw new Exception(new ErrorResponse(
+            throw new ApiException(new ApiResponse(
                     "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         Crop existingCrop = repositoryCrop.findById(new ObjectId(id))
-                .orElseThrow(() -> new Exception(
-                        new ErrorResponse("El usuario con ID '" + id + "' no fue encontrado.",
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("El usuario con ID '" + id + "' no fue encontrado.",
                                 HttpStatus.NOT_FOUND.value())
                 ));
 

@@ -48,7 +48,7 @@ public class History implements Serializable {
     @Field("measures")
     private Measures measures;
 
-    @DBRef
+   // @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
