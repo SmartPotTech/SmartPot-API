@@ -41,11 +41,33 @@ public class SessionController {
     public ResponseEntity<Session> deleteSession(@PathVariable String id) {
         if(session.getSessionById(id) != null) {
             session.deleteSessionById(id);
-            return ResponseEntity.ok(session.getSessionById(id));
+            return ResponseEntity.ok().build();
         }else{
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/User/{idUser}")
+    public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String idUser) {
+        List<Session> session1 = session.getSessionByUser(idUser);
+        if( session1 != null) {
+            return ResponseEntity.ok(session1);
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/deleteUser/{idUser}")
+    public ResponseEntity<Session> deleteSessionByUser(@PathVariable String idUser) {
+        if(session.getSessionByUser(idUser) != null) {
+            session.deleteSessionByIdUser(idUser);
+            return ResponseEntity.ok().build();
+        }else{
+
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     /*
 */
 /*

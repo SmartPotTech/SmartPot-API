@@ -27,18 +27,19 @@ public class SSession {
     @Autowired
     private RSession repositorySession;
 
-    private final SUser user = new SUser();
+    @Autowired
+    private SUser user;
 
 
     public Session getSessionById(String sessionId) {
-        if(!ObjectId.isValid(sessionId)) {
+        if (!ObjectId.isValid(sessionId)) {
             throw new ApiException(new ApiResponse(
-                    "la sesion con id '"+ sessionId +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    "la sesion con id '" + sessionId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         return repositorySession.findById(sessionId).orElseThrow(() -> new ApiException(
-                new ApiResponse("la sesion con id '"+ sessionId +"' no fue encontrado.",
+                new ApiResponse("la sesion con id '" + sessionId + "' no fue encontrado.",
                         HttpStatus.NOT_FOUND.value())
         ));
     }
@@ -47,7 +48,7 @@ public class SSession {
         return repositorySession.findByUser(user);
     }
 
-    public  List<Session> getAllSessions() {
+    public List<Session> getAllSessions() {
         return repositorySession.findAll();
     }
 
@@ -69,7 +70,7 @@ public class SSession {
 
     public Session createSession(Session newSession) {
         // Validar que el campo "user" no esté vacío
-        if (newSession.getUser() == null || newSession.getUser().isEmpty()) {
+        if (newSession.getUser() == null) {
             throw new IllegalArgumentException("La sesión debe estar asociada a un usuario válido.");
         }
 
@@ -96,10 +97,10 @@ public class SSession {
         return repositorySession.save(newSession);
     }
 
-    public Session deleteSessionById(String sessionId) {
-        if(!ObjectId.isValid(sessionId)) {
+    public void deleteSessionById(String sessionId) {
+        if (!ObjectId.isValid(sessionId)) {
             throw new ApiException(new ApiResponse(
-                    "la sesion con id '"+ sessionId +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    "la sesion con id '" + sessionId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
@@ -109,7 +110,6 @@ public class SSession {
         // Si la sesión existe, elimínala
         if (sessionOptional.isPresent()) {
             repositorySession.deleteById(sessionId);
-            return sessionOptional.get();
         } else {
             // Si la sesión no existe, lanza una excepción
             throw new ApiException(
@@ -118,5 +118,45 @@ public class SSession {
             );
         }
 
+    }
+
+    public void deleteSessionByIdUser(String userId) {
+        if (!ObjectId.isValid(userId)) {
+            throw new ApiException(new ApiResponse(
+                    "El user con  '" + userId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        List<Session> sessions = repositorySession.findByUser(userId);
+
+        if (sessions.isEmpty()) {
+            throw new ApiException(new ApiResponse(
+                    "No se encontraron sesiones asociadas al usuario con ID '" + userId + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+
+        for (Session session : sessions) {
+            repositorySession.deleteById(session.getId().toString());
+        }
+
+    }
+
+    public List<Session> getSessionByUser(String userId){
+        if (!ObjectId.isValid(userId)) {
+            throw new ApiException(new ApiResponse(
+                    "El user con  '" + userId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        List<Session> sessions = repositorySession.findByUser(userId);
+
+        if (sessions.isEmpty()) {
+            throw new ApiException(new ApiResponse(
+                    "No se encontraron sesiones asociadas al usuario con ID '" + userId + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return sessions;
     }
 }
