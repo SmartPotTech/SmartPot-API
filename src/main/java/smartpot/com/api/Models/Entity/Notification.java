@@ -52,13 +52,13 @@ public class Notification implements Serializable {
     private String type;
 
     @NotNull(message = "La fecha no puede estar vacía")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
     @Field("date")
     private Date date;
 
     @DBRef
     @NotNull(message = "La notificación debe ir dirigida a un usuario")
     @JsonSerialize(using = ObjectIdSerializer.class)
-    @Field("user")
+    @Field("user_id")
     private ObjectId user;
 }

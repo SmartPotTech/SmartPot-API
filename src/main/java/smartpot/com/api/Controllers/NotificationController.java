@@ -1,6 +1,7 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.Repository.RNotification;
+import org.bson.types.ObjectId;
+import smartpot.com.api.Models.DAO.Service.SNotification;
 import smartpot.com.api.Models.Entity.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,52 +12,37 @@ import java.util.List;
 @RestController
 @RequestMapping("/Notificaciones")
 public class NotificationController {
-/*
- * 
+
 
     @Autowired
-    private RNotification repositoryNotification;
+    private SNotification serviceNotification;
 
     @GetMapping
     public List<Notification> getAllNotifications() {
-        return repositoryNotification.findAll();
+        return serviceNotification.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Notification> getNotification(@PathVariable String id) {
-        return repositoryNotification.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException("Notificación con id " + id + " no encontrada"));
+    public List<Notification> getNotificationByUser(@PathVariable String id) {
+        return serviceNotification.findByUser(id);
     }
 
     @PostMapping
     public Notification createNotification(@RequestBody Notification newNotification) {
-        return repositoryNotification.save(newNotification);
+        return serviceNotification.save(newNotification);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Notification> updateNotification(@PathVariable String id, @RequestBody Notification notificationDetails) {
-        return repositoryNotification.findById(id)
-                .map(notification -> {
-                    notification.setMessage(notificationDetails.getMessage());
-                    notification.setType(notificationDetails.getType());
-                    notification.setUser(notificationDetails.getUser());
-                    // Actualiza la fecha a la actual
-                    notification.setDate(new java.util.Date());
-                    Notification updatedNotification = repositoryNotification.save(notification);
-                    return ResponseEntity.ok(updatedNotification);
-                })
-                .orElseThrow(() -> new RuntimeException("Notificación con id " + id + " no encontrada"));
+    public Notification updateNotification(@PathVariable String id, @RequestBody Notification notificationDetails) {
+        return serviceNotification.updateNotification(id, notificationDetails);
     }
 
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable String id) {
-        return repositoryNotification.findById(id)
-                .map(notification -> {
-                    repositoryNotification.delete(notification);
-                    return ResponseEntity.ok().<Void>build();
-                })
-                .orElseThrow(() -> new RuntimeException("Notificación con id " + id + " no encontrada"));
+    public String deleteNotification(@PathVariable String id) {
+        serviceNotification.delete(id);
+        return "eliminado";
+
     }
-                 */
+
 }
