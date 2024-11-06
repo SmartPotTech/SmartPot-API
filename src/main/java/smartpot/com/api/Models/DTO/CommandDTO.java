@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class CommandDTO {
-    private String id;
     private String commandType;
     private String status;
     private String dateCreated;

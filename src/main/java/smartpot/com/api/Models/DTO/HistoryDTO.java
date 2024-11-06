@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class HistoryDTO {
-    private String id;
     private String date;
     private MeasuresDTO measures;
     private String crop;
