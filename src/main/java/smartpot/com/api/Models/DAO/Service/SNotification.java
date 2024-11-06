@@ -30,6 +30,7 @@ public class SNotification{
         return repositoryNotification.findAll();
     }
 
+
     public List<Notification> findByUser(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(

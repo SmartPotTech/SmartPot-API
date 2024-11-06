@@ -11,6 +11,7 @@ import smartpot.com.api.Models.Entity.Notification;
 import java.util.List;
 import java.util.Optional;
 
+
 @Repository
 public interface RNotification extends MongoRepository<Notification, ObjectId> {
 
