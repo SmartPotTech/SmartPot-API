@@ -62,7 +62,7 @@ public class Command {
     private String response;
 
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
-    @DocumentReference(lazy = true)
+    //@DBRef
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
     private ObjectId crop;
