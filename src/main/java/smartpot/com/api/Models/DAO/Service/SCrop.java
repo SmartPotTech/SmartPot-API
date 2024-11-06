@@ -10,13 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.Entity.Crop;
-import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.Models.Entity.*;
 import smartpot.com.api.Validation.ErrorResponse;
 import smartpot.com.api.Validation.Exception;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Data
 @Builder
@@ -64,7 +64,14 @@ public class SCrop {
      * @return Lista de todos los cultivos existentes
      */
     public List<Crop> getCrops() {
-        return repositoryCrop.findAll();
+        List<Crop> crops = repositoryCrop.findAll();
+        if (crops == null || crops.isEmpty()) {
+            throw new Exception(new ErrorResponse(
+                    "No se encontro ningun cultivo en la db",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return crops;
     }
 
     /**
@@ -98,7 +105,14 @@ public class SCrop {
      * @return Lista de cultivos que coinciden con el tipo especificado
      */
     public List<Crop> getCropsByType(String type) {
-        return repositoryCrop.findByType(type);
+        List<Crop> cropsByType = repositoryCrop.findByType(type);
+        if(cropsByType.isEmpty()){
+            throw new Exception(new ErrorResponse(
+                    "No se encuentra ningun Cultivo perteneciente al type: '" + type + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }else
+    return repositoryCrop.findByType(type);
     }
 
     /**
@@ -118,7 +132,14 @@ public class SCrop {
      * @return Lista de cultivos que se encuentran en el estado especificado
      */
     public List<Crop> getCropsByStatus(String status) {
-        return repositoryCrop.findByStatus(status);
+        List<Crop> cropsByStatus = repositoryCrop.findByStatus(status);
+        if(cropsByStatus.isEmpty()){
+            throw new Exception(new ErrorResponse(
+                    "No se encuentra ningun Cultivo perteneciente al status: '" + status + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }else
+        return cropsByStatus;
     }
 
     /**
@@ -128,6 +149,20 @@ public class SCrop {
      * @return Cultivo guardado
      */
     public Crop createCrop(Crop newCrop) {
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
+        if (!isValidStatus) {
+            throw new Exception(new ErrorResponse(
+                    "El Status '" + newCrop.getStatus().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
+        if (!isValidSType) {
+            throw new Exception(new ErrorResponse(
+                    "El Type '" + newCrop.getType().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
         return repositoryCrop.save(newCrop);
     }
 
@@ -139,9 +174,25 @@ public class SCrop {
      * @return El Crop actualizado después de guardarlo en el servicio.
      *
      */
-    public Crop updatedCrop(ObjectId id, Crop updatedCrop) {
-      return repositoryCrop.updateUser(id,updatedCrop);
-    }
+    public Crop updatedCrop(String id, Crop updatedCrop) {
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getStatus().name()));
+        if (!isValidStatus) {
+            throw new Exception(new ErrorResponse(
+                    "El Status '" + updatedCrop.getStatus().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getStatus().name()));
+        if (!isValidSType) {
+            throw new Exception(new ErrorResponse(
+                    "El Type '" + updatedCrop.getType().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+                return repositoryCrop.updateUser(getCropById(id).getId(), updatedCrop);
+            }
+
+
 
 
     /**
@@ -149,9 +200,20 @@ public class SCrop {
      *
      * @param id Es el  identificador del cultivo que se desea eliminar.
      */
-    public void deleteCrop(ObjectId id) {
-            //repositoryCrop.deleteById(String.valueOf(id));
+    public void deleteCrop(String id) {
+        if (!ObjectId.isValid(id)) {
+            throw new Exception(new ErrorResponse(
+                    "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        Crop existingCrop = repositoryCrop.findById(new ObjectId(id))
+                .orElseThrow(() -> new Exception(
+                        new ErrorResponse("El usuario con ID '" + id + "' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
 
+        repositoryCrop.deleteById(existingCrop.getId());
     }
     }
 

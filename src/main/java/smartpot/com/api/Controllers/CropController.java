@@ -106,7 +106,7 @@ public class CropController {
      */
     @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCultivo(@PathVariable ObjectId id) {
+    public void deleteCultivo(@PathVariable String id) {
         serviceCrop.deleteCrop(id);
     }
 
@@ -119,6 +119,6 @@ public class CropController {
      */
     @PutMapping("/Update/{id}")
     public Crop updateCrop(@PathVariable String id, @RequestBody Crop cropDetails) {
-        return serviceCrop.updatedCrop(new ObjectId(id),cropDetails);
+        return serviceCrop.updatedCrop(id,cropDetails);
     }
 }

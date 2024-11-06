@@ -23,10 +23,7 @@ public interface RCrop extends MongoRepository<Crop, ObjectId> {
     @Query("{ 'status' : ?0 }")
     List<Crop> findByStatus(String status);
 
-    /*@Transactional
-    @Query("{ '_id' : ?0 }")
     void deleteById(ObjectId id);
-*/
     @Transactional
     @Query("{ '_id' : ?0 }")
     Crop updateUser(ObjectId id, Crop crop);
