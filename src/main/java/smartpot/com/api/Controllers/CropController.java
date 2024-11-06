@@ -2,12 +2,15 @@ package smartpot.com.api.Controllers;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import smartpot.com.api.Models.DAO.Service.SCrop;
+import smartpot.com.api.Models.DTO.CropDTO;
 import smartpot.com.api.Models.Entity.Crop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.Validation.Exception.ApiResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -93,7 +96,7 @@ public class CropController {
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public Crop createCrop(@RequestBody Crop newCrop) {
+    public Crop createCrop(@RequestBody CropDTO newCrop) {
         return serviceCrop.createCrop(newCrop);
     }
 
@@ -106,8 +109,8 @@ public class CropController {
      */
     @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCultivo(@PathVariable String id) {
-        serviceCrop.deleteCrop(id);
+    public ResponseEntity<ApiResponse> deleteCultivo(@PathVariable String id) {
+        return  serviceCrop.deleteCrop(serviceCrop.getCropById(id));
     }
 
     /**
@@ -118,7 +121,7 @@ public class CropController {
      * @return El objeto Crop actualizado.
      */
     @PutMapping("/Update/{id}")
-    public Crop updateCrop(@PathVariable String id, @RequestBody Crop cropDetails) {
+    public Crop updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
         return serviceCrop.updatedCrop(id,cropDetails);
     }
 }
