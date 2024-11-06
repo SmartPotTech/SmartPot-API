@@ -54,12 +54,12 @@ public class CommandController {
     }
 
     @PutMapping("/{id}/ejecutar")
-    public ResponseEntity<Command> executeCommand(@PathVariable String id, @RequestBody Command commandDetails) {
+    public ResponseEntity<Command> executeCommand(@PathVariable String id) {
         Command command = sCommand.getCommandById(id);
         if (command != null) {
             command.setStatus("EXECUTED");
             command.setDateExecuted(new Date());
-            command.setResponse(commandDetails.getResponse());
+            command.setResponse("SUCCESSFUL");
             Command updatedCommand = sCommand.updateCommand(id,command);
             return ResponseEntity.ok(updatedCommand);
         } else {

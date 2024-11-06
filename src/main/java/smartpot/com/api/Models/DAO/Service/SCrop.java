@@ -4,20 +4,24 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.Entity.Crop;
-import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Models.DTO.CropDTO;
+import smartpot.com.api.Models.Entity.*;
 import smartpot.com.api.Validation.Exception.ApiException;
+import smartpot.com.api.Validation.Exception.ApiResponse;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.stream.Stream;
+@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
@@ -43,7 +47,7 @@ public class SCrop {
      * @param id El identificador del cultivo a buscar. Se recibe como String para evitar errores de conversion.
      * @return El cultivo correspondiente al id proporcionado.
      * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el cultivo.
-     * @throws ApiException Si no se encuentra el cultivo con el id proporcionado.
+     * @throws Exception Si no se encuentra el cultivo con el id proporcionado.
      */
     public Crop getCropById(String id) {
         if(!ObjectId.isValid(id)) {
@@ -64,7 +68,14 @@ public class SCrop {
      * @return Lista de todos los cultivos existentes
      */
     public List<Crop> getCrops() {
-        return repositoryCrop.findAll();
+        List<Crop> crops = repositoryCrop.findAll();
+        if (crops == null || crops.isEmpty()) {
+            throw new ApiException(new ApiResponse(
+                    "No se encontro ningun cultivo en la db",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return crops;
     }
 
     /**
@@ -98,7 +109,15 @@ public class SCrop {
      * @return Lista de cultivos que coinciden con el tipo especificado
      */
     public List<Crop> getCropsByType(String type) {
-        return repositoryCrop.findByType(type);
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(type));
+        if (!isValidSType) {
+            throw new ApiException(new ApiResponse(
+                    "El Type '" + type + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        List<Crop> cropsByType = repositoryCrop.findByType(type);
+    return repositoryCrop.findByType(type);
     }
 
     /**
@@ -118,16 +137,40 @@ public class SCrop {
      * @return Lista de cultivos que se encuentran en el estado especificado
      */
     public List<Crop> getCropsByStatus(String status) {
-        return repositoryCrop.findByStatus(status);
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(status));
+        if (!isValidStatus) {
+            throw new ApiException(new ApiResponse(
+                    "El Status '" + status + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        List<Crop> cropsByStatus = repositoryCrop.findByStatus(status);
+        return cropsByStatus;
     }
 
     /**
      * Crea  un cultivo en el sistema.
      *
-     * @param newCrop Cultivo a crear
+     *
      * @return Cultivo guardado
      */
-    public Crop createCrop(Crop newCrop) {
+    public Crop createCrop(CropDTO newCropDto) {
+       serviceUser.getUserById(newCropDto.getUser());
+        Crop newCrop = cropDtotoCrop(newCropDto);
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
+        if (!isValidStatus) {
+            throw new ApiException(new ApiResponse(
+                    "El Status '" + newCrop.getStatus().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getType().name()));
+        if (!isValidSType) {
+            throw new ApiException(new ApiResponse(
+                    "El Type '" + newCrop.getType().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
         return repositoryCrop.save(newCrop);
     }
 
@@ -135,13 +178,37 @@ public class SCrop {
      * Actualiza la información de un Crop existente.
      *
      * @param id El identificador del Crop a actualizar.
-     * @param updatedCrop Un objeto Crop que contiene los nuevos datos del Cultivo.
+     *
      * @return El Crop actualizado después de guardarlo en el servicio.
      *
      */
-    public Crop updatedCrop(ObjectId id, Crop updatedCrop) {
-      return repositoryCrop.updateUser(id,updatedCrop);
-    }
+    public Crop updatedCrop(String id, CropDTO cropDto) {
+        serviceUser.getUserById(cropDto.getUser());
+        Crop updatedCrop = cropDtotoCrop(cropDto);
+        boolean isValidStatus = Stream.of(Status.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getStatus().name()));
+        if (!isValidStatus) {
+            throw new ApiException(new ApiResponse(
+                    "El Status '" + updatedCrop.getStatus().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+        boolean isValidSType = Stream.of(Type.values())
+                .anyMatch(r -> r.name().equalsIgnoreCase(updatedCrop.getType().name()));
+        if (!isValidSType) {
+            throw new ApiException(new ApiResponse(
+                    "El Type '" + updatedCrop.getType().name() + "' no es válido.",
+                    HttpStatus.BAD_REQUEST.value()));
+        }
+                return repositoryCrop.updateUser(getCropById(id).getId(), updatedCrop);
+            }
+
+ private Crop cropDtotoCrop(CropDTO cropDto){
+        Crop crop = new Crop();
+        crop.setType(Type.valueOf(cropDto.getType()));
+        crop.setStatus(Status.valueOf(cropDto.getStatus()));
+        crop.setUser(new ObjectId(cropDto.getUser()));
+        return crop;
+ }
 
 
     /**
@@ -149,9 +216,34 @@ public class SCrop {
      *
      * @param id Es el  identificador del cultivo que se desea eliminar.
      */
-    public void deleteCrop(ObjectId id) {
-            //repositoryCrop.deleteById(String.valueOf(id));
+   /* public void deleteCrop(String id) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        Crop existingCrop = repositoryCrop.findById(new ObjectId(id))
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("El usuario con ID '" + id + "' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
 
+        repositoryCrop.deleteById(existingCrop.getId());
+    }*/
+    public ResponseEntity<ApiResponse> deleteCrop(Crop existingCrop) {
+        try {
+            repositoryCrop.deleteById(existingCrop.getId());
+            return ResponseEntity.status(HttpStatus.OK.value()).body(
+                    new ApiResponse("El cultivo con ID '" + existingCrop.getId() + "' fue eliminado.",
+                            HttpStatus.OK.value())
+            );
+        } catch (Exception e) {
+            log.error("e: ", e);
+            throw new ApiException(
+                    new ApiResponse("No se pudo eliminar el usuario con ID '" + existingCrop.getId() + "'.",
+                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
     }
 

@@ -2,12 +2,15 @@ package smartpot.com.api.Controllers;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import smartpot.com.api.Models.DAO.Service.SCrop;
+import smartpot.com.api.Models.DTO.CropDTO;
 import smartpot.com.api.Models.Entity.Crop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Models.Entity.User;
+import smartpot.com.api.Validation.Exception.ApiResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +18,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/Cultivos")
 public class CropController {
+
 
     @Autowired
     private SCrop serviceCrop;
@@ -33,7 +37,7 @@ public class CropController {
      * Busca un cultivo por su identificador único.
      *
      * @param id Identificador ObjectId del cultivo
-     * @return Optional que contiene el cultivo si existe, vacío si no se encuentra
+     * @return El cultivo encontrado
      */
     @GetMapping("/{id}")
     public Crop getCrop(@PathVariable String id) {
@@ -51,10 +55,8 @@ public class CropController {
         return serviceCrop.getCropsByStatus(status);
     }
 
-
-
     /**
-     * Busca cultivos por su tipo .
+     * Busca cultivos por su tipo.
      *
      * @param type Tipo del cultivo
      * @return Lista de cultivos que coinciden con el tipo especificado
@@ -74,6 +76,7 @@ public class CropController {
     public List<Crop> getCropByUser(@PathVariable String id) {
         return serviceCrop.getCropsByUser(id);
     }
+
     /**
      * Cuenta el número total de cultivos que tiene un usuario.
      *
@@ -81,23 +84,33 @@ public class CropController {
      * @return Número total de cultivos del usuario
      */
     @GetMapping("/count")
-    public long countCropsByUser(String id) {
+    public long countCropsByUser(@RequestParam String id) {
         return serviceCrop.countCropsByUser(id);
     }
 
     /**
-     * Crea un nuevo cultivo
+     * Crea un nuevo cultivo.
      *
-     * @param newCrop El objeto cultivo que contiene los datos del cultivo que se debe guardar
-     * @return El objeto cultivo creado.
+     * @param newCropDto Datos del nuevo cultivo a crear
+     * @return El cultivo creado
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public Crop createCrop(@RequestBody Crop newCrop) {
-        return serviceCrop.createCrop(newCrop);
+    public Crop createCrop(@RequestBody CropDTO newCropDto) {
+        return serviceCrop.createCrop(newCropDto);
     }
 
-
+    /**
+     * Actualiza un cultivo existente.
+     *
+     * @param id         El ID del cultivo a actualizar.
+     * @param cropDetails Datos actualizados del cultivo.
+     * @return El cultivo actualizado.
+     */
+    @PutMapping("/Update/{id}")
+    public Crop updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
+        return serviceCrop.updatedCrop(id, cropDetails);
+    }
 
     /**
      * Elimina un cultivo existente por su ID.
@@ -106,19 +119,7 @@ public class CropController {
      */
     @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCultivo(@PathVariable ObjectId id) {
-        serviceCrop.deleteCrop(id);
-    }
-
-    /**
-     * Actualiza un cultivo existente.
-     *
-     * @param id El ID del cultivo a actualizar.
-     * @param cropDetails El objeto Crop que contiene los nuevos datos.
-     * @return El objeto Crop actualizado.
-     */
-    @PutMapping("/Update/{id}")
-    public Crop updateCrop(@PathVariable String id, @RequestBody Crop cropDetails) {
-        return serviceCrop.updatedCrop(new ObjectId(id),cropDetails);
+    public ResponseEntity<ApiResponse> deleteCrop(@PathVariable String id) {
+        return serviceCrop.deleteCrop(serviceCrop.getCropById(id));
     }
 }

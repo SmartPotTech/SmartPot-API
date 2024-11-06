@@ -7,4 +7,6 @@ import smartpot.com.api.Models.Entity.History;
 
 @Repository
 public interface RHistory extends MongoRepository<History, ObjectId> {
+
+
 }

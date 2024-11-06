@@ -38,13 +38,13 @@ public class Crop implements Serializable {
     private ObjectId id;
 
     @Field("status")
-    private String status;
+    private Status status;
 
     @NotEmpty(message = "El tipo no puede estar vacío")
     @Field("type")
-    private String type;
+    private Type type;
 
-    @DBRef
+    /*@DBRef*/
     @NotNull(message = "El cultivo debe pertenecer a un usuario")
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")

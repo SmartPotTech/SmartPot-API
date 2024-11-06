@@ -1,6 +1,7 @@
 package smartpot.com.api.Controllers;
 
 import smartpot.com.api.Models.DAO.Repository.RSession;
+import smartpot.com.api.Models.DAO.Service.SSession;
 import smartpot.com.api.Models.Entity.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,34 +13,75 @@ import java.util.List;
 @RestController
 @RequestMapping("/Sesiones")
 public class SessionController {
-/*
- * 
-
-    private final RSession repositorySession;
 
     @Autowired
-    public SessionController(RSession repositorySession) {
-        this.repositorySession = repositorySession;
-    }
+    private SSession session;
 
     @GetMapping
     public List<Session> getAllSessions() {
-        return repositorySession.findAll();
+        return session.getAllSessions();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Session> getSession(@PathVariable String id) {
-        return repositorySession.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Session session1 = session.getSessionById(id);
+        if( session1 != null) {
+            return ResponseEntity.ok(session1);
+        }else{
+            return ResponseEntity.notFound().build();
+        }
     }
 
- /*   @PostMapping
+    @PostMapping
     public ResponseEntity<Session> createSession(@RequestBody Session newSession) {
-        newSession.setRegistration(new Date()); // Asigna la fecha actual
-        Session savedSession = repositorySession.save(newSession);
-        return ResponseEntity.ok(savedSession);
+        return ResponseEntity.ok(session.createSession(newSession));
     }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Session> deleteSession(@PathVariable String id) {
+        if(session.getSessionById(id) != null) {
+            session.deleteSessionById(id);
+            return ResponseEntity.ok().build();
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/User/{idUser}")
+    public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String idUser) {
+        List<Session> session1 = session.getSessionByUser(idUser);
+        if( session1 != null) {
+            return ResponseEntity.ok(session1);
+        }else{
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/deleteUser/{idUser}")
+    public ResponseEntity<Session> deleteSessionByUser(@PathVariable String idUser) {
+        if(session.getSessionByUser(idUser) != null) {
+            session.deleteSessionByIdUser(idUser);
+            return ResponseEntity.ok().build();
+        }else{
+
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /*
+*/
+/*
+ *
+    @Autowired
+    public SessionController(RSession repositorySession) {
+        this.repositorySession = repositorySession;
+    }
+ /*
+
+
+
+
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Session> updateSession(@PathVariable String id, @RequestBody Session sessionDetails) {
