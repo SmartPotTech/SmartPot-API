@@ -16,6 +16,7 @@ import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
+import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.Role;
 import smartpot.com.api.Models.Entity.User;
 import smartpot.com.api.Validation.Exception.ApiResponse;
@@ -150,7 +151,7 @@ public class SUser implements UserDetailsService {
 
         if (!isValidRole) {
             throw new ApiException(new ApiResponse(
-                    "El Rol '" + role + "' no válido.",
+                    "El Rol '" + role + "' es no válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
     }
@@ -190,23 +191,26 @@ public class SUser implements UserDetailsService {
     /**
      * Crea un nuevo usuario, validando los datos antes de guardarlos.
      *
-     * @param user El usuario a crear.
+     * @param userDTO El usuario a crear.
      * @return El usuario creado.
      * @throws ApiException Si ocurre algún error durante la creación.
      */
-    public User CreateUser(User user) {
-        ValidationName(user.getName());
-        ValidationLastname(user.getLastname());
-        ValidationEmail(user.getEmail());
-        ValidationPassword(user.getPassword());
-        ValidationRole(user.getRole().toString());
-        isEmailExist(user.getEmail());
-        user.setCreateAt(new Date());
+    public User CreateUser(UserDTO userDTO) {
+        ValidationName(userDTO.getName());
+        ValidationLastname(userDTO.getLastname());
+        ValidationEmail(userDTO.getEmail());
+        ValidationPassword(userDTO.getPassword());
+        ValidationRole(userDTO.getRole());
+        isEmailExist(userDTO.getEmail());
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        String hashedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(hashedPassword);
+        String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
+        userDTO.setPassword(hashedPassword);
+
+        User newUser = new User(userDTO);
+        newUser.setCreateAt(new Date());
+
         try {
-            return repositoryUser.save(user);
+            return repositoryUser.save(newUser);
         } catch (Exception e) {
             log.error("e: ", e);
             throw new ApiException(
@@ -347,14 +351,12 @@ public class SUser implements UserDetailsService {
      * @return El usuario actualizado.
      * @throws ApiException Si ocurre algún error durante la actualización.
      */
-    public User updateUser(User existingUser, User updatedUser) {
+    public User updateUser(User existingUser, UserDTO updatedUser) {
+
         if (updatedUser.getName() != null) {
-            System.out.println("nuevo nombre");
             String name = updatedUser.getName();
-            System.out.println("nombre update"+name);
             ValidationName(name);
             existingUser.setName(name);
-            System.out.println("nombre setado"+existingUser.getName());
         }
 
         if (updatedUser.getLastname() != null) {
@@ -371,13 +373,14 @@ public class SUser implements UserDetailsService {
         }
 
         if (updatedUser.getRole() != null) {
-            String role = updatedUser.getRole().toString();
+            String role = updatedUser.getRole();
             ValidationRole(role);
-            existingUser.setRole(updatedUser.getRole());
+            existingUser.setRole(Role.valueOf(role));
         }
 
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+        if (updatedUser.getPassword() != null) {
             if (!new BCryptPasswordEncoder().matches(updatedUser.getPassword(), existingUser.getPassword())) {
+                ValidationPassword(updatedUser.getPassword());
                 existingUser.setPassword(new BCryptPasswordEncoder().encode(updatedUser.getPassword()));
             }
         }

@@ -2,6 +2,7 @@ package smartpot.com.api.Controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import smartpot.com.api.Models.DAO.Service.SUser;
+import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class UserController {
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public User createUser(@RequestBody User newUser) {
+    public User createUser(@RequestBody UserDTO newUser) {
         return serviceUser.CreateUser(newUser);
     }
 
@@ -113,7 +114,7 @@ public class UserController {
      * @return El objeto Usuario actualizado.
      */
     @PutMapping("/Update/{id}")
-    public User updateUser(@PathVariable String id, @RequestBody User updatedUser) {
+    public User updateUser(@PathVariable String id, @RequestBody UserDTO updatedUser) {
         return serviceUser.updateUser(serviceUser.getUserById(id), updatedUser);
     }
 
