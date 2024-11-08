@@ -1,19 +1,15 @@
 package smartpot.com.api.Controllers;
 
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import smartpot.com.api.Models.DAO.Service.SCrop;
 import smartpot.com.api.Models.DTO.CropDTO;
 import smartpot.com.api.Models.Entity.Crop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/Cultivos")

@@ -1,4 +1,4 @@
-package smartpot.com.api.Validation.Exception;
+package smartpot.com.api.Exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

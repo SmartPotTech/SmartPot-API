@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RSession;
 import smartpot.com.api.Models.Entity.Session;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Validation.Exception.ApiException;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.Date;
 import java.util.List;

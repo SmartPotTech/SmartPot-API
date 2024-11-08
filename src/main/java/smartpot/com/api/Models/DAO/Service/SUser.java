@@ -14,13 +14,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.Role;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Validation.Exception.ApiResponse;
-import smartpot.com.api.Validation.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiException;
 
 import java.util.Date;
 import java.util.List;

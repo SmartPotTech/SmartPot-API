@@ -1,16 +1,14 @@
 package smartpot.com.api.Controllers;
 
 import org.springframework.http.HttpStatus;
-import smartpot.com.api.Models.DAO.Repository.RHistory;
 import smartpot.com.api.Models.DAO.Service.SHistory;
 import smartpot.com.api.Models.DTO.HistoryDTO;
 import smartpot.com.api.Models.Entity.History;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiResponse;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController

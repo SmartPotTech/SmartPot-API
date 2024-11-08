@@ -9,17 +9,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.http.ResponseEntity;
-import smartpot.com.api.Validation.ObjectIdSerializer;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import smartpot.com.api.Models.DTO.ObjectIdSerializer;
+
 import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
 
 @Data
 @Builder

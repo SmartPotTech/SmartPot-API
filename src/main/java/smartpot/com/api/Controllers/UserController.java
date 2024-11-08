@@ -6,7 +6,7 @@ import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.List;
 

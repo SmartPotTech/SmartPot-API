@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RNotification;
 import smartpot.com.api.Models.Entity.Notification;
-import smartpot.com.api.Validation.Exception.ApiException;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.List;
 

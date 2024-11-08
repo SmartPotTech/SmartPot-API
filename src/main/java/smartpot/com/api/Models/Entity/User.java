@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import smartpot.com.api.Models.DTO.UserDTO;
-import smartpot.com.api.Validation.ObjectIdSerializer;
+import smartpot.com.api.Models.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;

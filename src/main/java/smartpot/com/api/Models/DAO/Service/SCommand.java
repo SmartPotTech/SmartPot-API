@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RCommand;
 import smartpot.com.api.Models.Entity.Command;
-import smartpot.com.api.Validation.Exception.ApiResponse;
-import smartpot.com.api.Validation.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiException;
 
 import java.util.Date;
 import java.util.List;

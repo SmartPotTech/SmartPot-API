@@ -1,17 +1,15 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.Repository.RSession;
 import smartpot.com.api.Models.DAO.Service.SSession;
 import smartpot.com.api.Models.Entity.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Sesiones")
+@RequestMapping("/Sessions")
 public class SessionController {
 
     @Autowired
@@ -32,12 +30,12 @@ public class SessionController {
         }
     }
 
-    @PostMapping
+    @PostMapping("/Create")
     public ResponseEntity<Session> createSession(@RequestBody Session newSession) {
         return ResponseEntity.ok(session.createSession(newSession));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/Delete/{id}")
     public ResponseEntity<Session> deleteSession(@PathVariable String id) {
         if(session.getSessionById(id) != null) {
             session.deleteSessionById(id);
@@ -47,9 +45,9 @@ public class SessionController {
         }
     }
 
-    @GetMapping("/User/{idUser}")
-    public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String idUser) {
-        List<Session> session1 = session.getSessionByUser(idUser);
+    @GetMapping("/user/{UserId}")
+    public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String UserId) {
+        List<Session> session1 = session.getSessionByUser(UserId);
         if( session1 != null) {
             return ResponseEntity.ok(session1);
         }else{
@@ -57,10 +55,10 @@ public class SessionController {
         }
     }
 
-    @DeleteMapping("/deleteUser/{idUser}")
-    public ResponseEntity<Session> deleteSessionByUser(@PathVariable String idUser) {
-        if(session.getSessionByUser(idUser) != null) {
-            session.deleteSessionByIdUser(idUser);
+    @DeleteMapping("/deleteUser/{UserId}")
+    public ResponseEntity<Session> deleteSessionByUser(@PathVariable String UserId) {
+        if(session.getSessionByUser(UserId) != null) {
+            session.deleteSessionByIdUser(UserId);
             return ResponseEntity.ok().build();
         }else{
 

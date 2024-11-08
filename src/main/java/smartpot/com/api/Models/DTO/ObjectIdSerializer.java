@@ -1,4 +1,4 @@
-package smartpot.com.api.Validation;
+package smartpot.com.api.Models.DTO;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

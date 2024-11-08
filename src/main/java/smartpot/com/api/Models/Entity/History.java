@@ -11,7 +11,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Validation.ObjectIdSerializer;
+import smartpot.com.api.Models.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;

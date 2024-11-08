@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Models.DAO.Repository.RHistory;
 import smartpot.com.api.Models.DTO.HistoryDTO;
 import smartpot.com.api.Models.Entity.*;
-import smartpot.com.api.Validation.Exception.ApiException;
-import smartpot.com.api.Validation.Exception.ApiResponse;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

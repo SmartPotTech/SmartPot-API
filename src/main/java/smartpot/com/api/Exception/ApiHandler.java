@@ -1,4 +1,4 @@
-package smartpot.com.api.Validation.Exception;
+package smartpot.com.api.Exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
