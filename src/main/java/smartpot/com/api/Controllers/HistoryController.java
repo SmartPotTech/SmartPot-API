@@ -28,6 +28,15 @@ public class HistoryController {
     }
 
     /**
+     * Busca un histórico filtrando por un cultivo.
+     *
+     * @param id Identificador ObjectId del cultivo
+     * @return Los históricos encontrado
+     */
+    @GetMapping("/crop/{id}")
+    public List<History> getByCrop(@PathVariable String id) { return serviceHistory.getByCrop(id); }
+
+    /**
      * Busca un histórico por su identificador único.
      *
      * @param id Identificador ObjectId del histórico

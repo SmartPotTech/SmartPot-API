@@ -48,13 +48,13 @@ public class SNotification{
     public List<Notification> findByUserAndType(String id, String type) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
-                    "Las notificaciones con user id '"+ id +"' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    " con user id '"+ id +"' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         return repositoryNotification.findByUserAndType(new ObjectId(id), type)
                 .orElseThrow(() -> new ApiException(
-                        new ApiResponse("La notificación con id '"+ id +"' no fue encontrada.",
+                        new ApiResponse("No se pudo encontrar notificaciones.",
                                 HttpStatus.NOT_FOUND.value())
                 ));
     }
@@ -66,7 +66,7 @@ public class SNotification{
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.findByUserAndType(new ObjectId(id), date)
+        return repositoryNotification.findByUserAndDate(new ObjectId(id), date)
                 .orElseThrow(() -> new ApiException(
                         new ApiResponse("La notificación con id '"+ id +"' no fue encontrada.",
                                 HttpStatus.NOT_FOUND.value())

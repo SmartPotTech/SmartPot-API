@@ -39,8 +39,9 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSec) throws Exception {
         return httpSec
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable) // TODO: configure correctly the cors
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
-                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login","/**").permitAll();
+                    authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login", "/**").permitAll();
                     authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
                 })
                 .httpBasic(Customizer.withDefaults())

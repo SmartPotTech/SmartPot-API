@@ -27,6 +27,11 @@ public class NotificationController {
         return serviceNotification.findByUser(id);
     }
 
+    @GetMapping("/{type}/{id}")
+    public List<Notification> getNotifiacationByUserAndType(@PathVariable String type, @PathVariable String id) {
+        return serviceNotification.findByUserAndType(id, type);
+    }
+
     @PostMapping
     public Notification createNotification(@RequestBody Notification newNotification) {
         return serviceNotification.save(newNotification);

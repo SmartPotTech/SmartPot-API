@@ -51,6 +51,21 @@ public class SHistory {
         return historys;
     }
 
+    public List<History> getByCrop(String cropId) {
+
+        if (!ObjectId.isValid(cropId)) {
+            throw new ApiException(new ApiResponse(
+                    "The crop id isn't valid",
+                    HttpStatus.BAD_REQUEST.value()
+
+            ));
+        }
+
+        return repositoryHistory.getHistoriesByCrop(new ObjectId(cropId));
+
+
+    }
+
     /**
      * Crea un nuevo histórico.
      * Valida que los datos del histórico sean correctos y luego lo guarda en la base de datos.
