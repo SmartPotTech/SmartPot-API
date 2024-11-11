@@ -22,6 +22,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.DAO.Service.SUser;
+import smartpot.com.api.Security.headers.CorsConfig;
 import smartpot.com.api.Security.jwt.JwtAuthFilter;
 
 import java.util.Arrays;
@@ -31,6 +32,9 @@ import java.util.Arrays;
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
 @RequiredArgsConstructor
 public class SecurityConfiguration {
+
+    @Autowired
+    CorsConfig CorsConfig;
 
     @Autowired
     private RUser repositoryUser;
@@ -44,7 +48,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSec) throws Exception {
         return httpSec
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(Customizer.withDefaults())
+                .cors(c -> c.configurationSource(CorsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
                     authorizationManagerRequestMatcherRegistry.requestMatchers("/auth/login", "/**").permitAll();
                     authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
@@ -57,20 +61,6 @@ public class SecurityConfiguration {
                 .build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://smarpot.netlify.app", "https://localhost:5173/"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
-
-        // Creación del source de CORS
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return source;
-    }
 
     @Bean
     AuthenticationProvider authenticationProvider() {
