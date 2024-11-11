@@ -1,22 +1,7 @@
 package smartpot.com.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.DAO.Repository.RHistory;
-import smartpot.com.api.Models.DAO.Repository.RSession;
-import smartpot.com.api.Models.DAO.Repository.RUser;
-import smartpot.com.api.Models.Entity.Crop;
-import smartpot.com.api.Models.Entity.History;
-import smartpot.com.api.Models.Entity.Session;
-import smartpot.com.api.Models.Entity.User;
-
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -71,4 +56,4 @@ public class DataInitializer implements CommandLineRunner {
         }
 
          */
-    }
+}

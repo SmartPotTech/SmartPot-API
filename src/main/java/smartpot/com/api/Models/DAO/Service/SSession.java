@@ -8,11 +8,11 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Repository.RSession;
 import smartpot.com.api.Models.Entity.Session;
 import smartpot.com.api.Models.Entity.User;
-import smartpot.com.api.Exception.ApiException;
-import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.Date;
 import java.util.List;
@@ -142,7 +142,7 @@ public class SSession {
 
     }
 
-    public List<Session> getSessionByUser(String userId){
+    public List<Session> getSessionByUser(String userId) {
         if (!ObjectId.isValid(userId)) {
             throw new ApiException(new ApiResponse(
                     "El user con  '" + userId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",

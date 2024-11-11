@@ -12,6 +12,6 @@ import java.util.List;
 public interface RHistory extends MongoRepository<History, ObjectId> {
 
     @Query("{ 'crop' : ?0 }")
-    public List<History> getHistoriesByCrop(ObjectId cropId);
+    List<History> getHistoriesByCrop(ObjectId cropId);
 
 }

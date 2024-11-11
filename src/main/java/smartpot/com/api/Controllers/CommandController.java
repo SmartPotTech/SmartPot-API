@@ -1,15 +1,14 @@
 package smartpot.com.api.Controllers;
 
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Models.DAO.Service.SCommand;
 import smartpot.com.api.Models.DAO.Service.SCrop;
 import smartpot.com.api.Models.Entity.Command;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Models.Entity.Crop;
-import smartpot.com.api.Models.Entity.User;
 
 import java.util.Date;
 import java.util.List;
@@ -60,7 +59,7 @@ public class CommandController {
             command.setStatus("EXECUTED");
             command.setDateExecuted(new Date());
             command.setResponse("SUCCESSFUL");
-            Command updatedCommand = sCommand.updateCommand(id,command);
+            Command updatedCommand = sCommand.updateCommand(id, command);
             return ResponseEntity.ok(updatedCommand);
         } else {
             return ResponseEntity.notFound().build();
@@ -69,16 +68,16 @@ public class CommandController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Object> deleteCommand(@PathVariable String id) {
-        if(sCommand.getCommandById(id) != null) {
+        if (sCommand.getCommandById(id) != null) {
             sCommand.deleteCommand(id);
             return ResponseEntity.ok().build();
-        }else{
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PutMapping("/Update/{id}")
-    public Command  updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) {
+    public Command updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) {
         return sCommand.updateCommand(id, updatedCommad);
     }
 

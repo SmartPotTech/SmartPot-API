@@ -1,12 +1,13 @@
 package smartpot.com.api.Controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Service.SUser;
 import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.List;
 
@@ -86,7 +87,7 @@ public class UserController {
     /**
      * Encuentra usuarios por su nombre y apellido.
      *
-     * @param name El nombre por el que filtrar los usuarios.
+     * @param name     El nombre por el que filtrar los usuarios.
      * @param lastname El apellido por el que filtrar los usuarios.
      * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionado.
      */
@@ -109,7 +110,7 @@ public class UserController {
     /**
      * Actualiza un usuario existente.
      *
-     * @param id El ID del usuario a actualizar.
+     * @param id          El ID del usuario a actualizar.
      * @param updatedUser El objeto Usuario que contiene los nuevos datos.
      * @return El objeto Usuario actualizado.
      */

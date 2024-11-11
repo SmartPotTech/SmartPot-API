@@ -8,10 +8,10 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Repository.RCommand;
 import smartpot.com.api.Models.Entity.Command;
-import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Exception.ApiException;
 
 import java.util.Date;
 import java.util.List;
@@ -59,7 +59,7 @@ public class SCommand {
             throw new IllegalArgumentException("El comando de actualización no puede ser nulo");
         }
 
-        if (upCommand.getCrop() == null && sCrop.getCropById(upCommand.getCrop().toString())!=null  ) {
+        if (upCommand.getCrop() == null && sCrop.getCropById(upCommand.getCrop().toString()) != null) {
             throw new IllegalArgumentException("El campo 'crop' no puede ser nulo");
         }
 
@@ -87,8 +87,7 @@ public class SCommand {
             exCommand.setResponse(upCommand.getResponse());
             exCommand.setDateCreated(upCommand.getDateCreated());
             return repositoryCommand.save(exCommand);
-        }
-        else{
+        } else {
             return null;
         }
         /*

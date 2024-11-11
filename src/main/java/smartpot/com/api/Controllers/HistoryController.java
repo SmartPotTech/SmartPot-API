@@ -1,13 +1,13 @@
 package smartpot.com.api.Controllers;
 
-import org.springframework.http.HttpStatus;
-import smartpot.com.api.Models.DAO.Service.SHistory;
-import smartpot.com.api.Models.DTO.HistoryDTO;
-import smartpot.com.api.Models.Entity.History;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Models.DAO.Service.SHistory;
+import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.Entity.History;
 
 import java.util.List;
 
@@ -34,7 +34,9 @@ public class HistoryController {
      * @return Los históricos encontrado
      */
     @GetMapping("/crop/{id}")
-    public List<History> getByCrop(@PathVariable String id) { return serviceHistory.getByCrop(id); }
+    public List<History> getByCrop(@PathVariable String id) {
+        return serviceHistory.getByCrop(id);
+    }
 
     /**
      * Busca un histórico por su identificador único.
@@ -62,7 +64,7 @@ public class HistoryController {
     /**
      * Actualiza un histórico existente.
      *
-     * @param id El ID del histórico a actualizar.
+     * @param id             El ID del histórico a actualizar.
      * @param historyDetails El objeto HistoryDTO que contiene los nuevos datos.
      * @return El objeto History actualizado.
      */

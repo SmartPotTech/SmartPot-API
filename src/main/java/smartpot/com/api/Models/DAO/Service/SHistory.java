@@ -10,11 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Models.DAO.Repository.RHistory;
-import smartpot.com.api.Models.DTO.HistoryDTO;
-import smartpot.com.api.Models.Entity.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Models.DAO.Repository.RHistory;
+import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.Entity.History;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -83,7 +83,7 @@ public class SHistory {
      * Actualiza un histórico existente.
      * Verifica que el cultivo asociado al histórico exista, luego actualiza los datos del histórico y lo guarda.
      *
-     * @param id        Identificador del histórico a actualizar
+     * @param id         Identificador del histórico a actualizar
      * @param historyDto Datos actualizados del histórico
      * @return El histórico actualizado
      */

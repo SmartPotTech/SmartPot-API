@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import smartpot.com.api.Models.DAO.Repository.RUser;
 import smartpot.com.api.Models.DAO.Service.SUser;
-import smartpot.com.api.Models.Entity.User;
-
 
 import java.io.IOException;
 

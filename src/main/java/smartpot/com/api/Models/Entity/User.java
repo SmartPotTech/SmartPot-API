@@ -10,8 +10,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.DTO.ObjectIdSerializer;
+import smartpot.com.api.Models.DTO.UserDTO;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -73,7 +73,7 @@ public class User implements Serializable {
     @Field("role")
     private Role role;
 
-    public User(UserDTO userDTO){
+    public User(UserDTO userDTO) {
         this.name = userDTO.getName();
         this.lastname = userDTO.getLastname();
         this.email = userDTO.getEmail();

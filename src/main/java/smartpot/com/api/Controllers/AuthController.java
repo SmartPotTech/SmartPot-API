@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Service.SUser;
-import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.User;
 import smartpot.com.api.Security.jwt.JwtService;
 
@@ -47,11 +46,11 @@ public class AuthController {
         String email = jwtService.extractEmail(token);
         UserDetails user = serviceUser.loadUserByUsername(email);
 
-        System.out.println("my user ---------------> " +user);
+        System.out.println("my user ---------------> " + user);
 
         if (jwtService.validateToken(token, user)) {
             User finalUser = serviceUser.getUserByEmail(email);
-            finalUser.setPassword("")   ;
+            finalUser.setPassword("");
             return finalUser;
 
         } else {

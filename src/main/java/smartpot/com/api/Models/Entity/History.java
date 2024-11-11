@@ -2,7 +2,9 @@ package smartpot.com.api.Models.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -47,7 +49,7 @@ public class History implements Serializable {
     @Field("measures")
     private Measures measures;
 
-   // @DBRef
+    // @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
     @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")

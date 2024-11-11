@@ -6,10 +6,9 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Models.Entity.Command;
-import smartpot.com.api.Models.Entity.User;
 
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 
 @Repository
 public interface RCommand extends MongoRepository<Command, ObjectId> {
@@ -69,5 +68,5 @@ public interface RCommand extends MongoRepository<Command, ObjectId> {
 
     @Transactional
     @Query("{ '_id' : ?0 }")
-    Command updateComand(ObjectId  id, Command command);
+    Command updateComand(ObjectId id, Command command);
 }

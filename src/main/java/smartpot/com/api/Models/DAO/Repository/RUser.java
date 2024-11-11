@@ -2,11 +2,10 @@ package smartpot.com.api.Models.DAO.Repository;
 
 
 import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.transaction.annotation.Transactional;
-import smartpot.com.api.Models.Entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+import smartpot.com.api.Models.Entity.User;
 
 import java.util.List;
 

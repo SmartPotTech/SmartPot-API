@@ -1,10 +1,10 @@
 package smartpot.com.api.Controllers;
 
-import smartpot.com.api.Models.DAO.Service.SSession;
-import smartpot.com.api.Models.Entity.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Models.DAO.Service.SSession;
+import smartpot.com.api.Models.Entity.Session;
 
 import java.util.List;
 
@@ -23,9 +23,9 @@ public class SessionController {
     @GetMapping("/{id}")
     public ResponseEntity<Session> getSession(@PathVariable String id) {
         Session session1 = session.getSessionById(id);
-        if( session1 != null) {
+        if (session1 != null) {
             return ResponseEntity.ok(session1);
-        }else{
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
@@ -37,10 +37,10 @@ public class SessionController {
 
     @DeleteMapping("/Delete/{id}")
     public ResponseEntity<Session> deleteSession(@PathVariable String id) {
-        if(session.getSessionById(id) != null) {
+        if (session.getSessionById(id) != null) {
             session.deleteSessionById(id);
             return ResponseEntity.ok().build();
-        }else{
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
@@ -48,26 +48,26 @@ public class SessionController {
     @GetMapping("/user/{UserId}")
     public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String UserId) {
         List<Session> session1 = session.getSessionByUser(UserId);
-        if( session1 != null) {
+        if (session1 != null) {
             return ResponseEntity.ok(session1);
-        }else{
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("/deleteUser/{UserId}")
     public ResponseEntity<Session> deleteSessionByUser(@PathVariable String UserId) {
-        if(session.getSessionByUser(UserId) != null) {
+        if (session.getSessionByUser(UserId) != null) {
             session.deleteSessionByIdUser(UserId);
             return ResponseEntity.ok().build();
-        }else{
+        } else {
 
             return ResponseEntity.notFound().build();
         }
     }
 
     /*
-*/
+     */
 /*
  *
     @Autowired

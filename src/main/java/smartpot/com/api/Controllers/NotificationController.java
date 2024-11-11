@@ -1,11 +1,9 @@
 package smartpot.com.api.Controllers;
 
-import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Models.DAO.Service.SNotification;
 import smartpot.com.api.Models.Entity.Notification;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -41,7 +39,6 @@ public class NotificationController {
     public Notification updateNotification(@PathVariable String id, @RequestBody Notification notificationDetails) {
         return serviceNotification.updateNotification(id, notificationDetails);
     }
-
 
 
     @DeleteMapping("/{id}")

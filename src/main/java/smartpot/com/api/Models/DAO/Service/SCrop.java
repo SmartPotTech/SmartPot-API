@@ -11,15 +11,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import smartpot.com.api.Models.DAO.Repository.RCrop;
-import smartpot.com.api.Models.DTO.CropDTO;
-import smartpot.com.api.Models.Entity.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Models.DAO.Repository.RCrop;
+import smartpot.com.api.Models.DTO.CropDTO;
+import smartpot.com.api.Models.Entity.Crop;
+import smartpot.com.api.Models.Entity.Status;
+import smartpot.com.api.Models.Entity.Type;
+import smartpot.com.api.Models.Entity.User;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+
 @Slf4j
 @Data
 @Builder
@@ -46,21 +50,22 @@ public class SCrop {
      * @param id El identificador del cultivo a buscar. Se recibe como String para evitar errores de conversion.
      * @return El cultivo correspondiente al id proporcionado.
      * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el cultivo.
-     * @throws Exception Si no se encuentra el cultivo con el id proporcionado.
+     * @throws Exception               Si no se encuentra el cultivo con el id proporcionado.
      */
     public Crop getCropById(String id) {
-        if(!ObjectId.isValid(id)) {
+        if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
-                    "El cultivo con id '"+ id +"' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    "El cultivo con id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
         return repositoryCrop.findById(new ObjectId(id))
                 .orElseThrow(() -> new ApiException(
-                        new ApiResponse("El cultivo con id '"+ id +"' no fue encontrado.",
+                        new ApiResponse("El cultivo con id '" + id + "' no fue encontrado.",
                                 HttpStatus.NOT_FOUND.value())
                 ));
     }
+
     /**
      * Obtiene todos los cultivos almacenados en el sistema.
      *
@@ -85,20 +90,20 @@ public class SCrop {
      */
     public List<Crop> getCropsByUser(String id) {
         User user = serviceUser.getUserById(id);
-            List<Crop> crops = repositoryCrop.findAll();
-            List<Crop> cropsUser = new ArrayList<>();
-            for(Crop crop : crops){
-                if(crop.getUser().equals(user.getId())){
-                    cropsUser.add(crop);
-                }
+        List<Crop> crops = repositoryCrop.findAll();
+        List<Crop> cropsUser = new ArrayList<>();
+        for (Crop crop : crops) {
+            if (crop.getUser().equals(user.getId())) {
+                cropsUser.add(crop);
             }
-            if (cropsUser.isEmpty()) {
-                throw new ApiException(new ApiResponse(
-                        "No se encuentra ningun Cultivo perteneciente al usuario con el id: '" + id + "'.",
-                        HttpStatus.NOT_FOUND.value()
-                ));
-            }
-            return cropsUser;
+        }
+        if (cropsUser.isEmpty()) {
+            throw new ApiException(new ApiResponse(
+                    "No se encuentra ningun Cultivo perteneciente al usuario con el id: '" + id + "'.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        return cropsUser;
     }
 
     /**
@@ -116,7 +121,7 @@ public class SCrop {
                     HttpStatus.BAD_REQUEST.value()));
         }
         List<Crop> cropsByType = repositoryCrop.findByType(type);
-    return repositoryCrop.findByType(type);
+        return repositoryCrop.findByType(type);
     }
 
     /**
@@ -125,7 +130,8 @@ public class SCrop {
      * @param id del Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
-    public long countCropsByUser(String id) { return getCropsByUser(id).size();
+    public long countCropsByUser(String id) {
+        return getCropsByUser(id).size();
 
     }
 
@@ -150,11 +156,10 @@ public class SCrop {
     /**
      * Crea  un cultivo en el sistema.
      *
-     *
      * @return Cultivo guardado
      */
     public Crop createCrop(CropDTO newCropDto) {
-       serviceUser.getUserById(newCropDto.getUser());
+        serviceUser.getUserById(newCropDto.getUser());
         Crop newCrop = cropDtotoCrop(newCropDto);
         boolean isValidStatus = Stream.of(Status.values())
                 .anyMatch(r -> r.name().equalsIgnoreCase(newCrop.getStatus().name()));
@@ -177,9 +182,7 @@ public class SCrop {
      * Actualiza la información de un Crop existente.
      *
      * @param id El identificador del Crop a actualizar.
-     *
      * @return El Crop actualizado después de guardarlo en el servicio.
-     *
      */
     public Crop updatedCrop(String id, CropDTO cropDto) {
         serviceUser.getUserById(cropDto.getUser());
@@ -198,16 +201,16 @@ public class SCrop {
                     "El Type '" + updatedCrop.getType().name() + "' no es válido.",
                     HttpStatus.BAD_REQUEST.value()));
         }
-                return repositoryCrop.updateUser(getCropById(id).getId(), updatedCrop);
-            }
+        return repositoryCrop.updateUser(getCropById(id).getId(), updatedCrop);
+    }
 
- private Crop cropDtotoCrop(CropDTO cropDto){
+    private Crop cropDtotoCrop(CropDTO cropDto) {
         Crop crop = new Crop();
         crop.setType(Type.valueOf(cropDto.getType()));
         crop.setStatus(Status.valueOf(cropDto.getStatus()));
         crop.setUser(new ObjectId(cropDto.getUser()));
         return crop;
- }
+    }
 
 
     /**
@@ -244,6 +247,6 @@ public class SCrop {
                             HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
     }
-    }
+}
 
 
