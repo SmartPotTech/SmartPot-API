@@ -4,17 +4,16 @@ import lombok.Data;
 
 @Data
 public class HistoryDTO {
-    private String date;
     private MeasuresDTO measures;
     private String crop;
 
     @Data
     public static class MeasuresDTO {
-        private Double atmosphere;
-        private Double brightness;
-        private Double temperature;
-        private Double ph;
-        private Double tds;
-        private Double humidity;
+        private String atmosphere;
+        private String brightness;
+        private String temperature;
+        private String ph;
+        private String tds;
+        private String humidity;
     }
 }

@@ -13,6 +13,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import smartpot.com.api.Models.DTO.HistoryDTO;
 import smartpot.com.api.Models.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
@@ -84,5 +85,20 @@ public class History implements Serializable {
         @Positive(message = "La humedad debe ser un valor positivo")
         @Field("humidity")
         private Double humidity;
+
+        public Measures(HistoryDTO.MeasuresDTO measures) {
+            this.atmosphere = Double.parseDouble(measures.getAtmosphere());
+            this.brightness = Double.parseDouble(measures.getBrightness());
+            this.temperature = Double.parseDouble(measures.getTemperature());
+            this.ph = Double.parseDouble(measures.getPh());
+            this.tds = Double.parseDouble(measures.getTds());
+            this.humidity = Double.parseDouble(measures.getHumidity());
+        }
+    }
+
+    public History(HistoryDTO history) {
+        this.date = new Date();
+        this.measures = new Measures(history.getMeasures());
+        this.crop = new ObjectId(history.getCrop());
     }
 }

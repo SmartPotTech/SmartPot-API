@@ -14,6 +14,7 @@ import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Repository.RHistory;
 import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.History;
 
 import java.text.ParseException;
@@ -34,6 +35,71 @@ public class SHistory {
     @Autowired
     private SCrop serviceCrop;
 
+    //Validations
+
+    private void ValidationMesuares(HistoryDTO.MeasuresDTO measures) {
+        // Validación y conversión de "atmosphere"
+        try {
+            Double atmosphere = Double.parseDouble(measures.getAtmosphere());
+            if (atmosphere <= 0) {
+                throw new ApiException(new ApiResponse("La atmósfera debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("La atmósfera debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        // Validación y conversión de "brightness"
+        try {
+            Double brightness = Double.parseDouble(measures.getBrightness());
+            if (brightness <= 0) {
+                throw new ApiException(new ApiResponse("El brillo debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("El brillo debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        // Validación y conversión de "temperature"
+        try {
+            Double temperature = Double.parseDouble(measures.getTemperature());
+            if (temperature <= 0) {
+                throw new ApiException(new ApiResponse("La temperatura debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("La temperatura debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        // Validación y conversión de "ph"
+        try {
+            Double ph = Double.parseDouble(measures.getPh());
+            if (ph <= 0) {
+                throw new ApiException(new ApiResponse("El pH debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("El pH debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        // Validación y conversión de "tds"
+        try {
+            Double tds = Double.parseDouble(measures.getTds());
+            if (tds <= 0) {
+                throw new ApiException(new ApiResponse("El TDS debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("El TDS debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+
+        // Validación y conversión de "humidity"
+        try {
+            Double humidity = Double.parseDouble(measures.getHumidity());
+            if (humidity <= 0) {
+                throw new ApiException(new ApiResponse("La humedad debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            }
+        } catch (NumberFormatException e) {
+            throw new ApiException(new ApiResponse("La humedad debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
+        }
+    }
+
+
     /**
      * Obtiene todos los históricos almacenados en el sistema.
      * Si no se encuentran históricos, lanza una excepción ApiException.
@@ -44,7 +110,7 @@ public class SHistory {
         List<History> historys = repositoryHistory.findAll();
         if (historys == null || historys.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ninguna History en la db",
+                    "No se encontro ningun registro en el historial",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -70,12 +136,13 @@ public class SHistory {
      * Crea un nuevo histórico.
      * Valida que los datos del histórico sean correctos y luego lo guarda en la base de datos.
      *
-     * @param historyDto Datos del nuevo histórico a crear
+     * @param historyDTO Datos del nuevo histórico a crear
      * @return El histórico creado
      */
-    public History Createhistory(HistoryDTO historyDto) {
-        History history = historyDto_tohistory(new History(), historyDto);
-        validateHistory(history);
+    public History Createhistory(HistoryDTO historyDTO) {
+        ValidationMesuares(historyDTO.getMeasures());
+        Crop crop = serviceCrop.getCropById(historyDTO.getCrop());
+        History history = new History(historyDTO);
         return repositoryHistory.save(history);
     }
 
@@ -83,90 +150,30 @@ public class SHistory {
      * Actualiza un histórico existente.
      * Verifica que el cultivo asociado al histórico exista, luego actualiza los datos del histórico y lo guarda.
      *
-     * @param id         Identificador del histórico a actualizar
-     * @param historyDto Datos actualizados del histórico
+     * @param existingHistory Historial para actualizar
+     * @param updateHistory Datos a actualizar  en el historial
      * @return El histórico actualizado
      */
-    public History updatedHistory(String id, HistoryDTO historyDto) {
-        serviceCrop.getCropById(historyDto.getCrop());
-        History updatedHistory = historyDto_tohistory(getHistoryById(id), historyDto);
-        validateHistory(updatedHistory);
-        return repositoryHistory.save(updatedHistory);
-    }
+    public History updatedHistory(History existingHistory, HistoryDTO updateHistory) {
+        if (updateHistory.getMeasures()!=null){
+            HistoryDTO.MeasuresDTO measures = updateHistory.getMeasures();
+            ValidationMesuares(measures);
+            existingHistory.setMeasures(new History.Measures(measures));
+        }
 
-    /**
-     * Convierte un HistoryDTO a un objeto History.
-     * Copia los datos del HistoryDTO al objeto History.
-     *
-     * @param history    Objeto History a actualizar
-     * @param historydto Datos del HistoryDTO
-     * @return El objeto History actualizado
-     */
-    private History historyDto_tohistory(History history, HistoryDTO historydto) {
-        history.setDate(parseDate(historydto.getDate()));
-        history.setMeasures(measurestoMeasures(historydto.getMeasures()));
-        history.setCrop(new ObjectId(historydto.getCrop()));
-        return history;
-    }
-
-    /**
-     * Convierte un HistoryDTO.MeasuresDTO a un objeto History.Measures.
-     * Copia los datos del HistoryDTO.MeasuresDTO al objeto History.Measures.
-     *
-     * @param measuresDTO Datos del HistoryDTO.MeasuresDTO
-     * @return El objeto History.Measures
-     */
-    private History.Measures measurestoMeasures(HistoryDTO.MeasuresDTO measuresDTO) {
-        History.Measures measures = new History.Measures();
-        measures.setPh(measuresDTO.getPh());
-        measures.setBrightness(measuresDTO.getBrightness());
-        measures.setTds(measuresDTO.getTds());
-        measures.setHumidity(measuresDTO.getHumidity());
-        measures.setAtmosphere(measuresDTO.getAtmosphere());
-        measures.setTemperature(measuresDTO.getTemperature());
-        return measures;
-    }
-
-    /**
-     * Parsea una fecha en formato String a un objeto Date.
-     * Si la cadena de fecha está vacía, se devuelve la fecha actual.
-     *
-     * @param dateString Cadena de fecha en formato "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-     * @return Objeto Date
-     */
-    private Date parseDate(String dateString) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        if(updateHistory.getCrop()!=null){
+            String cropId = updateHistory.getCrop();
+            Crop crop = serviceCrop.getCropById(cropId);
+            existingHistory.setCrop(crop.getId());
+        }
         try {
-            if (dateString.equals(" ")) {
-                return new Date();
-            }
-            return dateFormat.parse(dateString);
-        } catch (ParseException e) {
-            throw new IllegalArgumentException("La fecha proporcionada no tiene un formato válido.", e);
+            return repositoryHistory.save(existingHistory);
+        } catch (Exception e) {
+            log.error("e: ", e);
+            throw new ApiException(
+                    new ApiResponse("No se pudo actualizar el registro con ID '" + existingHistory.getId() + "'.",
+                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
-    }
-
-    /**
-     * Valida que los datos del histórico sean correctos.
-     * Verifica que la fecha del histórico sea anterior a la fecha actual y que los valores de las métricas estén dentro de los rangos esperados.
-     *
-     * @param history Objeto History a validar
-     */
-    private void validateHistory(History history) {
-        Date currentDate = new Date();
-        if (!(history.getDate().compareTo(currentDate) <= 0)) {
-            throw new ApiException(new ApiResponse(
-                    "La fecha '" + history.getDate() + "' no es válido.",
-                    HttpStatus.BAD_REQUEST.value()));
-        }
-        History.Measures measures = history.getMeasures();
-        // Validar rangos estándar
-        if (measures.getAtmosphere() < 0 || measures.getAtmosphere() > 1100) {
-            throw new ApiException(new ApiResponse(
-                    "La atmósfera debe estar entre 0 y 1100 hPa.",
-                    HttpStatus.BAD_REQUEST.value()));
-        }
-        // Validaciones similares para otros campos de métricas
     }
 
     /**

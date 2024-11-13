@@ -70,7 +70,7 @@ public class HistoryController {
      */
     @PutMapping("/Update/{id}")
     public History updateHistory(@PathVariable String id, @RequestBody HistoryDTO historyDetails) {
-        return serviceHistory.updatedHistory(id, historyDetails);
+        return serviceHistory.updatedHistory(serviceHistory.getHistoryById(id), historyDetails);
     }
 
     /**
