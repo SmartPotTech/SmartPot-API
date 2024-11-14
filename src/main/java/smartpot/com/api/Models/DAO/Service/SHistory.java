@@ -37,68 +37,128 @@ public class SHistory {
 
     //Validations
 
+    /**
+     * Valida las medidas proporcionadas en el objeto `MeasuresDTO`.
+     * Llama a las funciones de validación específicas para cada tipo de medida.
+     *
+     * @param measures Objeto que contiene las medidas a validar.
+     */
     private void ValidationMesuares(HistoryDTO.MeasuresDTO measures) {
-        // Validación y conversión de "atmosphere"
+        validateAtmosphere(measures.getAtmosphere());
+        validateBrightness(measures.getBrightness());
+        validateTemperature(measures.getTemperature());
+        validatePh(measures.getPh());
+        validateTds(measures.getTds());
+        validateHumidity(measures.getHumidity());
+    }
+
+    /**
+     * Valida el valor de la atmósfera (temperatura).
+     * La temperatura debe ser mayor que -40°C y menor o igual a 80°C.
+     *
+     * @param atmosphereValue Valor de la atmósfera (temperatura) a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validateAtmosphere(String atmosphereValue) {
         try {
-            Double atmosphere = Double.parseDouble(measures.getAtmosphere());
+            Double atmosphere = Double.parseDouble(atmosphereValue);
             if (atmosphere <= 0) {
                 throw new ApiException(new ApiResponse("La atmósfera debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("La atmósfera debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
+    }
 
-        // Validación y conversión de "brightness"
+    /**
+     * Valida el valor del brillo (luz).
+     * El brillo debe estar dentro del rango [0, 1000].
+     *
+     * @param brightnessValue Valor del brillo a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validateBrightness(String brightnessValue) {
         try {
-            Double brightness = Double.parseDouble(measures.getBrightness());
-            if (brightness <= 0) {
-                throw new ApiException(new ApiResponse("El brillo debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            Double brightness = Double.parseDouble(brightnessValue);
+            if (brightness < 0 || brightness > 1000) {
+                throw new ApiException(new ApiResponse("El brillo debe estar entre 0 y 1000", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("El brillo debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
+    }
 
-        // Validación y conversión de "temperature"
+    /**
+     * Valida el valor de la temperatura.
+     * La temperatura debe estar dentro del rango [-40°C, 80°C].
+     *
+     * @param temperatureValue Valor de la temperatura a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validateTemperature(String temperatureValue) {
         try {
-            Double temperature = Double.parseDouble(measures.getTemperature());
-            if (temperature <= 0) {
-                throw new ApiException(new ApiResponse("La temperatura debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            Double temperature = Double.parseDouble(temperatureValue);
+            if (temperature < -40 || temperature > 80) {
+                throw new ApiException(new ApiResponse("La temperatura debe estar entre -40°C y 80°C", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("La temperatura debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
+    }
 
-        // Validación y conversión de "ph"
+    /**
+     * Valida el valor del pH.
+     * El pH debe estar dentro del rango [0, 14].
+     *
+     * @param phValue Valor del pH a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validatePh(String phValue) {
         try {
-            Double ph = Double.parseDouble(measures.getPh());
-            if (ph <= 0) {
-                throw new ApiException(new ApiResponse("El pH debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            Double ph = Double.parseDouble(phValue);
+            if (ph < 0 || ph > 14) {
+                throw new ApiException(new ApiResponse("El pH debe estar entre 0 y 14", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("El pH debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
+    }
 
-        // Validación y conversión de "tds"
+    /**
+     * Valida el valor de TDS (Total Dissolved Solids).
+     * El TDS debe estar dentro del rango [0, 1000 ppm].
+     *
+     * @param tdsValue Valor de TDS a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validateTds(String tdsValue) {
         try {
-            Double tds = Double.parseDouble(measures.getTds());
-            if (tds <= 0) {
-                throw new ApiException(new ApiResponse("El TDS debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            Double tds = Double.parseDouble(tdsValue);
+            if (tds < 0 || tds > 1000) {
+                throw new ApiException(new ApiResponse("El TDS debe estar entre 0 y 1000 ppm", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("El TDS debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
+    }
 
-        // Validación y conversión de "humidity"
+    /**
+     * Valida el valor de la humedad.
+     * La humedad debe estar dentro del rango [0%, 100%].
+     *
+     * @param humidityValue Valor de la humedad a validar.
+     * @throws ApiException Si el valor no es válido o está fuera de rango.
+     */
+    private void validateHumidity(String humidityValue) {
         try {
-            Double humidity = Double.parseDouble(measures.getHumidity());
-            if (humidity <= 0) {
-                throw new ApiException(new ApiResponse("La humedad debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
+            Double humidity = Double.parseDouble(humidityValue);
+            if (humidity < 0 || humidity > 100) {
+                throw new ApiException(new ApiResponse("La humedad debe estar entre 0% y 100%", HttpStatus.BAD_REQUEST.value()));
             }
         } catch (NumberFormatException e) {
             throw new ApiException(new ApiResponse("La humedad debe ser un número válido", HttpStatus.BAD_REQUEST.value()));
         }
     }
-
 
     /**
      * Obtiene todos los históricos almacenados en el sistema.
