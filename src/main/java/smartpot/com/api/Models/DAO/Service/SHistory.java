@@ -177,19 +177,37 @@ public class SHistory {
         return historys;
     }
 
-    public List<History> getByCrop(String cropId) {
-
-        if (!ObjectId.isValid(cropId)) {
+    /**
+     * Obtiene un histórico por su identificador único.
+     * Verifica que el ID sea válido y lanza una excepción si no se encuentra el histórico.
+     *
+     * @param id Identificador del histórico
+     * @return El histórico encontrado
+     */
+    public History getHistoryById(String id) {
+        if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
-                    "The crop id isn't valid",
+                    "El id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
                     HttpStatus.BAD_REQUEST.value()
-
             ));
         }
+        return repositoryHistory.findById(new ObjectId(id))
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("El History con id '" + id + "' no fue encontrado.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+    }
 
-        return repositoryHistory.getHistoriesByCrop(new ObjectId(cropId));
-
-
+    /**
+     * Obtiene la lista de históricos asociada a un cultivo específico.
+     * Se busca el cultivo por su ID, luego se recuperan los históricos relacionados con ese cultivo.
+     *
+     * @param cropId El ID del cultivo cuyo historial se desea recuperar.
+     * @return Una lista de objetos {@link History} que representan los históricos asociados al cultivo.
+     * @throws ApiException Si el cultivo con el ID proporcionado no se encuentra o si ocurre un error en la consulta.
+     */
+    public List<History> getByCrop(String cropId) {
+        return repositoryHistory.getHistoriesByCrop(serviceCrop.getCropById(cropId).getId());
     }
 
     /**
@@ -234,27 +252,6 @@ public class SHistory {
                     new ApiResponse("No se pudo actualizar el registro con ID '" + existingHistory.getId() + "'.",
                             HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
-    }
-
-    /**
-     * Obtiene un histórico por su identificador único.
-     * Verifica que el ID sea válido y lanza una excepción si no se encuentra el histórico.
-     *
-     * @param id Identificador del histórico
-     * @return El histórico encontrado
-     */
-    public History getHistoryById(String id) {
-        if (!ObjectId.isValid(id)) {
-            throw new ApiException(new ApiResponse(
-                    "El id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-        return repositoryHistory.findById(new ObjectId(id))
-                .orElseThrow(() -> new ApiException(
-                        new ApiResponse("El History con id '" + id + "' no fue encontrado.",
-                                HttpStatus.NOT_FOUND.value())
-                ));
     }
 
     /**

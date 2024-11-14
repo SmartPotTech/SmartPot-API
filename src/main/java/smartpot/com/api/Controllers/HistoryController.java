@@ -12,7 +12,7 @@ import smartpot.com.api.Models.Entity.History;
 import java.util.List;
 
 @RestController
-@RequestMapping("/Historial")
+@RequestMapping("/Records")
 public class HistoryController {
     @Autowired
     private SHistory serviceHistory;
@@ -22,9 +22,21 @@ public class HistoryController {
      *
      * @return Lista de todos los históricos existentes
      */
-    @GetMapping
+    @GetMapping("/All")
     public List<History> getAllHistories() {
         return serviceHistory.getAllHistorys();
+    }
+
+    /**
+     * Crea un nuevo histórico
+     *
+     * @param newHistory El objeto histórico que contiene los datos del histórico que se debe guardar
+     * @return El objeto histórico creado
+     */
+    @PostMapping("/Create")
+    @ResponseStatus(HttpStatus.CREATED)
+    public History createHistory(@RequestBody HistoryDTO newHistory) {
+        return serviceHistory.Createhistory(newHistory);
     }
 
     /**
@@ -49,17 +61,6 @@ public class HistoryController {
         return serviceHistory.getHistoryById(id);
     }
 
-    /**
-     * Crea un nuevo histórico
-     *
-     * @param newHistory El objeto histórico que contiene los datos del histórico que se debe guardar
-     * @return El objeto histórico creado
-     */
-    @PostMapping("/Create")
-    @ResponseStatus(HttpStatus.CREATED)
-    public History createHistory(@RequestBody HistoryDTO newHistory) {
-        return serviceHistory.Createhistory(newHistory);
-    }
 
     /**
      * Actualiza un histórico existente.
