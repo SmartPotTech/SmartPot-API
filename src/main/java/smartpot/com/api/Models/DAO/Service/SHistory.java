@@ -17,23 +17,22 @@ import smartpot.com.api.Models.DTO.HistoryDTO;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.History;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 @Slf4j
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Service
 public class SHistory {
 
+    private final RHistory repositoryHistory;
+    private final SCrop serviceCrop;
+
     @Autowired
-    private RHistory repositoryHistory;
-    @Autowired
-    private SCrop serviceCrop;
+    public SHistory(RHistory repositoryHistory, SCrop serviceCrop) {
+        this.repositoryHistory = repositoryHistory;
+        this.serviceCrop = serviceCrop;
+    }
 
     //Validations
 
@@ -61,7 +60,7 @@ public class SHistory {
      */
     private void validateAtmosphere(String atmosphereValue) {
         try {
-            Double atmosphere = Double.parseDouble(atmosphereValue);
+            double atmosphere = Double.parseDouble(atmosphereValue);
             if (atmosphere <= 0) {
                 throw new ApiException(new ApiResponse("La atmósfera debe ser un valor positivo", HttpStatus.BAD_REQUEST.value()));
             }
@@ -79,7 +78,7 @@ public class SHistory {
      */
     private void validateBrightness(String brightnessValue) {
         try {
-            Double brightness = Double.parseDouble(brightnessValue);
+            double brightness = Double.parseDouble(brightnessValue);
             if (brightness < 0 || brightness > 1000) {
                 throw new ApiException(new ApiResponse("El brillo debe estar entre 0 y 1000", HttpStatus.BAD_REQUEST.value()));
             }
@@ -97,7 +96,7 @@ public class SHistory {
      */
     private void validateTemperature(String temperatureValue) {
         try {
-            Double temperature = Double.parseDouble(temperatureValue);
+            double temperature = Double.parseDouble(temperatureValue);
             if (temperature < -40 || temperature > 80) {
                 throw new ApiException(new ApiResponse("La temperatura debe estar entre -40°C y 80°C", HttpStatus.BAD_REQUEST.value()));
             }
@@ -115,7 +114,7 @@ public class SHistory {
      */
     private void validatePh(String phValue) {
         try {
-            Double ph = Double.parseDouble(phValue);
+            double ph = Double.parseDouble(phValue);
             if (ph < 0 || ph > 14) {
                 throw new ApiException(new ApiResponse("El pH debe estar entre 0 y 14", HttpStatus.BAD_REQUEST.value()));
             }
@@ -133,7 +132,7 @@ public class SHistory {
      */
     private void validateTds(String tdsValue) {
         try {
-            Double tds = Double.parseDouble(tdsValue);
+            double tds = Double.parseDouble(tdsValue);
             if (tds < 0 || tds > 1000) {
                 throw new ApiException(new ApiResponse("El TDS debe estar entre 0 y 1000 ppm", HttpStatus.BAD_REQUEST.value()));
             }
@@ -151,7 +150,7 @@ public class SHistory {
      */
     private void validateHumidity(String humidityValue) {
         try {
-            Double humidity = Double.parseDouble(humidityValue);
+            double humidity = Double.parseDouble(humidityValue);
             if (humidity < 0 || humidity > 100) {
                 throw new ApiException(new ApiResponse("La humedad debe estar entre 0% y 100%", HttpStatus.BAD_REQUEST.value()));
             }
@@ -167,14 +166,14 @@ public class SHistory {
      * @return Lista de todos los históricos existentes
      */
     public List<History> getAllHistorys() {
-        List<History> historys = repositoryHistory.findAll();
-        if (historys == null || historys.isEmpty()) {
+        List<History> records = repositoryHistory.findAll();
+        if (records.isEmpty()) {
             throw new ApiException(new ApiResponse(
                     "No se encontro ningun registro en el historial",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
-        return historys;
+        return records;
     }
 
     /**
@@ -229,17 +228,17 @@ public class SHistory {
      * Verifica que el cultivo asociado al histórico exista, luego actualiza los datos del histórico y lo guarda.
      *
      * @param existingHistory Historial para actualizar
-     * @param updateHistory Datos a actualizar  en el historial
+     * @param updateHistory   Datos a actualizar  en el historial
      * @return El histórico actualizado
      */
     public History updatedHistory(History existingHistory, HistoryDTO updateHistory) {
-        if (updateHistory.getMeasures()!=null){
+        if (updateHistory.getMeasures() != null) {
             HistoryDTO.MeasuresDTO measures = updateHistory.getMeasures();
             ValidationMesuares(measures);
             existingHistory.setMeasures(new History.Measures(measures));
         }
 
-        if(updateHistory.getCrop()!=null){
+        if (updateHistory.getCrop() != null) {
             String cropId = updateHistory.getCrop();
             Crop crop = serviceCrop.getCropById(cropId);
             existingHistory.setCrop(crop.getId());
