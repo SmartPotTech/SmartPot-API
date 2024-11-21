@@ -1,9 +1,7 @@
 package smartpot.com.api.Models.DAO.Service;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +35,7 @@ public class SHistory {
     //Validations
 
     /**
-     * Valida las medidas proporcionadas en el objeto `MeasuresDTO`.
+     * Válida las medidas proporcionadas en el objeto `MeasuresDTO`.
      * Llama a las funciones de validación específicas para cada tipo de medida.
      *
      * @param measures Objeto que contiene las medidas a validar.
@@ -70,7 +68,7 @@ public class SHistory {
     }
 
     /**
-     * Valida el valor del brillo (luz).
+     * Válida el valor del brillo (luz).
      * El brillo debe estar dentro del rango [0, 1000].
      *
      * @param brightnessValue Valor del brillo a validar.
@@ -88,8 +86,8 @@ public class SHistory {
     }
 
     /**
-     * Valida el valor de la temperatura.
-     * La temperatura debe estar dentro del rango [-40°C, 80°C].
+     * Válida el valor de la temperatura.
+     * La temperatura debe estar dentro del rango [-40 °C, 80 °C].
      *
      * @param temperatureValue Valor de la temperatura a validar.
      * @throws ApiException Si el valor no es válido o está fuera de rango.
@@ -106,7 +104,7 @@ public class SHistory {
     }
 
     /**
-     * Valida el valor del pH.
+     * Válida el valor del pH.
      * El pH debe estar dentro del rango [0, 14].
      *
      * @param phValue Valor del pH a validar.
@@ -124,7 +122,7 @@ public class SHistory {
     }
 
     /**
-     * Valida el valor de TDS (Total Dissolved Solids).
+     * Válida el valor de TDS (Total Dissolved Solids).
      * El TDS debe estar dentro del rango [0, 1000 ppm].
      *
      * @param tdsValue Valor de TDS a validar.
@@ -142,7 +140,7 @@ public class SHistory {
     }
 
     /**
-     * Valida el valor de la humedad.
+     * Válida el valor de la humedad.
      * La humedad debe estar dentro del rango [0%, 100%].
      *
      * @param humidityValue Valor de la humedad a validar.
@@ -211,14 +209,14 @@ public class SHistory {
 
     /**
      * Crea un nuevo histórico.
-     * Valida que los datos del histórico sean correctos y luego lo guarda en la base de datos.
+     * Válida que los datos del histórico sean correctos y luego lo guarda en la base de datos.
      *
      * @param historyDTO Datos del nuevo histórico a crear
      * @return El histórico creado
      */
     public History Createhistory(HistoryDTO historyDTO) {
         ValidationMesuares(historyDTO.getMeasures());
-        Crop crop = serviceCrop.getCropById(historyDTO.getCrop());
+        serviceCrop.getCropById(historyDTO.getCrop());
         History history = new History(historyDTO);
         return repositoryHistory.save(history);
     }
@@ -228,7 +226,7 @@ public class SHistory {
      * Verifica que el cultivo asociado al histórico exista, luego actualiza los datos del histórico y lo guarda.
      *
      * @param existingHistory Historial para actualizar
-     * @param updateHistory   Datos a actualizar  en el historial
+     * @param updateHistory   Datos a actualizar en el historial
      * @return El histórico actualizado
      */
     public History updatedHistory(History existingHistory, HistoryDTO updateHistory) {

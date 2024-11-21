@@ -54,11 +54,11 @@ public class SUser implements UserDetailsService {
     /* * Patrón para correos electrónicos */
     public static final String EMAIL_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
 
-    /* * Patrón para contraseñas (8 caracteres, un digito, una minuscula, una mayuscula y un caracter especial) */
+    /* * Patrón para contraseñas (8 caracteres, un dígito, una minúscula, una mayúscula y un carácter especial) */
     public static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
 
     /**
-     * Valida si el ID proporcionado es un ObjectId válido de MongoDB.
+     * Válida si el ID proporcionado es un ObjectId válido de MongoDB.
      *
      * @param id El identificador a validar.
      * @throws ApiException Si el ID no es válido.
@@ -73,7 +73,7 @@ public class SUser implements UserDetailsService {
     }
 
     /**
-     * Valida que el nombre cumpla con el patrón especificado.
+     * Válida que el nombre cumpla con el patrón especificado.
      *
      * @param name El nombre a validar.
      * @throws ApiException Si el nombre no es válido.
@@ -88,7 +88,7 @@ public class SUser implements UserDetailsService {
     }
 
     /**
-     * Valida que el apellido cumpla con el patrón especificado.
+     * Válida que el apellido cumpla con el patrón especificado.
      *
      * @param lastname El apellido a validar.
      * @throws ApiException Si el apellido no es válido.
@@ -103,7 +103,7 @@ public class SUser implements UserDetailsService {
     }
 
     /**
-     * Valida que el correo electrónico cumpla con el patrón especificado.
+     * Válida que el correo electrónico cumpla con el patrón especificado.
      *
      * @param email El correo electrónico a validar.
      * @throws ApiException Si el correo no es válido.
@@ -118,7 +118,7 @@ public class SUser implements UserDetailsService {
     }
 
     /**
-     * Valida que la contraseña cumpla con el patrón especificado.
+     * Válida que la contraseña cumpla con el patrón especificado.
      *
      * @param password La contraseña a validar.
      * @throws ApiException Si la contraseña no es válida.
@@ -133,7 +133,7 @@ public class SUser implements UserDetailsService {
     }
 
     /**
-     * Valida que el rol proporcionado sea un rol válido.
+     * Válida que el rol proporcionado sea un rol válido.
      *
      * @param role El rol a validar.
      * @throws ApiException Si el rol no es válido.
@@ -178,9 +178,9 @@ public class SUser implements UserDetailsService {
      */
     public List<User> getAllUsers() {
         List<User> users = repositoryUser.findAll();
-        if (users == null || users.isEmpty()) {
+        if (users.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun usuario en la db",
+                    "No se encontró ningún usuario en la db",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -192,7 +192,7 @@ public class SUser implements UserDetailsService {
      *
      * @param userDTO El usuario a crear.
      * @return El usuario creado.
-     * @throws ApiException Si ocurre algún error durante la creación.
+     * @throws ApiException Sí ocurre algún error durante la creación.
      */
     public User CreateUser(UserDTO userDTO) {
         ValidationName(userDTO.getName());
@@ -248,7 +248,7 @@ public class SUser implements UserDetailsService {
         List<User> users = repositoryUser.findByEmail(email);
         if (users == null || users.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun usuario con el correo electrónico: '" + email + "'.",
+                    "No se encontró ningún usuario con el correo electrónico: '" + email + "'.",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -271,7 +271,7 @@ public class SUser implements UserDetailsService {
         List<User> users = repositoryUser.findByFullName(name, lastname);
         if (users == null || users.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun usuario con el nombre '" + name + "' y apellido '" + lastname + "'.",
+                    "No se encontró ningún usuario con el nombre '" + name + "' y apellido '" + lastname + "'.",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -291,7 +291,7 @@ public class SUser implements UserDetailsService {
         List<User> users = repositoryUser.findByName(name);
         if (users == null || users.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun usuario con el nombre '" + name + "'.",
+                    "No se encontró ningún usuario con el nombre '" + name + "'.",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -311,7 +311,7 @@ public class SUser implements UserDetailsService {
         List<User> users = repositoryUser.findByLastname(lastname);
         if (users == null || users.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun usuario con el apellido '" + lastname + "'.",
+                    "No se encontró ningún usuario con el apellido '" + lastname + "'.",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -348,7 +348,7 @@ public class SUser implements UserDetailsService {
      * @param existingUser El User del usuario a actualizar.
      * @param updatedUser  Los nuevos datos del usuario.
      * @return El usuario actualizado.
-     * @throws ApiException Si ocurre algún error durante la actualización.
+     * @throws ApiException Sí ocurre algún error durante la actualización.
      */
     public User updateUser(User existingUser, UserDTO updatedUser) {
 
@@ -417,7 +417,7 @@ public class SUser implements UserDetailsService {
 
     /**
      * Carga un usuario basado en su nombre de usuario (en este caso, el correo electrónico).
-     * Este metodo es parte de la implementación de `UserDetailsService` de Spring Security.
+     * Este método es parte de la implementación de `UserDetailsService` de Spring Security.
      * Busca un usuario en la base de datos utilizando el correo electrónico como nombre de usuario.
      * Si no se encuentra un usuario con el correo electrónico proporcionado, se lanza una excepción `UsernameNotFoundException`.
      *
