@@ -1,9 +1,7 @@
 package smartpot.com.api.Models.DAO.Service;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,35 +25,52 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 
+/**
+ * Esta clase implementa los métodos de servicio para la gestión de usuarios.
+ * Incluye la validación de campos y la interacción con el repositorio de usuarios.
+ */
 @Slf4j
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Service
 public class SUser implements UserDetailsService {
-    /**
-     * Esta clase implementa los métodos de servicio para la gestión de usuarios.
-     * Incluye la validación de campos y la interacción con el repositorio de usuarios.
-     */
-
+    private final RUser repositoryUser;
 
     @Autowired
-    private RUser repositoryUser;
+    public SUser(RUser repositoryUser) {
+        this.repositoryUser = repositoryUser;
+    }
 
-    //Validations
-
-    /* * Patrón para nombres y apellidos (mínimo 4, máximo 15 caracteres) */
+    /**
+     * Patrón para validar nombres:
+     * - Solo permite letras (mayúsculas y minúsculas).
+     * - Longitud entre 4 y 15 caracteres.
+     */
     public static final String NAME_PATTERN = "^[a-zA-Z]{4,15}$";
 
-    /* * Patrón para apellidos (mínimo 4, máximo 30 caracteres) */
+    /**
+     * Patrón para validar apellidos:
+     * - Solo permite letras (mayúsculas y minúsculas).
+     * - Longitud entre 4 y 30 caracteres.
+     */
     public static final String LASTNAME_PATTERN = "^[a-zA-Z]{4,30}$";
 
-    /* * Patrón para correos electrónicos */
+    /**
+     * Patrón para validar correos electrónicos:
+     * - Asegura que haya un texto antes y después del símbolo @.
+     * - Requiere un dominio válido con un punto (.) después del símbolo @.
+     * - No permite espacios en ninguna parte del correo.
+     */
     public static final String EMAIL_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
 
-    /* * Patrón para contraseñas (8 caracteres, un dígito, una minúscula, una mayúscula y un carácter especial) */
+    /**
+     * Patrón para validar contraseñas:
+     * - Debe contener al menos 8 caracteres.
+     * - Debe tener al menos una letra minúscula, una letra mayúscula, un dígito y un carácter especial.
+     * - Permite letras (mayúsculas y minúsculas), dígitos y los caracteres especiales: @$!%*?&.
+     */
     public static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+
 
     /**
      * Válida si el ID proporcionado es un ObjectId válido de MongoDB.
@@ -320,7 +335,7 @@ public class SUser implements UserDetailsService {
 
     /**
      * Obtiene una lista de usuarios filtrados por su rol.
-     * Este método permite recuperar todos los usuarios que tienen asignado un rol específico.
+     * Este método permite recuperar todos los usuarios que tiene asignado un rol especifico.
      * Si no se encuentran usuarios con el rol proporcionado, se lanza una excepción.
      *
      * @param role El rol que se utilizará para filtrar los usuarios. Este valor debe ser una cadena que corresponda con uno de los roles definidos en la enumeración `Role`.

@@ -17,6 +17,17 @@ import java.io.Serializable;
 import java.util.Date;
 
 
+/**
+ * Representa un usuario en el sistema.
+ * <p>
+ * Esta clase contiene los datos esenciales de un usuario, tales como nombre, apellido,
+ * correo electrónico, contraseña, fecha de registro y rol. Se utiliza para almacenar y recuperar
+ * la información de los usuarios desde la colección "usuarios" en MongoDB.
+ * <p>
+ * La clase incluye validaciones para asegurar que los datos sean correctos antes de persistirlos.
+ * Además, la contraseña se encripta antes de almacenarse en la base de datos, utilizando BCrypt.
+ */
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,10 +36,6 @@ import java.util.Date;
 @Document(collection = "usuarios")
 public class User implements Serializable {
     /**
-     * Representa un usuario en el sistema.
-     * * Esta clase contiene la información básica de un usuario, incluyendo
-     * * atributos como nombre, apellido, correo electrónico, fecha de registro,
-     * * contraseña y rol. Se utiliza en la colección "usuarios" de MongoDB.
      * TODO: Considerar implementar un método para hacer hash de la contraseña antes de almacenarla.
      * ! Asegurarse de que los datos sensibles como contraseñas estén protegidos.
      * ? ¿Qué medidas se tomarán si un usuario olvida su contraseña?
@@ -73,6 +80,13 @@ public class User implements Serializable {
     @Field("role")
     private Role role;
 
+    /**
+     * Constructor que mapea los datos desde un {@link UserDTO}.
+     * Este constructor toma los datos de un DTO y los convierte a la entidad {@link User}.
+     * La contraseña se encripta utilizando BCrypt antes de ser almacenada.
+     *
+     * @param userDTO El objeto DTO con los datos del usuario.
+     */
     public User(UserDTO userDTO) {
         this.name = userDTO.getName();
         this.lastname = userDTO.getLastname();
