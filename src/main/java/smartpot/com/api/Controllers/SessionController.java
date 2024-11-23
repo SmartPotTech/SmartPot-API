@@ -12,8 +12,12 @@ import java.util.List;
 @RequestMapping("/Sessions")
 public class SessionController {
 
+    private final SSession session;
+
     @Autowired
-    private SSession session;
+    public SessionController(SSession session) {
+        this.session = session;
+    }
 
     @GetMapping
     public List<Session> getAllSessions() {

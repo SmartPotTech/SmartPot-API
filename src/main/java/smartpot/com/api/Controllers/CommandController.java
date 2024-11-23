@@ -18,34 +18,34 @@ import java.util.Optional;
 @RequestMapping("/Comandos")
 public class CommandController {
 
+    private final SCommand serviceCommand;
+    private final SCrop serviceCrop;
+
     @Autowired
-    private SCommand sCommand;
-
-    private final SCrop sCrop;
-
-    public CommandController(SCrop sCrop) {
-        this.sCrop = sCrop;
+    public CommandController(SCommand serviceCommand, SCrop serviceCrop) {
+        this.serviceCommand = serviceCommand;
+        this.serviceCrop = serviceCrop;
     }
 
     @GetMapping("/All")
     public List<Command> getAllCommand() {
-        return sCommand.getAllCommands();
+        return serviceCommand.getAllCommands();
     }
 
     @GetMapping("/id/{id}")
     public Command getUserById(@PathVariable String id) {
-        return sCommand.getCommandById(id);
+        return serviceCommand.getCommandById(id);
     }
 
     @PostMapping("/commandCreate/{cropId}")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
-        Optional<Crop> cropOpt = Optional.ofNullable(sCrop.getCropById(cropId));
+        Optional<Crop> cropOpt = Optional.ofNullable(serviceCrop.getCropById(cropId));
         if (cropOpt.isPresent()) {
             newCommand.setCrop(new ObjectId(cropId));
             newCommand.setDateCreated(new Date());
             newCommand.setStatus("PENDING");
-            Command savedCommand = sCommand.createCommand(newCommand);
+            Command savedCommand = serviceCommand.createCommand(newCommand);
             return ResponseEntity.ok(savedCommand);
         } else {
             return ResponseEntity.notFound().build();
@@ -54,12 +54,12 @@ public class CommandController {
 
     @PutMapping("/{id}/ejecutar")
     public ResponseEntity<Command> executeCommand(@PathVariable String id) {
-        Command command = sCommand.getCommandById(id);
+        Command command = serviceCommand.getCommandById(id);
         if (command != null) {
             command.setStatus("EXECUTED");
             command.setDateExecuted(new Date());
             command.setResponse("SUCCESSFUL");
-            Command updatedCommand = sCommand.updateCommand(id, command);
+            Command updatedCommand = serviceCommand.updateCommand(id, command);
             return ResponseEntity.ok(updatedCommand);
         } else {
             return ResponseEntity.notFound().build();
@@ -68,8 +68,8 @@ public class CommandController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Object> deleteCommand(@PathVariable String id) {
-        if (sCommand.getCommandById(id) != null) {
-            sCommand.deleteCommand(id);
+        if (serviceCommand.getCommandById(id) != null) {
+            serviceCommand.deleteCommand(id);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();
@@ -78,7 +78,7 @@ public class CommandController {
 
     @PutMapping("/Update/{id}")
     public Command updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) {
-        return sCommand.updateCommand(id, updatedCommad);
+        return serviceCommand.updateCommand(id, updatedCommad);
     }
 
 }

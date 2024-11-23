@@ -14,8 +14,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/Records")
 public class HistoryController {
-    @Autowired
+
     private SHistory serviceHistory;
+
+    @Autowired
+    public HistoryController(SHistory serviceHistory) {
+        this.serviceHistory = serviceHistory;
+    }
 
     /**
      * Obtiene todos los históricos almacenados en el sistema.

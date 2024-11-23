@@ -1,6 +1,5 @@
 package smartpot.com.api.Controllers;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,14 +13,16 @@ import smartpot.com.api.Security.jwt.JwtService;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private SUser serviceUser;
+    private final SUser serviceUser;
+    private final JwtService jwtService;
 
     @Autowired
-    private JwtService jwtService;
+    public AuthController(final SUser serviceUser, final JwtService jwtService) {
+        this.serviceUser = serviceUser;
+        this.jwtService = jwtService;
+    }
 
     // TODO: Handle no allowed method
 

@@ -15,9 +15,12 @@ import java.util.List;
 @RequestMapping("/Cultivos")
 public class CropController {
 
+    private final SCrop serviceCrop;
 
     @Autowired
-    private SCrop serviceCrop;
+    public CropController(SCrop serviceCrop) {
+        this.serviceCrop = serviceCrop;
+    }
 
     /**
      * Obtiene todos los cultivos almacenados en el sistema.

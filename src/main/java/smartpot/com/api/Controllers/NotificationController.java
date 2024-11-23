@@ -11,9 +11,12 @@ import java.util.List;
 @RequestMapping("/Notificaciones")
 public class NotificationController {
 
+    private final SNotification serviceNotification;
 
     @Autowired
-    private SNotification serviceNotification;
+    public NotificationController(SNotification serviceNotification) {
+        this.serviceNotification = serviceNotification;
+    }
 
     @GetMapping
     public List<Notification> getAllNotifications() {
