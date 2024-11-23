@@ -24,24 +24,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-@Slf4j
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Service
+
 /**
  * Servicio que gestiona las operaciones relacionadas con los cultivos.
  * Proporciona métodos para crear, leer, actualizar y eliminar cultivos,
  * así como búsquedas específicas por diferentes criterios.
  */
+@Slf4j
+@Data
+@Builder
+@Service
 public class SCrop {
 
-    @Autowired
-    private RCrop repositoryCrop;
-    @Autowired
-    private SUser serviceUser;
+    private final RCrop repositoryCrop;
+    private final SUser serviceUser;
 
+    @Autowired
+    public SCrop(RCrop repositoryCrop, SUser serviceUser) {
+        this.repositoryCrop = repositoryCrop;
+        this.serviceUser = serviceUser;
+    }
 
     /**
      * Este metodo maneja el ID como un ObjectId de MongoDB. Si el ID es válido como ObjectId,

@@ -18,13 +18,15 @@ import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Service
 public class SNotification {
 
+    private final RNotification repositoryNotification;
+
     @Autowired
-    private RNotification repositoryNotification;
+    public SNotification(RNotification repositoryNotification) {
+        this.repositoryNotification = repositoryNotification;
+    }
 
     public List<Notification> findAll() {
         return repositoryNotification.findAll();

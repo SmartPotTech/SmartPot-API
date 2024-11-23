@@ -20,16 +20,17 @@ import java.util.Optional;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Service
 public class SSession {
-    @Autowired
-    private RSession repositorySession;
+
+    private final RSession repositorySession;
+    private final SUser user;
 
     @Autowired
-    private SUser user;
-
+    public SSession(RSession repositorySession, SUser user) {
+        this.repositorySession = repositorySession;
+        this.user = user;
+    }
 
     public Session getSessionById(String sessionId) {
         if (!ObjectId.isValid(sessionId)) {

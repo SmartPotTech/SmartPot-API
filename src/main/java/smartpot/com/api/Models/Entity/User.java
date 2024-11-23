@@ -57,7 +57,7 @@ public class User implements Serializable {
     private String lastname;
 
     @NotEmpty(message = "El email no puede estar vacío")
-    @Size(min = 14, max = 60, message = "El email debe tener entre 14 y 60 caracteres")
+    @Size(min = 14, max = 254, message = "El email debe tener entre 14 y 254 caracteres")
     @Email(message = "El email debe ser válido")
     @Indexed(unique = true)
     @Field("email")
@@ -69,6 +69,7 @@ public class User implements Serializable {
     private Date createAt;
 
     @NotEmpty(message = "La contraseña no puede estar vacío")
+
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
             message = "La contraseña debe tener al menos 8 caracteres, " +
                     "una letra mayúscula, una letra minúscula, " +

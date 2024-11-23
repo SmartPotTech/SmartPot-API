@@ -18,16 +18,17 @@ import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Service
 public class SCommand {
 
+    private final RCommand repositoryCommand;
+    private final SCrop serviceCrop;
 
     @Autowired
-    private RCommand repositoryCommand;
-
-    private final SCrop sCrop = new SCrop();
+    public SCommand(RCommand repositoryCommand, SCrop serviceCrop) {
+        this.repositoryCommand = repositoryCommand;
+        this.serviceCrop = serviceCrop;
+    }
 
     public List<Command> getAllCommands() {
         return repositoryCommand.findAll();
@@ -59,7 +60,7 @@ public class SCommand {
             throw new IllegalArgumentException("El comando de actualización no puede ser nulo");
         }
 
-        if (upCommand.getCrop() == null && sCrop.getCropById(upCommand.getCrop().toString()) != null) {
+        if (upCommand.getCrop() == null && serviceCrop.getCropById(upCommand.getCrop().toString()) != null) {
             throw new IllegalArgumentException("El campo 'crop' no puede ser nulo");
         }
 
