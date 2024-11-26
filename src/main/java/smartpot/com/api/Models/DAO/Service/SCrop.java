@@ -85,7 +85,7 @@ public class SCrop {
     /**
      * Busca todos los cultivos asociados a un usuario específico.
      *
-     * @param id del  Usuario propietario de los cultivos
+     * @param id del Usuario propietario de los cultivos
      * @return Lista de cultivos pertenecientes al usuario
      */
     public List<Crop> getCropsByUser(String id) {

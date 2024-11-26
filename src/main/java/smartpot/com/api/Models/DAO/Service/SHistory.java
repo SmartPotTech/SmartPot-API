@@ -11,10 +11,14 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Repository.RHistory;
-import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.DTO.CropDTO;
+import smartpot.com.api.Models.DTO.CropRecordDTO;
+import smartpot.com.api.Models.DTO.MeasuresDTO;
+import smartpot.com.api.Models.DTO.RecordDTO;
 import smartpot.com.api.Models.Entity.Crop;
 import smartpot.com.api.Models.Entity.History;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -40,7 +44,7 @@ public class SHistory {
      *
      * @param measures Objeto que contiene las medidas a validar.
      */
-    private void ValidationMesuares(HistoryDTO.MeasuresDTO measures) {
+    private void ValidationMesuares(MeasuresDTO measures) {
         validateAtmosphere(measures.getAtmosphere());
         validateBrightness(measures.getBrightness());
         validateTemperature(measures.getTemperature());
@@ -167,7 +171,7 @@ public class SHistory {
         List<History> records = repositoryHistory.findAll();
         if (records.isEmpty()) {
             throw new ApiException(new ApiResponse(
-                    "No se encontro ningun registro en el historial",
+                    "No se encontró ningún registro en el historial",
                     HttpStatus.NOT_FOUND.value()
             ));
         }
@@ -208,16 +212,45 @@ public class SHistory {
     }
 
     /**
+     * Obtiene los registros históricos de cultivo asociados a un usuario específico.
+     * Verifica que el ID del usuario sea válido y lanza una excepción si no se encuentra el usuario o si
+     * alguno de los cultivos del usuario no tiene registros históricos asociados.
+     *
+     * @param id El identificador del usuario cuyo historial de cultivos se quiere obtener.
+     * @return Una lista de objetos {@link CropRecordDTO} que contienen información de los cultivos y sus registros históricos.
+     * @throws ApiException Si el ID del usuario no es válido (formato incorrecto) o si no se encuentran cultivos asociados al usuario.
+     */
+    public List<CropRecordDTO> getByUser(String id) {
+        List<CropRecordDTO> records = new ArrayList<>();
+        List<Crop> crops = serviceCrop.getCropsByUser(id);
+        // Verificar si el usuario tiene cultivos
+        if (crops.isEmpty()) {
+            throw new ApiException(new ApiResponse(
+                    "El usuario con id '" + id + "' no tiene cultivos registrados.",
+                    HttpStatus.NOT_FOUND.value()
+            ));
+        }
+        for (Crop crop : crops) {
+            List<History> histories = repositoryHistory.getHistoriesByCrop(crop.getId());
+
+            for (History history : histories) {
+                records.add(new CropRecordDTO(crop,history));
+            }
+        }
+        return records;
+    }
+
+    /**
      * Crea un nuevo histórico.
      * Válida que los datos del histórico sean correctos y luego lo guarda en la base de datos.
      *
-     * @param historyDTO Datos del nuevo histórico a crear
+     * @param recordDTO Datos del nuevo histórico a crear
      * @return El histórico creado
      */
-    public History Createhistory(HistoryDTO historyDTO) {
-        ValidationMesuares(historyDTO.getMeasures());
-        serviceCrop.getCropById(historyDTO.getCrop());
-        History history = new History(historyDTO);
+    public History Createhistory(RecordDTO recordDTO) {
+        ValidationMesuares(recordDTO.getMeasures());
+        serviceCrop.getCropById(recordDTO.getCrop());
+        History history = new History(recordDTO);
         return repositoryHistory.save(history);
     }
 
@@ -229,9 +262,9 @@ public class SHistory {
      * @param updateHistory   Datos a actualizar en el historial
      * @return El histórico actualizado
      */
-    public History updatedHistory(History existingHistory, HistoryDTO updateHistory) {
+    public History updatedHistory(History existingHistory, RecordDTO updateHistory) {
         if (updateHistory.getMeasures() != null) {
-            HistoryDTO.MeasuresDTO measures = updateHistory.getMeasures();
+            MeasuresDTO measures = updateHistory.getMeasures();
             ValidationMesuares(measures);
             existingHistory.setMeasures(new History.Measures(measures));
         }
@@ -272,4 +305,5 @@ public class SHistory {
                             HttpStatus.INTERNAL_SERVER_ERROR.value()));
         }
     }
+
 }

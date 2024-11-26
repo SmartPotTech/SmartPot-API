@@ -13,7 +13,8 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.DTO.MeasuresDTO;
+import smartpot.com.api.Models.DTO.RecordDTO;
 import smartpot.com.api.Models.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
@@ -86,7 +87,7 @@ public class History implements Serializable {
         @Field("humidity")
         private Double humidity;
 
-        public Measures(HistoryDTO.MeasuresDTO measures) {
+        public Measures(MeasuresDTO measures) {
             this.atmosphere = Double.parseDouble(measures.getAtmosphere());
             this.brightness = Double.parseDouble(measures.getBrightness());
             this.temperature = Double.parseDouble(measures.getTemperature());
@@ -96,7 +97,7 @@ public class History implements Serializable {
         }
     }
 
-    public History(HistoryDTO history) {
+    public History(RecordDTO history) {
         this.date = new Date();
         this.measures = new Measures(history.getMeasures());
         this.crop = new ObjectId(history.getCrop());

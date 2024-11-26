@@ -6,7 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Service.SHistory;
-import smartpot.com.api.Models.DTO.HistoryDTO;
+import smartpot.com.api.Models.DTO.CropRecordDTO;
+import smartpot.com.api.Models.DTO.RecordDTO;
 import smartpot.com.api.Models.Entity.History;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public class HistoryController {
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public History createHistory(@RequestBody HistoryDTO newHistory) {
+    public History createHistory(@RequestBody RecordDTO newHistory) {
         return serviceHistory.Createhistory(newHistory);
     }
 
@@ -53,6 +54,17 @@ public class HistoryController {
     @GetMapping("/crop/{id}")
     public List<History> getByCrop(@PathVariable String id) {
         return serviceHistory.getByCrop(id);
+    }
+
+    /**
+     * Busca un histórico filtrando por un cultivo.
+     *
+     * @param id Identificador ObjectId del cultivo
+     * @return Los históricos encontrado
+     */
+    @GetMapping("/user/{id}")
+    public List<CropRecordDTO> getByUser(@PathVariable String id) {
+        return serviceHistory.getByUser(id);
     }
 
     /**
@@ -75,7 +87,7 @@ public class HistoryController {
      * @return El objeto History actualizado.
      */
     @PutMapping("/Update/{id}")
-    public History updateHistory(@PathVariable String id, @RequestBody HistoryDTO historyDetails) {
+    public History updateHistory(@PathVariable String id, @RequestBody RecordDTO historyDetails) {
         return serviceHistory.updatedHistory(serviceHistory.getHistoryById(id), historyDetails);
     }
 
