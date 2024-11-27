@@ -149,3 +149,92 @@ Contiene las configuraciones y clases relacionadas con la seguridad, como la aut
 
 #### `SmartPotApiApplication.java`
 Archivo principal que contiene el punto de entrada de la aplicación Spring Boot. Aquí se inicia la aplicación y se configura el contexto de Spring.
+
+
+Aquí está el complemento para el archivo `README.md` que incluye explicaciones adicionales, ejemplos y una estructura bien organizada:
+
+---
+
+## Ejecución en Entorno Docker
+
+Para desplegar la aplicación en un entorno Docker, puedes utilizar el siguiente comando:
+
+```bash
+docker run -d --name <CONTAINER_NAME> -p <EXTERNAL_PORT>:<INTERNAL_PORT> \
+-e APP_NAME=<Nombre de la aplicación> \
+-e PORT=<Puerto de escucha interno> \
+-e TITLE=<Título de la API> \
+-e DESCRIPTION=<Descripción de la API> \
+-e VERSION=<Versión de la API> \
+-e AUTHOR=<Nombre del autor o equipo> \
+-e DATA_SOURCE_USERNAME=<Usuario de la base de datos> \
+-e DATA_SOURCE_PASSWORD=<Contraseña de la base de datos> \
+-e DATA_SOURCE_DOMAIN=<Dominio de la base de datos> \
+-e DATA_SOURCE_DB=<Nombre de la base de datos> \
+-e DATA_SOURCE_RETRY_WRITES=<Habilitar o deshabilitar reintentos de escritura (true/false)> \
+-e DATA_SOURCE_W=<Nivel de confirmación de escritura> \
+-e DATA_SOURCE_APP_NAME=<Nombre de la aplicación en MongoDB> \
+-e SECURITY_JWT_SECRET_KEY=<Clave secreta para JWT> \
+-e SECURITY_JWT_EXPIRATION=<Tiempo de expiración del JWT en milisegundos> \
+-e SECURITY_PUBLIC_ROUTES=<Rutas públicas que no requieren autenticación> \
+-e HEADER_CORS_ALLOWED_ORIGINS=<Origen permitido para CORS> \
+-e DEBUGGER_MODE=<Modo de depuración (INFO, DEBUG, OFF)> \
+<DOCKER_IMAGE>
+```
+
+### Variables de Entorno
+A continuación, se describen las variables de entorno necesarias para la ejecución:
+
+#### Configuración de la Aplicación
+- **`APP_NAME`**: Nombre de la aplicación para identificación en el entorno.
+- **`PORT`**: Puerto interno en el que la aplicación escucha.
+- **`TITLE`**: Título descriptivo de la API.
+- **`DESCRIPTION`**: Información breve sobre la API.
+- **`VERSION`**: Versión de la API (en formato semántico, como `1.0.0`).
+- **`AUTHOR`**: Nombre del autor o equipo desarrollador.
+
+#### Configuración de la Base de Datos
+- **`DATA_SOURCE_USERNAME`**: Usuario de acceso a la base de datos.
+- **`DATA_SOURCE_PASSWORD`**: Contraseña de acceso.
+- **`DATA_SOURCE_DOMAIN`**: URL o dominio del clúster de MongoDB.
+- **`DATA_SOURCE_DB`**: Nombre de la base de datos.
+- **`DATA_SOURCE_RETRY_WRITES`**: Define si los reintentos de escritura están habilitados (`true` o `false`).
+- **`DATA_SOURCE_W`**: Nivel de confirmación de escritura (por ejemplo, `majority`).
+- **`DATA_SOURCE_APP_NAME`**: Nombre usado para identificar la aplicación en las métricas de MongoDB.
+
+#### Configuración de Seguridad
+- **`SECURITY_JWT_SECRET_KEY`**: Clave secreta utilizada para firmar y verificar los tokens JWT.
+- **`SECURITY_JWT_EXPIRATION`**: Duración del token JWT en milisegundos (por ejemplo, `300000` para 5 minutos).
+- **`SECURITY_PUBLIC_ROUTES`**: Endpoints públicos que no requieren autenticación (separados por comas).
+
+#### Configuración de CORS
+- **`HEADER_CORS_ALLOWED_ORIGINS`**: Origen permitido para solicitudes CORS (por ejemplo, `http://localhost:3000`).
+
+#### Configuración de Depuración
+- **`DEBUGGER_MODE`**: Nivel de detalle para los logs (`INFO`, `DEBUG`, `OFF`).
+
+### Ejemplo de Ejecución
+Aquí tienes un ejemplo práctico con valores de ejemplo que puedes ajustar según tu entorno:
+
+```bash
+docker run -d --name smartpot-api-dev -p 8091:8091 \
+-e APP_NAME=SmartPot-API \
+-e PORT=8091 \
+-e TITLE="SmartPot API" \
+-e DESCRIPTION="Documentación de la API REST de SmartPot" \
+-e VERSION=1.0.0 \
+-e AUTHOR="SmartPot Developers" \
+-e DATA_SOURCE_USERNAME=SmartPot-Admin \
+-e DATA_SOURCE_PASSWORD=SecurePassword123 \
+-e DATA_SOURCE_DOMAIN=smartpot.example.mongodb.net \
+-e DATA_SOURCE_DB=smartpot \
+-e DATA_SOURCE_RETRY_WRITES=true \
+-e DATA_SOURCE_W=majority \
+-e DATA_SOURCE_APP_NAME=smartpot-app \
+-e SECURITY_JWT_SECRET_KEY=SuperSecretKey \
+-e SECURITY_JWT_EXPIRATION=300000 \
+-e SECURITY_PUBLIC_ROUTES="/auth/login,/**" \
+-e HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+-e DEBUGGER_MODE=INFO \
+sebastian190030/api-smartpot:latest
+```
