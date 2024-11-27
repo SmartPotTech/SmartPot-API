@@ -8,7 +8,7 @@ WORKDIR /app
 COPY target/api-0.0.1-SNAPSHOT.jar /app/api-smarpot.jar
 
 # Exponer el puerto que usa la aplicación
-EXPOSE 3000
+EXPOSE 8091
 
 # Comando para ejecutar aplicación
 CMD ["java","-jar","/app/api-smarpot.jar"]
