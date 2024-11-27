@@ -34,3 +34,4 @@ build/
 
 credentials.properties
 deploy.render.cmd
+.env

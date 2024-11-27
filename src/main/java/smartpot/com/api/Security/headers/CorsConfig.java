@@ -1,6 +1,7 @@
 package smartpot.com.api.Security.headers;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
@@ -17,7 +18,7 @@ public class CorsConfig implements CorsConfigurationSource {
     private String allowedOrigins;
 
     @Override
-    public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+    public CorsConfiguration getCorsConfiguration(@NonNull HttpServletRequest request) {
         CorsConfiguration config = new CorsConfiguration();
         List<String> originsList;
         if (allowedOrigins.contains(",")) {
