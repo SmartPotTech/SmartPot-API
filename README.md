@@ -11,7 +11,7 @@
   mvn clean package -DskipTests -P docker -f pom.xml
   ```
 
-    - Esto limpiará el proyecto, compilará el código y empaquetará la aplicación en un archivo JAR. El uso de `-DskipTests` omite las pruebas durante la construcción, esto con la finalidad de que no genere error, dado que se cambia las properties por variables de entorno. El uso de `-P docker` es porque se definió un perfil de build especifico donde no se compila en credentials.propierties
+    - Esto limpiará el proyecto, compilará el código y empaquetará la aplicación en un archivo JAR. El uso de `-DskipTests` omite las pruebas durante la construcción, esto con la finalidad de que no genere error, dado que se cambia las properties por variables de entorno. El uso de `-P docker` es porque se definió un perfil de build especifico donde compila ignorando él .env
 
 ### 2. Creación de la Imagen Docker
 
@@ -38,7 +38,7 @@
   docker push sebastian190030/api-smartpot:latest
   ```
 
-    - Esto hace que tu imagen esté disponible en linea públicamente
+    - Esto hace que tu imagen esté disponible en línea públicamente
 
 ### 4. Despliegue en Render.com
 
@@ -52,7 +52,7 @@
 - **Haz clic en "Crear"** para iniciar el despliegue.
 
 #### 4.2 Despliegue
-- **Usa el Deploy hook** para hacer deploy automatico
+- **Usa el Deploy hook** para hacer deploy automático
 
   ```bash
   cmd /c deploy.render.cmd
@@ -116,7 +116,7 @@ Contiene la lógica de acceso a datos. Aquí se encuentran los repositorios que 
   - **`RUser.java`**: Repositorio para la entidad `User`.
 
 ##### `DTO/`
-Contiene las clases de objetos de transferencia de datos (DTOs). Estas clases son utilizadas para enviar y recibir datos entre el cliente y el servidor.
+Contiene las clases de objetos de transferencia de datos (DTO). Estas clases son utilizadas para enviar y recibir datos entre el cliente y el servidor.
 
 - **`CommandDTO.java`**: DTO para el recurso `Command`.
 - **`CropDTO.java`**: DTO para el recurso `Crop`.
@@ -124,7 +124,7 @@ Contiene las clases de objetos de transferencia de datos (DTOs). Estas clases so
 - **`NotificationDTO.java`**: DTO para el recurso `Notification`.
 - **`SessionDTO.java`**: DTO para el recurso `Session`.
 - **`UserDTO.java`**: DTO para el recurso `User`.
-- **`ObjectIdSerializer.java`**: Serializador personalizado para el tipo de ID de objetos.
+- **`ObjectIdSerializer.java`**: Serializado personalizado para el tipo de ID de objetos.
 
 ##### `Entity/`
 Contiene las clases que representan las entidades JPA, mapeadas a las tablas de la base de datos.
