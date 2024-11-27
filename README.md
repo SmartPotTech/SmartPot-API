@@ -233,7 +233,7 @@ docker run -d --name smartpot-api-dev -p 8091:8091 \
 -e DATA_SOURCE_APP_NAME=smartpot-app \
 -e SECURITY_JWT_SECRET_KEY=SuperSecretKey \
 -e SECURITY_JWT_EXPIRATION=300000 \
--e SECURITY_PUBLIC_ROUTES="/auth/login,/**" \
+-e SECURITY_PUBLIC_ROUTES="/auth/login" \
 -e HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
 -e DEBUGGER_MODE=INFO \
 sebastian190030/api-smartpot:latest
