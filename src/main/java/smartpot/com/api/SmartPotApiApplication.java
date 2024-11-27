@@ -10,6 +10,11 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 public class SmartPotApiApplication {
 
     public static void main(String[] args) {
+        loadEnv();
+        SpringApplication.run(SmartPotApiApplication.class, args);
+    }
+
+    private static void loadEnv(){
         // Carga de .env
         Dotenv dotenv = Dotenv.load();
 
@@ -40,7 +45,5 @@ public class SmartPotApiApplication {
 
         // Debug
         System.setProperty("DEBUGGER_MODE", dotenv.get("DEBUGGER_MODE"));
-        SpringApplication.run(SmartPotApiApplication.class, args);
     }
-
 }
