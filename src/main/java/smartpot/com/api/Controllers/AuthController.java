@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Service.SUser;
+import smartpot.com.api.Models.DTO.UserDTO;
 import smartpot.com.api.Models.Entity.User;
 import smartpot.com.api.Security.jwt.JwtService;
 
@@ -27,7 +28,7 @@ public class AuthController {
     // TODO: Handle no allowed method
 
     @PostMapping("/login")
-    public String login(@RequestBody User reqUser) {
+    public String login(@RequestBody UserDTO reqUser) {
         User user = serviceUser.getUserByEmail(reqUser.getEmail());
         if (user == null) return "Invalid Credentials";
 
