@@ -29,6 +29,7 @@ public class CorsConfig implements CorsConfigurationSource {
         config.setAllowedOrigins(originsList);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
         return config;
     }
 
