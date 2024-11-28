@@ -16,7 +16,7 @@ import java.util.List;
 @RequestMapping("/Records")
 public class HistoryController {
 
-    private SHistory serviceHistory;
+    private final SHistory serviceHistory;
 
     @Autowired
     public HistoryController(SHistory serviceHistory) {
