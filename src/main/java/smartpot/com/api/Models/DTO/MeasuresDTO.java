@@ -2,9 +2,12 @@ package smartpot.com.api.Models.DTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import smartpot.com.api.Models.Entity.History;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class MeasuresDTO {
     private String atmosphere;
     private String brightness;
