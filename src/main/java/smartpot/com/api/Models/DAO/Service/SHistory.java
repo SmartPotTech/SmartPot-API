@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Repository.RHistory;
-import smartpot.com.api.Models.DTO.CropDTO;
 import smartpot.com.api.Models.DTO.CropRecordDTO;
 import smartpot.com.api.Models.DTO.MeasuresDTO;
 import smartpot.com.api.Models.DTO.RecordDTO;
 import smartpot.com.api.Models.Entity.Crop;
+import smartpot.com.api.Models.Entity.DateRange;
 import smartpot.com.api.Models.Entity.History;
 
 import java.util.ArrayList;
@@ -167,7 +167,7 @@ public class SHistory {
      *
      * @return Lista de todos los históricos existentes
      */
-    public List<History> getAllHistorys() {
+    public List<History> getAllHistories() {
         List<History> records = repositoryHistory.findAll();
         if (records.isEmpty()) {
             throw new ApiException(new ApiResponse(
@@ -209,6 +209,39 @@ public class SHistory {
      */
     public List<History> getByCrop(String cropId) {
         return repositoryHistory.getHistoriesByCrop(serviceCrop.getCropById(cropId).getId());
+    }
+
+    /**
+     * Obtiene la lista de históricos asociada a un cultivo específico y a un rango de fechas.
+     * Se busca el cultivo por su ID, luego se recuperan los históricos relacionados con ese cultivo
+     * si están dentro de las fechas.
+     *
+     * @param cropId El ID del cultivo cuyo historial se desea recuperar.
+     * @return Una lista de objetos {@link History} que representan los históricos asociados al cultivo.
+     * @throws ApiException Si el cultivo con el ID proporcionado no se encuentra o si ocurre un error en la consulta.
+     */
+    public List<History> getHistoriesByCropAndDateBetween(String cropId, DateRange ranges) {
+        if (!ObjectId.isValid(cropId)) {
+            throw new ApiException(new ApiResponse(
+                    "El id '" + cropId + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        if (ranges.getEndDate() == null || ranges.getStartDate() == null) {
+            throw new ApiException(new ApiResponse(
+                    "Los rangos de fechas no están definidos",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+
+        // TODO: Validar correctamente las fechas
+
+        return repositoryHistory.getHistoriesByCropAndDateBetween(
+                new ObjectId(cropId),
+                ranges.getStartDate(),
+                ranges.getEndDate()
+        );
     }
 
     /**

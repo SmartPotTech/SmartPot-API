@@ -8,6 +8,7 @@ import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Models.DAO.Service.SHistory;
 import smartpot.com.api.Models.DTO.CropRecordDTO;
 import smartpot.com.api.Models.DTO.RecordDTO;
+import smartpot.com.api.Models.Entity.DateRange;
 import smartpot.com.api.Models.Entity.History;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public class HistoryController {
      */
     @GetMapping("/All")
     public List<History> getAllHistories() {
-        return serviceHistory.getAllHistorys();
+        return serviceHistory.getAllHistories();
     }
 
     /**
@@ -54,6 +55,18 @@ public class HistoryController {
     @GetMapping("/crop/{id}")
     public List<History> getByCrop(@PathVariable String id) {
         return serviceHistory.getByCrop(id);
+    }
+
+    /**
+     * Busca un histórico filtrando por un cultivo y por un rango de fechas.
+     *
+     * @param id Identificador ObjectId del cultivo
+     * @param ranges Rango de fechas
+     * @return Los históricos encontrado
+     */
+    @PostMapping("/crop/between/{id}")
+    public List<History> getByCropAndDateRange(@PathVariable String id, @RequestBody DateRange ranges) {
+        return serviceHistory.getHistoriesByCropAndDateBetween(id, ranges);
     }
 
     /**
