@@ -44,7 +44,6 @@ public class SmartPotApiApplication {
 
         //Config TOMCAT
         System.setProperty("SERVER_TOMCAT_TIMEOUT", dotenv.get("SERVER_TOMCAT_TIMEOUT"));
-        System.setProperty("SERVER_TOMCAT_THREADS", dotenv.get("SERVER_TOMCAT_THREADS"));
 
         // Debug
         System.setProperty("DEBUGGER_MODE", dotenv.get("DEBUGGER_MODE"));
