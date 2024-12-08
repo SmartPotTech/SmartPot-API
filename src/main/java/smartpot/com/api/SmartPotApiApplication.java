@@ -19,6 +19,7 @@ public class SmartPotApiApplication {
         Dotenv dotenv = Dotenv.load();
 
         // Configuración APP
+        System.setProperty("DATA_CONNECTION_METHOD", dotenv.get("DATA_CONNECTION_METHOD"));
         System.setProperty("APP_NAME", dotenv.get("APP_NAME"));
         System.setProperty("PORT", dotenv.get("PORT"));
         System.setProperty("TITLE", dotenv.get("TITLE"));
