@@ -19,7 +19,6 @@ public class SmartPotApiApplication {
         Dotenv dotenv = Dotenv.load();
 
         // Configuración APP
-        System.setProperty("DATA_CONNECTION_METHOD", dotenv.get("DATA_CONNECTION_METHOD"));
         System.setProperty("APP_NAME", dotenv.get("APP_NAME"));
         System.setProperty("PORT", dotenv.get("PORT"));
         System.setProperty("TITLE", dotenv.get("TITLE"));
@@ -28,13 +27,12 @@ public class SmartPotApiApplication {
         System.setProperty("AUTHOR", dotenv.get("AUTHOR"));
 
         // Conexión de MongoDB
+        System.setProperty("DATA_CONNECTION_METHOD", dotenv.get("DATA_CONNECTION_METHOD"));
         System.setProperty("DATA_SOURCE_USERNAME", dotenv.get("DATA_SOURCE_USERNAME"));
         System.setProperty("DATA_SOURCE_PASSWORD", dotenv.get("DATA_SOURCE_PASSWORD"));
         System.setProperty("DATA_SOURCE_DOMAIN", dotenv.get("DATA_SOURCE_DOMAIN"));
         System.setProperty("DATA_SOURCE_DB", dotenv.get("DATA_SOURCE_DB"));
-        System.setProperty("DATA_SOURCE_RETRY_WRITES", dotenv.get("DATA_SOURCE_RETRY_WRITES"));
-        System.setProperty("DATA_SOURCE_W", dotenv.get("DATA_SOURCE_W"));
-        System.setProperty("DATA_SOURCE_APP_NAME", dotenv.get("DATA_SOURCE_APP_NAME"));
+        System.setProperty("DATA_PARAMS", dotenv.get("DATA_PARAMS"));
 
         // Security Config
         System.setProperty("SECURITY_JWT_SECRET_KEY", dotenv.get("SECURITY_JWT_SECRET_KEY"));
