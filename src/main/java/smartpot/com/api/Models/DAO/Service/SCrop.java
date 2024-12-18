@@ -131,6 +131,7 @@ public class SCrop {
      * @return Número total de cultivos del usuario
      */
     public long countCropsByUser(String id) {
+        System.out.println("//////////////////////////////////////////////"+getCropsByUser(id).size());
         return getCropsByUser(id).size();
 
     }

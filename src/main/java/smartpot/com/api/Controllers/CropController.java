@@ -82,8 +82,8 @@ public class CropController {
      * @param id Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
-    @GetMapping("/count")
-    public long countCropsByUser(@RequestParam String id) {
+    @GetMapping("/count/{id}")
+    public long countCropsByUser(@PathVariable String id) {
         return serviceCrop.countCropsByUser(id);
     }
 
