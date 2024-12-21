@@ -10,7 +10,7 @@ import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Commands.Model.DAO.Repository.RCommand;
 import smartpot.com.api.Commands.Model.Entity.Command;
-import smartpot.com.api.Crops.Model.DAO.Service.SCrop;
+import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 
 import java.util.Date;
 import java.util.List;
@@ -18,31 +18,35 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SCommand {
+public class SCommand implements SCommandI{
 
     private final RCommand repositoryCommand;
-    private final SCrop serviceCrop;
+    private final SCropI serviceCrop;
 
     @Autowired
-    public SCommand(RCommand repositoryCommand, SCrop serviceCrop) {
+    public SCommand(RCommand repositoryCommand, SCropI serviceCrop) {
         this.repositoryCommand = repositoryCommand;
         this.serviceCrop = serviceCrop;
     }
 
+    @Override
     public List<Command> getAllCommands() {
         return repositoryCommand.findAll();
     }
 
+    @Override
     public Command getCommandById(String id) {
         return repositoryCommand.findById(new ObjectId(id)).orElse(null);
     }
 
+    @Override
     public Command createCommand(Command newCommand) {
         newCommand.setDateCreated(new Date());
         newCommand.setStatus("PENDING");
         return repositoryCommand.save(newCommand);
     }
 
+    @Override
     public Command updateCommand(String id, Command upCommand) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -106,6 +110,7 @@ public class SCommand {
 
     }
 
+    @Override
     public void deleteCommand(String id) {
         repositoryCommand.deleteById(new ObjectId(id));
     }

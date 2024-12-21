@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.jwt;
+package smartpot.com.api.Security.Config.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

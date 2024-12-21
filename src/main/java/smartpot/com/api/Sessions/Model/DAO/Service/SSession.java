@@ -10,7 +10,7 @@ import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Sessions.Model.DAO.Repository.RSession;
 import smartpot.com.api.Sessions.Model.Entity.Session;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.Date;
@@ -20,17 +20,18 @@ import java.util.Optional;
 @Data
 @Builder
 @Service
-public class SSession {
+public class SSession implements SSessionI{
 
     private final RSession repositorySession;
-    private final SUser user;
+    private final SUserI user;
 
     @Autowired
-    public SSession(RSession repositorySession, SUser user) {
+    public SSession(RSession repositorySession, SUserI user) {
         this.repositorySession = repositorySession;
         this.user = user;
     }
 
+    @Override
     public Session getSessionById(String sessionId) {
         if (!ObjectId.isValid(sessionId)) {
             throw new ApiException(new ApiResponse(
@@ -44,10 +45,12 @@ public class SSession {
         ));
     }
 
+    @Override
     public List<Session> getSessionsByUser(String user) {
         return repositorySession.findByUser(user);
     }
 
+    @Override
     public List<Session> getAllSessions() {
         return repositorySession.findAll();
     }
@@ -60,6 +63,7 @@ public class SSession {
         return repositorySession.findByRegistrationBetween(startDate, endDate);
     }*/
 
+    @Override
     public long countSessionsByUser(String user) {
         return repositorySession.countByUser(user);
     }
@@ -68,6 +72,7 @@ public class SSession {
         return repositorySession.findByRegistrationAfter(currentDate);
     }*/
 
+    @Override
     public Session createSession(Session newSession) {
         // Validar que el campo "user" no esté vacío
         if (newSession.getUser() == null) {
@@ -97,6 +102,7 @@ public class SSession {
         return repositorySession.save(newSession);
     }
 
+    @Override
     public void deleteSessionById(String sessionId) {
         if (!ObjectId.isValid(sessionId)) {
             throw new ApiException(new ApiResponse(
@@ -120,6 +126,7 @@ public class SSession {
 
     }
 
+    @Override
     public void deleteSessionByIdUser(String userId) {
         if (!ObjectId.isValid(userId)) {
             throw new ApiException(new ApiResponse(
@@ -142,6 +149,7 @@ public class SSession {
 
     }
 
+    @Override
     public List<Session> getSessionByUser(String userId) {
         if (!ObjectId.isValid(userId)) {
             throw new ApiException(new ApiResponse(

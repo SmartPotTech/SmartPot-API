@@ -17,7 +17,7 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SNotification {
+public class SNotification implements SNotificationI {
 
     private final RNotification repositoryNotification;
 
@@ -26,11 +26,12 @@ public class SNotification {
         this.repositoryNotification = repositoryNotification;
     }
 
+    @Override
     public List<Notification> findAll() {
         return repositoryNotification.findAll();
     }
 
-
+    @Override
     public List<Notification> findByUser(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -45,6 +46,7 @@ public class SNotification {
                 ));
     }
 
+    @Override
     public List<Notification> findByUserAndType(String id, String type) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -59,6 +61,7 @@ public class SNotification {
                 ));
     }
 
+    @Override
     public List<Notification> findByUserAndDate(String id, String date) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -73,6 +76,7 @@ public class SNotification {
                 ));
     }
 
+    @Override
     public Notification updateNotification(String id, Notification notification) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -83,7 +87,7 @@ public class SNotification {
         return repositoryNotification.updateNotification(new ObjectId(id), notification);
     }
 
-
+    @Override
     public Notification delete(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -94,6 +98,7 @@ public class SNotification {
         return repositoryNotification.delete(new ObjectId(id));
     }
 
+    @Override
     public Notification save(Notification notification) {
         return repositoryNotification.save(notification);
     }

@@ -2,7 +2,7 @@ package smartpot.com.api.Notifications.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Notifications.Model.DAO.Service.SNotification;
+import smartpot.com.api.Notifications.Model.DAO.Service.SNotificationI;
 import smartpot.com.api.Notifications.Model.Entity.Notification;
 
 import java.util.List;
@@ -11,10 +11,10 @@ import java.util.List;
 @RequestMapping("/Notificaciones")
 public class NotificationController {
 
-    private final SNotification serviceNotification;
+    private final SNotificationI serviceNotification;
 
     @Autowired
-    public NotificationController(SNotification serviceNotification) {
+    public NotificationController(SNotificationI serviceNotification) {
         this.serviceNotification = serviceNotification;
     }
 

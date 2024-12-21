@@ -7,20 +7,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
-import smartpot.com.api.Security.jwt.JwtService;
+import smartpot.com.api.Security.Config.jwt.JwtService;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final SUser serviceUser;
+    private final SUserI serviceUser;
     private final JwtService jwtService;
 
     @Autowired
-    public AuthController(final SUser serviceUser, final JwtService jwtService) {
+    public AuthController(final SUserI serviceUser, final JwtService jwtService) {
         this.serviceUser = serviceUser;
         this.jwtService = jwtService;
     }

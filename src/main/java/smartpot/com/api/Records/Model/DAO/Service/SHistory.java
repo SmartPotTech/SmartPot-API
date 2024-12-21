@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Crops.Model.DAO.Service.SCrop;
+import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Records.Model.DAO.Repository.RHistory;
@@ -26,13 +26,13 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SHistory {
+public class SHistory implements SHistoryI {
 
     private final RHistory repositoryHistory;
-    private final SCrop serviceCrop;
+    private final SCropI serviceCrop;
 
     @Autowired
-    public SHistory(RHistory repositoryHistory, SCrop serviceCrop) {
+    public SHistory(RHistory repositoryHistory, SCropI serviceCrop) {
         this.repositoryHistory = repositoryHistory;
         this.serviceCrop = serviceCrop;
     }
@@ -168,6 +168,7 @@ public class SHistory {
      *
      * @return Lista de todos los históricos existentes
      */
+    @Override
     public List<History> getAllHistories() {
         List<History> records = repositoryHistory.findAll();
         if (records.isEmpty()) {
@@ -186,6 +187,7 @@ public class SHistory {
      * @param id Identificador del histórico
      * @return El histórico encontrado
      */
+    @Override
     public History getHistoryById(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -208,6 +210,7 @@ public class SHistory {
      * @return Una lista de objetos {@link History} que representan los históricos asociados al cultivo.
      * @throws ApiException Si el cultivo con el ID proporcionado no se encuentra o si ocurre un error en la consulta.
      */
+    @Override
     public List<History> getByCrop(String cropId) {
         return repositoryHistory.getHistoriesByCrop(serviceCrop.getCropById(cropId).getId());
     }
@@ -221,6 +224,7 @@ public class SHistory {
      * @return Una lista de objetos {@link History} que representan los históricos asociados al cultivo.
      * @throws ApiException Si el cultivo con el ID proporcionado no se encuentra o si ocurre un error en la consulta.
      */
+    @Override
     public List<History> getHistoriesByCropAndDateBetween(String cropId, DateRange ranges) {
         if (!ObjectId.isValid(cropId)) {
             throw new ApiException(new ApiResponse(
@@ -254,6 +258,7 @@ public class SHistory {
      * @return Una lista de objetos {@link CropRecordDTO} que contienen información de los cultivos y sus registros históricos.
      * @throws ApiException Si el ID del usuario no es válido (formato incorrecto) o si no se encuentran cultivos asociados al usuario.
      */
+    @Override
     public List<CropRecordDTO> getByUser(String id) {
         List<CropRecordDTO> records = new ArrayList<>();
         List<Crop> crops = serviceCrop.getCropsByUser(id);
@@ -281,6 +286,7 @@ public class SHistory {
      * @param recordDTO Datos del nuevo histórico a crear
      * @return El histórico creado
      */
+    @Override
     public History Createhistory(RecordDTO recordDTO) {
         ValidationMesuares(recordDTO.getMeasures());
         serviceCrop.getCropById(recordDTO.getCrop());
@@ -296,6 +302,7 @@ public class SHistory {
      * @param updateHistory   Datos a actualizar en el historial
      * @return El histórico actualizado
      */
+    @Override
     public History updatedHistory(History existingHistory, RecordDTO updateHistory) {
         if (updateHistory.getMeasures() != null) {
             MeasuresDTO measures = updateHistory.getMeasures();
@@ -325,6 +332,7 @@ public class SHistory {
      * @param existingHistory El histórico a eliminar
      * @return Respuesta HTTP con un mensaje de éxito o error
      */
+    @Override
     public ResponseEntity<ApiResponse> deleteHistory(History existingHistory) {
         try {
             repositoryHistory.deleteById(existingHistory.getId());

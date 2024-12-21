@@ -4,8 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Crops.Model.DAO.Service.SCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
 
@@ -15,10 +15,10 @@ import java.util.List;
 @RequestMapping("/Cultivos")
 public class CropController {
 
-    private final SCrop serviceCrop;
+    private final SCropI serviceCrop;
 
     @Autowired
-    public CropController(SCrop serviceCrop) {
+    public CropController(SCropI serviceCrop) {
         this.serviceCrop = serviceCrop;
     }
 

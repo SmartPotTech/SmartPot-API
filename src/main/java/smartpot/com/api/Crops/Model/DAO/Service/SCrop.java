@@ -16,7 +16,7 @@ import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
 import smartpot.com.api.Crops.Model.Entity.Status;
 import smartpot.com.api.Crops.Model.Entity.Type;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.ArrayList;
@@ -33,13 +33,13 @@ import java.util.stream.Stream;
 @Data
 @Builder
 @Service
-public class SCrop {
+public class SCrop implements SCropI{
 
     private final RCrop repositoryCrop;
-    private final SUser serviceUser;
+    private final SUserI serviceUser;
 
     @Autowired
-    public SCrop(RCrop repositoryCrop, SUser serviceUser) {
+    public SCrop(RCrop repositoryCrop, SUserI serviceUser) {
         this.repositoryCrop = repositoryCrop;
         this.serviceUser = serviceUser;
     }
@@ -53,6 +53,7 @@ public class SCrop {
      * @throws ResponseStatusException Si el id proporcionado no es válido o no se encuentra el cultivo.
      * @throws Exception               Si no se encuentra el cultivo con el id proporcionado.
      */
+    @Override
     public Crop getCropById(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
@@ -72,6 +73,7 @@ public class SCrop {
      *
      * @return Lista de todos los cultivos existentes
      */
+    @Override
     public List<Crop> getCrops() {
         List<Crop> crops = repositoryCrop.findAll();
         if (crops == null || crops.isEmpty()) {
@@ -89,6 +91,7 @@ public class SCrop {
      * @param id del Usuario propietario de los cultivos
      * @return Lista de cultivos pertenecientes al usuario
      */
+    @Override
     public List<Crop> getCropsByUser(String id) {
         User user = serviceUser.getUserById(id);
         List<Crop> crops = repositoryCrop.findAll();
@@ -113,6 +116,7 @@ public class SCrop {
      * @param type Tipo del cultivo
      * @return Lista de cultivos que coinciden con el tipo especificado
      */
+    @Override
     public List<Crop> getCropsByType(String type) {
         boolean isValidSType = Stream.of(Type.values())
                 .anyMatch(r -> r.name().equalsIgnoreCase(type));
@@ -131,6 +135,7 @@ public class SCrop {
      * @param id del Usuario del que se quieren contar los cultivos
      * @return Número total de cultivos del usuario
      */
+    @Override
     public long countCropsByUser(String id) {
         System.out.println("//////////////////////////////////////////////"+getCropsByUser(id).size());
         return getCropsByUser(id).size();
@@ -143,6 +148,7 @@ public class SCrop {
      * @param status Estado del cultivo a buscar
      * @return Lista de cultivos que se encuentran en el estado especificado
      */
+    @Override
     public List<Crop> getCropsByStatus(String status) {
         boolean isValidStatus = Stream.of(Status.values())
                 .anyMatch(r -> r.name().equalsIgnoreCase(status));
@@ -160,6 +166,7 @@ public class SCrop {
      *
      * @return Cultivo guardado
      */
+    @Override
     public Crop createCrop(CropDTO newCropDto) {
         serviceUser.getUserById(newCropDto.getUser());
         Crop newCrop = cropDtotoCrop(newCropDto);
@@ -186,6 +193,7 @@ public class SCrop {
      * @param id El identificador del Crop a actualizar.
      * @return El Crop actualizado después de guardarlo en el servicio.
      */
+    @Override
     public Crop updatedCrop(String id, CropDTO cropDto) {
         serviceUser.getUserById(cropDto.getUser());
         Crop updatedCrop = cropDtotoCrop(cropDto);
@@ -235,6 +243,7 @@ public class SCrop {
 
         repositoryCrop.deleteById(existingCrop.getId());
     }*/
+    @Override
     public ResponseEntity<ApiResponse> deleteCrop(Crop existingCrop) {
         try {
             repositoryCrop.deleteById(existingCrop.getId());

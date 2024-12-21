@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.jwt;
+package smartpot.com.api.Security.Config.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

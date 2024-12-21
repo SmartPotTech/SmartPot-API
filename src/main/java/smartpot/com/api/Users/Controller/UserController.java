@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
 
@@ -19,10 +19,10 @@ import java.util.List;
 @Tag(name = "Usuarios", description = "Operaciones relacionadas con usuarios")
 public class UserController {
 
-    private final SUser serviceUser;
+    private final SUserI serviceUser;
 
     @Autowired
-    public UserController(SUser serviceUser) {
+    public UserController(SUserI serviceUser) {
         this.serviceUser = serviceUser;
     }
 

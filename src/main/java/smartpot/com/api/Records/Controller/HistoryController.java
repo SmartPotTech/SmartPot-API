@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Records.Model.DAO.Service.SHistory;
+import smartpot.com.api.Records.Model.DAO.Service.SHistoryI;
 import smartpot.com.api.Records.Model.DTO.CropRecordDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
 import smartpot.com.api.Records.Model.Entity.DateRange;
@@ -17,10 +17,10 @@ import java.util.List;
 @RequestMapping("/Records")
 public class HistoryController {
 
-    private final SHistory serviceHistory;
+    private final SHistoryI serviceHistory;
 
     @Autowired
-    public HistoryController(SHistory serviceHistory) {
+    public HistoryController(SHistoryI serviceHistory) {
         this.serviceHistory = serviceHistory;
     }
 

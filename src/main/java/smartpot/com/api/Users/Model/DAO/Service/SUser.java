@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,7 @@ import java.util.stream.Stream;
 @Data
 @Builder
 @Service
-public class SUser implements UserDetailsService {
+public class SUser implements SUserI {
     private final RUser repositoryUser;
 
     @Autowired
@@ -78,7 +77,8 @@ public class SUser implements UserDetailsService {
      * @param id El identificador a validar.
      * @throws ApiException Si el ID no es válido.
      */
-    private void ValidationId(String id) {
+    @Override
+    public void ValidationId(String id) {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
                     "El id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
@@ -93,7 +93,8 @@ public class SUser implements UserDetailsService {
      * @param name El nombre a validar.
      * @throws ApiException Si el nombre no es válido.
      */
-    private void ValidationName(String name) {
+    @Override
+    public void ValidationName(String name) {
         if (!Pattern.matches(NAME_PATTERN, name)) {
             throw new ApiException(new ApiResponse(
                     "El nombre '" + name + "' no es válido. Debe tener entre 4 y 15 caracteres y solo letras.",
@@ -108,7 +109,8 @@ public class SUser implements UserDetailsService {
      * @param lastname El apellido a validar.
      * @throws ApiException Si el apellido no es válido.
      */
-    private void ValidationLastname(String lastname) {
+    @Override
+    public void ValidationLastname(String lastname) {
         if (!Pattern.matches(LASTNAME_PATTERN, lastname)) {
             throw new ApiException(new ApiResponse(
                     "El apellido '" + lastname + "' no es valido. El apellido debe tener entre 4 y 30 caracteres",
@@ -123,7 +125,8 @@ public class SUser implements UserDetailsService {
      * @param email El correo electrónico a validar.
      * @throws ApiException Si el correo no es válido.
      */
-    private void ValidationEmail(String email) {
+    @Override
+    public void ValidationEmail(String email) {
         if (!Pattern.matches(EMAIL_PATTERN, email)) {
             throw new ApiException(new ApiResponse(
                     "El correo electrónico '" + email + "' no es válido. Asegúrate de que sigue el formato correcto.",
@@ -138,7 +141,8 @@ public class SUser implements UserDetailsService {
      * @param password La contraseña a validar.
      * @throws ApiException Si la contraseña no es válida.
      */
-    private void ValidationPassword(String password) {
+    @Override
+    public void ValidationPassword(String password) {
         if (!Pattern.matches(PASSWORD_PATTERN, password)) {
             throw new ApiException(new ApiResponse(
                     "La Contraseña '" + password + "' no es válida. La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial.",
@@ -153,7 +157,8 @@ public class SUser implements UserDetailsService {
      * @param role El rol a validar.
      * @throws ApiException Si el rol no es válido.
      */
-    private void ValidationRole(String role) {
+    @Override
+    public void ValidationRole(String role) {
         if (role == null || role.isEmpty()) {
             throw new ApiException(new ApiResponse(
                     "El rol no puede estar vacío",
@@ -176,7 +181,8 @@ public class SUser implements UserDetailsService {
      * @param email El correo electrónico a verificar.
      * @throws ApiException Si el correo ya está en uso.
      */
-    private void isEmailExist(String email) {
+    @Override
+    public void isEmailExist(String email) {
         if (!repositoryUser.findByEmail(email).isEmpty()) {
             throw new ApiException(new ApiResponse(
                     "El email '" + email + "' ya está en uso.",
@@ -191,6 +197,7 @@ public class SUser implements UserDetailsService {
      * @return Lista de usuarios.
      * @throws ApiException Si no se encuentran usuarios en la base de datos.
      */
+    @Override
     public List<User> getAllUsers() {
         List<User> users = repositoryUser.findAll();
         if (users.isEmpty()) {
@@ -209,6 +216,7 @@ public class SUser implements UserDetailsService {
      * @return El usuario creado.
      * @throws ApiException Sí ocurre algún error durante la creación.
      */
+    @Override
     public User CreateUser(UserDTO userDTO) {
         ValidationName(userDTO.getName());
         ValidationLastname(userDTO.getLastname());
@@ -240,6 +248,7 @@ public class SUser implements UserDetailsService {
      * @return El usuario encontrado.
      * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
      */
+    @Override
     public User getUserById(String id) {
         ValidationId(id);
 
@@ -257,6 +266,7 @@ public class SUser implements UserDetailsService {
      * @return El usuario encontrado.
      * @throws ApiException Si no se encuentra un usuario con el correo electrónico proporcionado.
      */
+    @Override
     public User getUserByEmail(String email) {
         ValidationEmail(email);
 
@@ -279,6 +289,7 @@ public class SUser implements UserDetailsService {
      * @return Lista de usuarios que coinciden con el nombre y apellido.
      * @throws ApiException Si no se encuentra un usuario con el nombre y apellido proporcionados.
      */
+    @Override
     public List<User> getUsersByFullName(String name, String lastname) {
         ValidationName(name);
         ValidationLastname(lastname);
@@ -300,6 +311,7 @@ public class SUser implements UserDetailsService {
      * @return Lista de usuarios que coinciden con el nombre.
      * @throws ApiException Si no se encuentra un usuario con el nombre proporcionado.
      */
+    @Override
     public List<User> getUsersByName(String name) {
         ValidationName(name);
 
@@ -320,6 +332,7 @@ public class SUser implements UserDetailsService {
      * @return Lista de usuarios que coinciden con el apellido.
      * @throws ApiException Si no se encuentra un usuario con el apellido proporcionado.
      */
+    @Override
     public List<User> getUsersByLastname(String lastname) {
         ValidationLastname(lastname);
 
@@ -342,6 +355,7 @@ public class SUser implements UserDetailsService {
      * @return Una lista de usuarios que tienen el rol especificado.
      * @throws ApiException Si no se encuentran usuarios con el rol proporcionado.
      */
+    @Override
     public List<User> getUsersByRole(String role) {
         ValidationRole(role);
 
@@ -365,6 +379,7 @@ public class SUser implements UserDetailsService {
      * @return El usuario actualizado.
      * @throws ApiException Sí ocurre algún error durante la actualización.
      */
+    @Override
     public User updateUser(User existingUser, UserDTO updatedUser) {
 
         if (updatedUser.getName() != null) {
@@ -415,6 +430,7 @@ public class SUser implements UserDetailsService {
      * @param existingUser El usuario existente que devuelve getUserById, con la finalidad de validar si existe, para poder eliminarlo.
      * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
      */
+    @Override
     public ResponseEntity<ApiResponse> deleteUser(User existingUser) {
         try {
             repositoryUser.deleteUserById(existingUser.getId());

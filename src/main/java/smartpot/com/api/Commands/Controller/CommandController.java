@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Commands.Model.DAO.Service.SCommand;
-import smartpot.com.api.Crops.Model.DAO.Service.SCrop;
+import smartpot.com.api.Commands.Model.DAO.Service.SCommandI;
+import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Commands.Model.Entity.Command;
 import smartpot.com.api.Crops.Model.Entity.Crop;
 
@@ -18,11 +18,11 @@ import java.util.Optional;
 @RequestMapping("/Comandos")
 public class CommandController {
 
-    private final SCommand serviceCommand;
-    private final SCrop serviceCrop;
+    private final SCommandI serviceCommand;
+    private final SCropI serviceCrop;
 
     @Autowired
-    public CommandController(SCommand serviceCommand, SCrop serviceCrop) {
+    public CommandController(SCommandI serviceCommand, SCropI serviceCrop) {
         this.serviceCommand = serviceCommand;
         this.serviceCrop = serviceCrop;
     }

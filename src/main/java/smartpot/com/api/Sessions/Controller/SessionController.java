@@ -3,7 +3,7 @@ package smartpot.com.api.Sessions.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Sessions.Model.DAO.Service.SSession;
+import smartpot.com.api.Sessions.Model.DAO.Service.SSessionI;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 
 import java.util.List;
@@ -12,10 +12,10 @@ import java.util.List;
 @RequestMapping("/Sessions")
 public class SessionController {
 
-    private final SSession session;
+    private final SSessionI session;
 
     @Autowired
-    public SessionController(SSession session) {
+    public SessionController(SSessionI session) {
         this.session = session;
     }
 
