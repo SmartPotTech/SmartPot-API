@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config.jwt;
+package smartpot.com.api.Security.Auth;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import smartpot.com.api.Security.Service.JwtService;
 import smartpot.com.api.Users.Model.DAO.Service.SUser;
 
 import java.io.IOException;

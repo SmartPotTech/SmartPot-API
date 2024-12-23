@@ -10,17 +10,17 @@ import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
-import smartpot.com.api.Security.Config.jwt.JwtService;
+import smartpot.com.api.Security.Service.JwtServiceI;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     private final SUserI serviceUser;
-    private final JwtService jwtService;
+    private final JwtServiceI jwtService;
 
     @Autowired
-    public AuthController(final SUserI serviceUser, final JwtService jwtService) {
+    public AuthController(final SUserI serviceUser, final JwtServiceI jwtService) {
         this.serviceUser = serviceUser;
         this.jwtService = jwtService;
     }

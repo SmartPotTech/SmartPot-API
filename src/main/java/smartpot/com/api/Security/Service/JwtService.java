@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config.jwt;
+package smartpot.com.api.Security.Service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class JwtService {
+public class JwtService implements JwtServiceI {
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -23,6 +23,7 @@ public class JwtService {
     @Value("${application.security.jwt.expiration}")
     private long expiration;
 
+    @Override
     public String generateToken(User user) {
         // TODO: Refine token (email != subject)
         Map<String, Object> claims = new HashMap<>();
@@ -33,6 +34,7 @@ public class JwtService {
         // createToken (CustomClaims, subjectClaim)
     }
 
+    @Override
     public Boolean validateToken(String token, UserDetails userDetails) {
         Date expirationDate = extractExpiration(token);
         if (expirationDate.before(new Date())) {
@@ -66,14 +68,17 @@ public class JwtService {
                 .getBody();
     }
 
+    @Override
     public Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
     }
 
+    @Override
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
 
+    @Override
     public String extractEmail(String token) {
         return extractAllClaims(token).get("email", String.class);
     }
