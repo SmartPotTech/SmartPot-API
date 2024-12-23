@@ -1,7 +1,6 @@
 package smartpot.com.api.Records.Model.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
@@ -15,7 +14,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import smartpot.com.api.Records.Model.DTO.MeasuresDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -38,7 +36,6 @@ public class History implements Serializable {
      */
 
     @Id
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("_id")
     private ObjectId id;
 
@@ -53,7 +50,6 @@ public class History implements Serializable {
 
     // @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
     private ObjectId crop;
 

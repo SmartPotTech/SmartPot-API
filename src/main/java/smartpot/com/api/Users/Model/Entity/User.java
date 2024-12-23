@@ -1,7 +1,6 @@
 package smartpot.com.api.Users.Model.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.bson.types.ObjectId;
@@ -10,9 +9,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-
 import java.io.Serializable;
 import java.util.Date;
 
@@ -42,7 +39,6 @@ public class User implements Serializable {
      */
 
     @Id
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("_id")
     private ObjectId id;
 

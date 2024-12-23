@@ -1,7 +1,6 @@
 package smartpot.com.api.Notifications.Model.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,7 +13,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -38,7 +36,6 @@ public class Notification implements Serializable {
      */
 
     @Id
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("_id")
     private ObjectId id;
 
@@ -58,7 +55,6 @@ public class Notification implements Serializable {
 
     @DBRef
     @NotNull(message = "La notificación debe ir dirigida a un usuario")
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user_id")
     private ObjectId user;
 }

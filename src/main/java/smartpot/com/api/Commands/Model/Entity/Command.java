@@ -1,7 +1,6 @@
 package smartpot.com.api.Commands.Model.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +10,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 
 import java.util.Date;
 
@@ -33,7 +31,6 @@ public class Command {
 
     @Id
     @Field("_id")
-    @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
 
     @Field("commandType")
@@ -57,7 +54,6 @@ public class Command {
 
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
     //@DBRef
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("crop")
     private ObjectId crop;
 

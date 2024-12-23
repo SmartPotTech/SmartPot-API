@@ -1,7 +1,6 @@
 package smartpot.com.api.Sessions.Model.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,7 +11,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -34,7 +32,6 @@ public class Session implements Serializable {
      */
 
     @Id
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("_id")
     private ObjectId id;
 

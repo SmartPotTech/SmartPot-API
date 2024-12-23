@@ -1,6 +1,5 @@
 package smartpot.com.api.Crops.Model.Entity;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -11,7 +10,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Security.DTO.ObjectIdSerializer;
 
 import java.io.Serializable;
 
@@ -33,7 +31,6 @@ public class Crop implements Serializable {
 
     @Id
     @Field("_id")
-    @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
 
     @Field("status")
@@ -45,7 +42,6 @@ public class Crop implements Serializable {
 
     /*@DBRef*/
     @NotNull(message = "El cultivo debe pertenecer a un usuario")
-    @JsonSerialize(using = ObjectIdSerializer.class)
     @Field("user")
     private ObjectId user;
 }
