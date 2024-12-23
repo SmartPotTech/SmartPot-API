@@ -2,12 +2,16 @@ package smartpot.com.api.Users.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Exception.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
@@ -29,14 +33,28 @@ public class UserController {
     /**
      * Crea un nuevo usuario.
      *
-     * @param newUser El objeto Usuario que contiene los datos del usuario que se guardarán.
+     * @param userDTO El objeto Usuario que contiene los datos del usuario que se guardarán.
      * @return El objeto Usuario creado.
      */
     @PostMapping("/Create")
-    @Operation(summary = "Crear un nuevo usuario", description = "Crea un nuevo usuario con la información proporcionada.")
-    @ResponseStatus(HttpStatus.CREATED)
-    public User createUser(@Parameter(description = "Datos del nuevo usuario", required = true) @RequestBody UserDTO newUser) {
-        return serviceUser.CreateUser(newUser);
+    @Operation(summary = "Crear un nuevo usuario", description = "Crea un nuevo usuario con la información proporcionada." ,
+            responses = {
+                    @ApiResponse(description = "Usuario Creado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuario no Creado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+
+            })
+    public ResponseEntity<?> createUser(@Parameter(description = "Datos del nuevo usuario", required = true) @RequestBody UserDTO userDTO) {
+        try {
+            return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -45,9 +63,26 @@ public class UserController {
      * @return Una lista de todos los usuarios registrados.
      */
     @GetMapping("/All")
-    @Operation(summary = "Obtener todos los usuarios", description = "Recupera todos los usuarios registrados en el sistema.")
-    public List<User> getAllUsers() {
-        return serviceUser.getAllUsers();
+    @Operation(summary = "Obtener todos los usuarios", description = "Recupera todos los usuarios registrados en el sistema.",
+            responses = {
+                    @ApiResponse(description = "Usuarios encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(
+                                            schema = @Schema(implementation = UserDTO.class)
+                                    ))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuarios no encontrados",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+            })
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            return new ResponseEntity<>(serviceUser.getAllUsers(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -57,9 +92,24 @@ public class UserController {
      * @return El objeto Usuario correspondiente al ID proporcionado.
      */
     @GetMapping("/id/{id}")
-    @Operation(summary = "Buscar usuario por ID", description = "Recupera un usuario utilizando su ID.")
-    public User getUserById(@PathVariable @Parameter(description = "ID del usuario") String id) {
-        return serviceUser.getUserById(id);
+    @Operation(summary = "Buscar usuario por ID", description = "Recupera un usuario utilizando su ID.",
+            responses = {
+                    @ApiResponse(description = "Usuario encontrado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuario no encontrado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+
+            })
+    public ResponseEntity<?> getUserById(@PathVariable @Parameter(description = "ID del usuario") String id) {
+        try {
+            return new ResponseEntity<>(serviceUser.getUserById(id), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -69,9 +119,24 @@ public class UserController {
      * @return Un usuario que coincide con el correo electrónico proporcionado.
      */
     @GetMapping("/email/{email}")
-    @Operation(summary = "Buscar usuario por correo electrónico", description = "Recupera un usuario utilizando su correo electrónico.")
-    public User getUsersByEmail(@PathVariable @Parameter(description = "Correo electrónico del usuario") String email) {
-        return serviceUser.getUserByEmail(email);
+    @Operation(summary = "Buscar usuario por correo electrónico", description = "Recupera un usuario utilizando su correo electrónico.",
+            responses = {
+                    @ApiResponse(description = "Usuario encontrado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuario no encontrado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+
+            })
+    public ResponseEntity<?> getUsersByEmail(@PathVariable @Parameter(description = "Correo electrónico del usuario") String email) {
+        try {
+            return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -81,9 +146,26 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el nombre proporcionado.
      */
     @GetMapping("/name/{name}")
-    @Operation(summary = "Buscar usuarios por nombre", description = "Recupera usuarios cuyo nombre coincide con el proporcionado.")
-    public List<User> getUsersByName(@PathVariable @Parameter(description = "Nombre del usuario") String name) {
-        return serviceUser.getUsersByName(name);
+    @Operation(summary = "Buscar usuarios por nombre", description = "Recupera usuarios cuyo nombre coincide con el proporcionado.",
+            responses = {
+                    @ApiResponse(description = "Usuarios encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(
+                                        schema = @Schema(implementation = UserDTO.class)
+                                    ))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuarios no encontrados",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+            })
+    public ResponseEntity<?> getUsersByName(@PathVariable @Parameter(description = "Nombre del usuario") String name) {
+        try {
+            return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -93,9 +175,26 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el apellido proporcionado.
      */
     @GetMapping("/lastname/{lastname}")
-    @Operation(summary = "Buscar usuarios por apellido", description = "Recupera usuarios cuyo apellido coincide con el proporcionado.")
-    public List<User> getUsersByLastname(@PathVariable @Parameter(description = "Apellido del usuario") String lastname) {
-        return serviceUser.getUsersByLastname(lastname);
+    @Operation(summary = "Buscar usuarios por apellido", description = "Recupera usuarios cuyo apellido coincide con el proporcionado.",
+            responses = {
+                    @ApiResponse(description = "Usuarios encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(
+                                            schema = @Schema(implementation = UserDTO.class)
+                                    ))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuarios no encontrados",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+            })
+    public ResponseEntity<?> getUsersByLastname(@PathVariable @Parameter(description = "Apellido del usuario") String lastname) {
+        try {
+            return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -106,10 +205,27 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionado.
      */
     @GetMapping("/fullname/{name}/{lastname}")
-    @Operation(summary = "Buscar usuarios por nombre y apellido", description = "Recupera usuarios cuyo nombre y apellido coinciden con los proporcionados.")
-    public List<User> getUsersByFullname(@PathVariable @Parameter(description = "Nombre del usuario") String name,
+    @Operation(summary = "Buscar usuarios por nombre y apellido", description = "Recupera usuarios cuyo nombre y apellido coinciden con los proporcionados.",
+            responses = {
+                    @ApiResponse(description = "Usuarios encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(
+                                            schema = @Schema(implementation = UserDTO.class)
+                                    ))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuarios no encontrados",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+            })
+    public ResponseEntity<?> getUsersByFullname(@PathVariable @Parameter(description = "Nombre del usuario") String name,
                                          @PathVariable @Parameter(description = "Apellido del usuario") String lastname) {
-        return serviceUser.getUsersByFullName(name, lastname);
+        try {
+            return new ResponseEntity<>(serviceUser.getUsersByFullName(name, lastname), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -119,9 +235,26 @@ public class UserController {
      * @return Una lista de usuarios que coinciden con el rol especificado.
      */
     @GetMapping("/role/{role}")
-    @Operation(summary = "Buscar usuarios por rol", description = "Recupera usuarios cuyo rol coincide con el proporcionado.")
-    public List<User> getUsersByRole(@PathVariable @Parameter(description = "Rol del usuario") String role) {
-        return serviceUser.getUsersByRole(role);
+    @Operation(summary = "Buscar usuarios por rol", description = "Recupera usuarios cuyo rol coincide con el proporcionado.",
+            responses = {
+                    @ApiResponse(description = "Usuarios encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(
+                                            schema = @Schema(implementation = UserDTO.class)
+                                    ))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuarios no encontrados",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+            })
+    public ResponseEntity<?> getUsersByRole(@PathVariable @Parameter(description = "Rol del usuario") String role) {
+        try {
+            return new ResponseEntity<>( serviceUser.getUsersByRole(role), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -132,10 +265,25 @@ public class UserController {
      * @return El objeto Usuario actualizado.
      */
     @PutMapping("/Update/{id}")
-    @Operation(summary = "Actualizar un usuario", description = "Actualiza los datos de un usuario existente utilizando su ID.")
-    public User updateUser(@PathVariable @Parameter(description = "ID del usuario a actualizar") String id,
+    @Operation(summary = "Actualizar un usuario", description = "Actualiza los datos de un usuario existente utilizando su ID.",
+            responses = {
+                    @ApiResponse(description = "Usuario actualizado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = UserDTO.class))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuario no actualizado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+
+            })
+    public ResponseEntity<?> updateUser(@PathVariable @Parameter(description = "ID del usuario a actualizar") String id,
                            @RequestBody @Parameter(description = "Datos actualizados del usuario") UserDTO updatedUser) {
-        return serviceUser.updateUser(serviceUser.getUserById(id), updatedUser);
+        try {
+            return new ResponseEntity<>(serviceUser.updateUser(serviceUser.getUserById(id), updatedUser), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -144,8 +292,23 @@ public class UserController {
      * @param id El ID del usuario a eliminar.
      */
     @DeleteMapping("/Delete/{id}")
-    @Operation(summary = "Eliminar un usuario", description = "Elimina un usuario existente utilizando su ID.")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable @Parameter(description = "ID del usuario a eliminar") String id) {
-        return serviceUser.deleteUser(serviceUser.getUserById(id));
+    @Operation(summary = "Eliminar un usuario", description = "Elimina un usuario existente utilizando su ID.",
+            responses = {
+                    @ApiResponse(description = "Usuario eliminado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+                    ),
+                    @ApiResponse(responseCode = "404",
+                            description = "Usuario no eliminado",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+
+            })
+    public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID del usuario a eliminar") String id) {
+        try {
+            return new ResponseEntity<>(serviceUser.deleteUser(serviceUser.getUserById(id)), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 }
