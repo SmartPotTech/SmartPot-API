@@ -11,6 +11,7 @@ import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Sessions.Model.DAO.Repository.RSession;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.Date;
@@ -73,14 +74,14 @@ public class SSession implements SSessionI{
     }*/
 
     @Override
-    public Session createSession(Session newSession) {
+    public Session createSession(Session newSession) throws Exception {
         // Validar que el campo "user" no esté vacío
         if (newSession.getUser() == null) {
             throw new IllegalArgumentException("La sesión debe estar asociada a un usuario válido.");
         }
 
         // Verificar que el usuario referenciado exista en la base de datos
-        Optional<User> userOptional = Optional.ofNullable(user.getUserById(newSession.getUser()));
+        Optional<UserDTO> userOptional = Optional.ofNullable(user.getUserById(newSession.getUser()));
         if (userOptional.isEmpty()) {
             throw new IllegalArgumentException("El usuario especificado no existe.");
         }

@@ -12,17 +12,17 @@ public interface SCropI {
 
     List<Crop> getCrops();
 
-    List<Crop> getCropsByUser(String id);
+    List<Crop> getCropsByUser(String id) throws Exception;
 
     List<Crop> getCropsByType(String type);
 
-    long countCropsByUser(String id);
+    long countCropsByUser(String id) throws Exception;
 
     List<Crop> getCropsByStatus(String status);
 
-    Crop createCrop(CropDTO newCropDto);
+    Crop createCrop(CropDTO newCropDto) throws Exception;
 
-    Crop updatedCrop(String id, CropDTO cropDto);
+    Crop updatedCrop(String id, CropDTO cropDto) throws Exception;
 
     /* public void deleteCrop(String id) {
             if (!ObjectId.isValid(id)) {

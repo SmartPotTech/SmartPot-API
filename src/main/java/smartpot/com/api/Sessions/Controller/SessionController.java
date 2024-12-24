@@ -1,8 +1,10 @@
 package smartpot.com.api.Sessions.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Exception.ErrorResponse;
 import smartpot.com.api.Sessions.Model.DAO.Service.SSessionI;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 
@@ -35,8 +37,12 @@ public class SessionController {
     }
 
     @PostMapping("/Create")
-    public ResponseEntity<Session> createSession(@RequestBody Session newSession) {
-        return ResponseEntity.ok(session.createSession(newSession));
+    public ResponseEntity<?> createSession(@RequestBody Session newSession) {
+        try {
+            return new ResponseEntity<>(session.createSession(newSession), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping("/Delete/{id}")

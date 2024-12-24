@@ -17,6 +17,7 @@ import smartpot.com.api.Crops.Model.Entity.Crop;
 import smartpot.com.api.Crops.Model.Entity.Status;
 import smartpot.com.api.Crops.Model.Entity.Type;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.ArrayList;
@@ -92,12 +93,13 @@ public class SCrop implements SCropI{
      * @return Lista de cultivos pertenecientes al usuario
      */
     @Override
-    public List<Crop> getCropsByUser(String id) {
-        User user = serviceUser.getUserById(id);
+    public List<Crop> getCropsByUser(String id) throws Exception {
+        UserDTO user = serviceUser.getUserById(id);
         List<Crop> crops = repositoryCrop.findAll();
         List<Crop> cropsUser = new ArrayList<>();
+        ObjectId userId = new ObjectId(user.getId());
         for (Crop crop : crops) {
-            if (crop.getUser().equals(user.getId())) {
+            if (crop.getUser().equals(userId)) {
                 cropsUser.add(crop);
             }
         }
@@ -136,7 +138,7 @@ public class SCrop implements SCropI{
      * @return Número total de cultivos del usuario
      */
     @Override
-    public long countCropsByUser(String id) {
+    public long countCropsByUser(String id) throws Exception {
         System.out.println("//////////////////////////////////////////////"+getCropsByUser(id).size());
         return getCropsByUser(id).size();
 
@@ -167,7 +169,7 @@ public class SCrop implements SCropI{
      * @return Cultivo guardado
      */
     @Override
-    public Crop createCrop(CropDTO newCropDto) {
+    public Crop createCrop(CropDTO newCropDto) throws Exception {
         serviceUser.getUserById(newCropDto.getUser());
         Crop newCrop = cropDtotoCrop(newCropDto);
         boolean isValidStatus = Stream.of(Status.values())
@@ -194,7 +196,7 @@ public class SCrop implements SCropI{
      * @return El Crop actualizado después de guardarlo en el servicio.
      */
     @Override
-    public Crop updatedCrop(String id, CropDTO cropDto) {
+    public Crop updatedCrop(String id, CropDTO cropDto) throws Exception {
         serviceUser.getUserById(cropDto.getUser());
         Crop updatedCrop = cropDtotoCrop(cropDto);
         boolean isValidStatus = Stream.of(Status.values())

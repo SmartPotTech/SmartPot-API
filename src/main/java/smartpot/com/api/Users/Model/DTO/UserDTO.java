@@ -20,6 +20,8 @@ public class UserDTO {
             example = "usuario@ejemplo.com")
     private String email;
 
+    private String createAt;
+
     @Schema(description = "Contraseña del usuario. Este campo es obligatorio.",
             example = "password123")
     private String password;

@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Exception.ErrorResponse;
 import smartpot.com.api.Records.Model.DAO.Service.SHistoryI;
 import smartpot.com.api.Records.Model.DTO.CropRecordDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
@@ -76,8 +77,12 @@ public class HistoryController {
      * @return Los históricos encontrado
      */
     @GetMapping("/user/{id}")
-    public List<CropRecordDTO> getByUser(@PathVariable String id) {
-        return serviceHistory.getByUser(id);
+    public ResponseEntity<?> getByUser(@PathVariable String id) {
+        try {
+            return new ResponseEntity<>(serviceHistory.getByUser(id), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**

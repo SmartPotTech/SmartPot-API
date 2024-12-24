@@ -13,7 +13,7 @@ public interface SSessionI {
 
     long countSessionsByUser(String user);
 
-    Session createSession(Session newSession);
+    Session createSession(Session newSession) throws Exception;
 
     void deleteSessionById(String sessionId);
 

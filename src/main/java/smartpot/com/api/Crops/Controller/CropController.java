@@ -8,6 +8,7 @@ import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
+import smartpot.com.api.Exception.ErrorResponse;
 
 import java.util.List;
 
@@ -72,8 +73,12 @@ public class CropController {
      * @return Lista de cultivos pertenecientes al usuario
      */
     @GetMapping("/User/{id}")
-    public List<Crop> getCropByUser(@PathVariable String id) {
-        return serviceCrop.getCropsByUser(id);
+    public ResponseEntity<?> getCropByUser(@PathVariable String id) {
+        try {
+            return new ResponseEntity<>(serviceCrop.getCropsByUser(id), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -83,8 +88,12 @@ public class CropController {
      * @return Número total de cultivos del usuario
      */
     @GetMapping("/count/{id}")
-    public long countCropsByUser(@PathVariable String id) {
-        return serviceCrop.countCropsByUser(id);
+    public ResponseEntity<?> countCropsByUser(@PathVariable String id) {
+        try {
+            return new ResponseEntity<>(serviceCrop.countCropsByUser(id), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -95,8 +104,12 @@ public class CropController {
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public Crop createCrop(@RequestBody CropDTO newCropDto) {
-        return serviceCrop.createCrop(newCropDto);
+    public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
+        try {
+            return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
@@ -107,8 +120,12 @@ public class CropController {
      * @return El cultivo actualizado.
      */
     @PutMapping("/Update/{id}")
-    public Crop updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
-        return serviceCrop.updatedCrop(id, cropDetails);
+    public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
+        try {
+            return new ResponseEntity<>(serviceCrop.updatedCrop(id, cropDetails), HttpStatus.OK);
+        } catch (Exception e)            {
+            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**

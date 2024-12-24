@@ -1,8 +1,6 @@
 package smartpot.com.api.Users.Model.DAO.Service;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
 
@@ -27,19 +25,19 @@ public interface SUserI extends UserDetailsService {
 
     User CreateUser(UserDTO userDTO);
 
-    User getUserById(String id) throws Exception;
+    UserDTO getUserById(String id) throws Exception;
 
-    User getUserByEmail(String email);
+    UserDTO getUserByEmail(String email) throws Exception;
 
     List<User> getUsersByFullName(String name, String lastname);
 
-    List<User> getUsersByName(String name);
+    List<UserDTO> getUsersByName(String name) throws Exception;
 
-    List<User> getUsersByLastname(String lastname);
+    List<UserDTO> getUsersByLastname(String lastname) throws Exception;
 
-    List<User> getUsersByRole(String role);
+    List<UserDTO> getUsersByRole(String role) throws Exception;
 
     User updateUser(User existingUser, UserDTO updatedUser);
 
-    ResponseEntity<ApiResponse> deleteUser(User existingUser);
+    String deleteUser(String id) throws Exception;
 }

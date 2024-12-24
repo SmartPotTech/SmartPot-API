@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ErrorResponse;
+import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
@@ -339,7 +340,7 @@ public class UserController {
             @PathVariable @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) String id,
             @RequestBody @Parameter(description = "Datos actualizados del usuario.") UserDTO updatedUser) {
         try {
-            return new ResponseEntity<>(serviceUser.updateUser(serviceUser.getUserById(id), updatedUser), HttpStatus.OK);
+            return new ResponseEntity<>(serviceUser.updateUser(MUser.INSTANCE.toEntity(serviceUser.getUserById(id)), updatedUser), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -372,7 +373,7 @@ public class UserController {
             })
     public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
         try {
-            return new ResponseEntity<>(serviceUser.deleteUser(serviceUser.getUserById(id)), HttpStatus.OK);
+            return new ResponseEntity<>(serviceUser.deleteUser(id), HttpStatus.OK);
         } catch (Exception e)            {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

@@ -1,23 +1,31 @@
 package smartpot.com.api.Records.Mapper;
 
+import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
+import smartpot.com.api.Records.Model.Entity.History;
 
 @Mapper(componentModel="spring")
 public interface MRecords {
-    /**
-     * Convierte un RecordDto a una entidad User.
-     *
-     * @param recordDTO El DTO del usuario.
-     * @return La entidad Registro.
-     */
-    public Record toEntity(RecordDTO recordDTO);
+    MRecords INSTANCE = Mappers.getMapper(MRecords.class);
 
-    /**
-     * Convierte una entidad Record a un RecordDTO.
-     *
-     * @param record La entidad Registro.
-     * @return El DTO del Registro.
-     */
-    public RecordDTO toDTO(Record record);
+    @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
+    @Mapping(source = "crop", target = "crop", qualifiedByName = "stringToObjectId")
+    public History toEntity(RecordDTO recordDTO);
+
+    @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
+    @Mapping(source = "crop", target = "crop", qualifiedByName = "objectIdToString")
+    public RecordDTO toDTO(History history);
+
+    @org.mapstruct.Named("objectIdToString")
+    default String objectIdToString(ObjectId objectId) {
+        return objectId != null ? objectId.toHexString() : null;
+    }
+
+    @org.mapstruct.Named("stringToObjectId")
+    default ObjectId stringToObjectId(String id) {
+        return id != null ? new ObjectId(id) : null;
+    }
 }

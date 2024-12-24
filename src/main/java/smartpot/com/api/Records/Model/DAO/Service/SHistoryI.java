@@ -18,7 +18,7 @@ public interface SHistoryI {
 
     List<History> getHistoriesByCropAndDateBetween(String cropId, DateRange ranges);
 
-    List<CropRecordDTO> getByUser(String id);
+    List<CropRecordDTO> getByUser(String id) throws Exception;
 
     History Createhistory(RecordDTO recordDTO);
 

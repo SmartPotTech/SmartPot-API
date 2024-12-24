@@ -9,15 +9,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
+import smartpot.com.api.Crops.Model.Entity.Crop;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Records.Mapper.MRecords;
 import smartpot.com.api.Records.Model.DAO.Repository.RHistory;
 import smartpot.com.api.Records.Model.DTO.CropRecordDTO;
 import smartpot.com.api.Records.Model.DTO.MeasuresDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
-import smartpot.com.api.Crops.Model.Entity.Crop;
 import smartpot.com.api.Records.Model.Entity.DateRange;
 import smartpot.com.api.Records.Model.Entity.History;
+import smartpot.com.api.Records.Model.Entity.Measures;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -259,7 +261,7 @@ public class SHistory implements SHistoryI {
      * @throws ApiException Si el ID del usuario no es válido (formato incorrecto) o si no se encuentran cultivos asociados al usuario.
      */
     @Override
-    public List<CropRecordDTO> getByUser(String id) {
+    public List<CropRecordDTO> getByUser(String id) throws Exception {
         List<CropRecordDTO> records = new ArrayList<>();
         List<Crop> crops = serviceCrop.getCropsByUser(id);
         // Verificar si el usuario tiene cultivos
@@ -290,7 +292,7 @@ public class SHistory implements SHistoryI {
     public History Createhistory(RecordDTO recordDTO) {
         ValidationMesuares(recordDTO.getMeasures());
         serviceCrop.getCropById(recordDTO.getCrop());
-        History history = new History(recordDTO);
+        History history = MRecords.INSTANCE.toEntity(recordDTO);
         return repositoryHistory.save(history);
     }
 
@@ -304,17 +306,10 @@ public class SHistory implements SHistoryI {
      */
     @Override
     public History updatedHistory(History existingHistory, RecordDTO updateHistory) {
-        if (updateHistory.getMeasures() != null) {
-            MeasuresDTO measures = updateHistory.getMeasures();
-            ValidationMesuares(measures);
-            existingHistory.setMeasures(new History.Measures(measures));
+        if (updateHistory.getMeasures() != null && updateHistory.getCrop() != null) {
+            existingHistory = MRecords.INSTANCE.toEntity(updateHistory);
         }
 
-        if (updateHistory.getCrop() != null) {
-            String cropId = updateHistory.getCrop();
-            Crop crop = serviceCrop.getCropById(cropId);
-            existingHistory.setCrop(crop.getId());
-        }
         try {
             return repositoryHistory.save(existingHistory);
         } catch (Exception e) {

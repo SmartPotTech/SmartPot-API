@@ -5,16 +5,11 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.NotAcceptableStatusException;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.server.ServerErrorException;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Mapper.MUser;
@@ -25,6 +20,7 @@ import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,10 +36,12 @@ import java.util.stream.Stream;
 @Service
 public class SUser implements SUserI {
     private final RUser repositoryUser;
+    private final MUser mapperUser;
 
     @Autowired
-    public SUser(RUser repositoryUser) {
+    public SUser(RUser repositoryUser, MUser mapperUser) {
         this.repositoryUser = repositoryUser;
+        this.mapperUser = mapperUser;
     }
 
     /**
@@ -255,14 +253,10 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
      */
     @Override
-    public User getUserById(String id) throws Exception {
-        List<User> users = repositoryUser.findAll();
-        if (users.isEmpty()) {
-            throw new Exception("No se encontró ningún producto");
-        }
-        return users.stream()
-                .map(MUser::toDTO)
-                .collect(Collectors.toList());
+    public UserDTO getUserById(String id) throws Exception {
+        return repositoryUser.findById(new ObjectId(id))
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El Usuario no existe"));
     }
 
     /**
@@ -270,21 +264,15 @@ public class SUser implements SUserI {
      *
      * @param email El correo electrónico del usuario a buscar.
      * @return El usuario encontrado.
-     * @throws ApiException Si no se encuentra un usuario con el correo electrónico proporcionado.
      */
     @Override
-    public User getUserByEmail(String email) {
-        ValidationEmail(email);
-
-        List<User> users = repositoryUser.findByEmail(email);
-        if (users == null || users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún usuario con el correo electrónico: '" + email + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-
-        return users.get(0);
+    public UserDTO getUserByEmail(String email) throws Exception {
+        return Optional.of(email)
+                .map(repositoryUser::findByEmail)
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.get(0))
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El usuario no existe"));
     }
 
     /**
@@ -318,17 +306,13 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentra un usuario con el nombre proporcionado.
      */
     @Override
-    public List<User> getUsersByName(String name) {
-        ValidationName(name);
-
-        List<User> users = repositoryUser.findByName(name);
-        if (users == null || users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún usuario con el nombre '" + name + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-        return users;
+    public List<UserDTO> getUsersByName(String name) throws Exception {
+        return Optional.ofNullable(repositoryUser.findByName(name))
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapperUser::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el nombre"));
     }
 
     /**
@@ -339,17 +323,13 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentra un usuario con el apellido proporcionado.
      */
     @Override
-    public List<User> getUsersByLastname(String lastname) {
-        ValidationLastname(lastname);
-
-        List<User> users = repositoryUser.findByLastname(lastname);
-        if (users == null || users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún usuario con el apellido '" + lastname + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-        return users;
+    public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
+        return Optional.ofNullable(repositoryUser.findByLastname(lastname))
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapperUser::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el apellido"));
     }
 
     /**
@@ -362,19 +342,13 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentran usuarios con el rol proporcionado.
      */
     @Override
-    public List<User> getUsersByRole(String role) {
-        ValidationRole(role);
-
-        List<User> users = repositoryUser.findByRole(role);
-
-        if (users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontraron usuarios con el rol '" + role + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-
-        return users;
+    public List<UserDTO> getUsersByRole(String role) throws Exception {
+        return Optional.ofNullable(repositoryUser.findByRole(role))
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapperUser::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el rol"));
     }
 
     /**
@@ -433,23 +407,17 @@ public class SUser implements SUserI {
     /**
      * Elimina un usuario por su ID.
      *
-     * @param existingUser El usuario existente que devuelve getUserById, con la finalidad de validar si existe, para poder eliminarlo.
+     * @param id del usuario con la finalidad de validar si existe, para poder eliminarlo.
      * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
      */
     @Override
-    public ResponseEntity<ApiResponse> deleteUser(User existingUser) {
-        try {
-            repositoryUser.deleteUserById(existingUser.getId());
-            return ResponseEntity.status(HttpStatus.OK.value()).body(
-                    new ApiResponse("El usuario con ID '" + existingUser.getId() + "' fue eliminado.",
-                            HttpStatus.OK.value())
-            );
-        } catch (Exception e) {
-            log.error("e: ", e);
-            throw new ApiException(
-                    new ApiResponse("No se pudo eliminar el usuario con ID '" + existingUser.getId() + "'.",
-                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+    public String deleteUser(String id) throws Exception {
+        return Optional.of(getUserById(id))
+                .map(product -> {
+                    repositoryUser.deleteById(new ObjectId(id));
+                    return "El Usuario con ID '" + id + "' fue eliminado.";
+                })
+                .orElseThrow(() -> new Exception("El Usuario no existe."));
     }
 
     /**
@@ -464,14 +432,11 @@ public class SUser implements SUserI {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = repositoryUser.findByEmail(username).get(0);
-        if (user != null) {
-            return org.springframework.security.core.userdetails.User.builder()
-                    .username(user.getEmail())
-                    .password(user.getPassword())
-                    .build();
-        } else {
-            throw new UsernameNotFoundException(username);
-        }
+        return repositoryUser.findByEmail(username).stream().findFirst()
+                .map(user -> org.springframework.security.core.userdetails.User.builder()
+                        .username(user.getEmail())
+                        .password(user.getPassword())
+                        .build())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con el email: " + username));
     }
 }

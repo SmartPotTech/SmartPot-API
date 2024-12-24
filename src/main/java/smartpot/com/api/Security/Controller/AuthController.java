@@ -7,6 +7,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
@@ -28,8 +29,8 @@ public class AuthController {
     // TODO: Handle no allowed method
 
     @PostMapping("/login")
-    public String login(@RequestBody UserDTO reqUser) {
-        User user = serviceUser.getUserByEmail(reqUser.getEmail());
+    public String login(@RequestBody UserDTO reqUser) throws Exception {
+        UserDTO user = serviceUser.getUserByEmail(reqUser.getEmail());
         if (user == null) return "Invalid Credentials";
 
         boolean passwordMatch = new BCryptPasswordEncoder().matches(reqUser.getPassword(), user.getPassword());
@@ -38,11 +39,11 @@ public class AuthController {
         // debug trace
         //System.out.println(reqUser + " - " + user + passwordMatch);
 
-        return jwtService.generateToken(user);
+        return jwtService.generateToken(MUser.INSTANCE.toEntity(user));
     }
 
     @GetMapping("/verify")
-    public User verify(@RequestHeader("Authorization") String bearerToken) {
+    public User verify(@RequestHeader("Authorization") String bearerToken) throws Exception {
 
         String token = bearerToken.split(" ")[1];
         String email = jwtService.extractEmail(token);
@@ -51,9 +52,9 @@ public class AuthController {
         System.out.println("my user ---------------> " + user);
 
         if (jwtService.validateToken(token, user)) {
-            User finalUser = serviceUser.getUserByEmail(email);
+            UserDTO finalUser = serviceUser.getUserByEmail(email);
             finalUser.setPassword("");
-            return finalUser;
+            return MUser.INSTANCE.toEntity(finalUser);
 
         } else {
             throw new ApiException(new ApiResponse(

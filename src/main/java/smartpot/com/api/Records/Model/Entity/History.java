@@ -3,17 +3,15 @@ package smartpot.com.api.Records.Model.Entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import smartpot.com.api.Records.Model.DTO.MeasuresDTO;
-import smartpot.com.api.Records.Model.DTO.RecordDTO;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -48,54 +46,8 @@ public class History implements Serializable {
     @Field("measures")
     private Measures measures;
 
-    // @DBRef
+    @DBRef
     @NotNull(message = "El registro debe estar asociado a un cultivo")
     @Field("crop")
     private ObjectId crop;
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Measures implements Serializable {
-
-        @Positive(message = "La atmósfera debe ser un valor positivo")
-        @Field("atmosphere")
-        private Double atmosphere;
-
-        @Positive(message = "El brillo debe ser un valor positivo")
-        @Field("brightness")
-        private Double brightness;
-
-        @Positive(message = "La temperatura debe ser un valor positivo")
-        @Field("temperature")
-        private Double temperature;
-
-        @Positive(message = "El pH debe ser un valor positivo")
-        @Field("ph")
-        private Double ph;
-
-        @Positive(message = "El TDS debe ser un valor positivo")
-        @Field("tds")
-        private Double tds;
-
-        @Positive(message = "La humedad debe ser un valor positivo")
-        @Field("humidity")
-        private Double humidity;
-
-        public Measures(MeasuresDTO measures) {
-            this.atmosphere = Double.parseDouble(measures.getAtmosphere());
-            this.brightness = Double.parseDouble(measures.getBrightness());
-            this.temperature = Double.parseDouble(measures.getTemperature());
-            this.ph = Double.parseDouble(measures.getPh());
-            this.tds = Double.parseDouble(measures.getTds());
-            this.humidity = Double.parseDouble(measures.getHumidity());
-        }
-    }
-
-    public History(RecordDTO history) {
-        this.date = new Date();
-        this.measures = new Measures(history.getMeasures());
-        this.crop = new ObjectId(history.getCrop());
-    }
 }
