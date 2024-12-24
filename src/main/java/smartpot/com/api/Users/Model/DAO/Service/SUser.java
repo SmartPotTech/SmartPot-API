@@ -5,14 +5,19 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.NotAcceptableStatusException;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerErrorException;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.Role;
@@ -21,6 +26,7 @@ import smartpot.com.api.Users.Model.Entity.User;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -249,14 +255,14 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
      */
     @Override
-    public User getUserById(String id) {
-        ValidationId(id);
-
-        return repositoryUser.findById(new ObjectId(id))
-                .orElseThrow(() -> new ApiException(
-                        new ApiResponse("El usuario con id '" + id + "' no fue encontrado.",
-                                HttpStatus.NOT_FOUND.value())
-                ));
+    public User getUserById(String id) throws Exception {
+        List<User> users = repositoryUser.findAll();
+        if (users.isEmpty()) {
+            throw new Exception("No se encontró ningún producto");
+        }
+        return users.stream()
+                .map(MUser::toDTO)
+                .collect(Collectors.toList());
     }
 
     /**

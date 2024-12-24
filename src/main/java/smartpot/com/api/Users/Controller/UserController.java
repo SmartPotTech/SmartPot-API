@@ -62,7 +62,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -96,7 +96,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getAllUsers(), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -132,7 +132,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUserById(id), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con id '" + id + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -166,7 +166,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con email '" + email + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -200,7 +200,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre '" + name + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -234,7 +234,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con apellido '" + lastname + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -271,7 +271,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByFullName(name, lastname), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre completo '" + name + " " + lastname + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -305,7 +305,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
