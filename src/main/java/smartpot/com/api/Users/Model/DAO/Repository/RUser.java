@@ -75,10 +75,5 @@ public interface RUser extends MongoRepository<User, ObjectId> {
     @Query("{ 'role' : ?0 }")
     List<User> findByRole(String role);
 
-    /**
-     * Elimina un usuario de la base de datos basado en su ID.
-     *
-     * @param id El ID único del usuario a eliminar.
-     */
-    void deleteUserById(ObjectId id);
+    boolean existsByEmail(String email);
 }

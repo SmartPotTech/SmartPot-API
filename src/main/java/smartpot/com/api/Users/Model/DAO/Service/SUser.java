@@ -1,5 +1,6 @@
 package smartpot.com.api.Users.Model.DAO.Service;
 
+import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +18,13 @@ import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.Role;
 import smartpot.com.api.Users.Model.Entity.User;
+import smartpot.com.api.Users.Validation.VUser;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -37,162 +38,13 @@ import java.util.stream.Stream;
 public class SUser implements SUserI {
     private final RUser repositoryUser;
     private final MUser mapperUser;
+    private final VUser validatorUser;
 
     @Autowired
-    public SUser(RUser repositoryUser, MUser mapperUser) {
+    public SUser(RUser repositoryUser, MUser mapperUser, VUser validatorUser) {
         this.repositoryUser = repositoryUser;
         this.mapperUser = mapperUser;
-    }
-
-    /**
-     * Patrón para validar nombres:
-     * - Solo permite letras (mayúsculas y minúsculas).
-     * - Longitud entre 4 y 15 caracteres.
-     */
-    public static final String NAME_PATTERN = "^[a-zA-Z]{4,15}$";
-
-    /**
-     * Patrón para validar apellidos:
-     * - Solo permite letras (mayúsculas y minúsculas).
-     * - Longitud entre 4 y 30 caracteres.
-     */
-    public static final String LASTNAME_PATTERN = "^[a-zA-Z]{4,30}$";
-
-    /**
-     * Patrón para validar correos electrónicos:
-     * - Asegura que haya un texto antes y después del símbolo @.
-     * - Requiere un dominio válido con un punto (.) después del símbolo @.
-     * - No permite espacios en ninguna parte del correo.
-     */
-    public static final String EMAIL_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
-
-    /**
-     * Patrón para validar contraseñas:
-     * - Debe contener al menos 8 caracteres.
-     * - Debe tener al menos una letra minúscula, una letra mayúscula, un dígito y un carácter especial.
-     * - Permite letras (mayúsculas y minúsculas), dígitos y los caracteres especiales: @$!%*?&.
-     */
-    public static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
-
-
-    /**
-     * Válida si el ID proporcionado es un ObjectId válido de MongoDB.
-     *
-     * @param id El identificador a validar.
-     * @throws ApiException Si el ID no es válido.
-     */
-    @Override
-    public void ValidationId(String id) {
-        if (!ObjectId.isValid(id)) {
-            throw new ApiException(new ApiResponse(
-                    "El id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-    }
-
-    /**
-     * Válida que el nombre cumpla con el patrón especificado.
-     *
-     * @param name El nombre a validar.
-     * @throws ApiException Si el nombre no es válido.
-     */
-    @Override
-    public void ValidationName(String name) {
-        if (!Pattern.matches(NAME_PATTERN, name)) {
-            throw new ApiException(new ApiResponse(
-                    "El nombre '" + name + "' no es válido. Debe tener entre 4 y 15 caracteres y solo letras.",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-    }
-
-    /**
-     * Válida que el apellido cumpla con el patrón especificado.
-     *
-     * @param lastname El apellido a validar.
-     * @throws ApiException Si el apellido no es válido.
-     */
-    @Override
-    public void ValidationLastname(String lastname) {
-        if (!Pattern.matches(LASTNAME_PATTERN, lastname)) {
-            throw new ApiException(new ApiResponse(
-                    "El apellido '" + lastname + "' no es valido. El apellido debe tener entre 4 y 30 caracteres",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-    }
-
-    /**
-     * Válida que el correo electrónico cumpla con el patrón especificado.
-     *
-     * @param email El correo electrónico a validar.
-     * @throws ApiException Si el correo no es válido.
-     */
-    @Override
-    public void ValidationEmail(String email) {
-        if (!Pattern.matches(EMAIL_PATTERN, email)) {
-            throw new ApiException(new ApiResponse(
-                    "El correo electrónico '" + email + "' no es válido. Asegúrate de que sigue el formato correcto.",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-    }
-
-    /**
-     * Válida que la contraseña cumpla con el patrón especificado.
-     *
-     * @param password La contraseña a validar.
-     * @throws ApiException Si la contraseña no es válida.
-     */
-    @Override
-    public void ValidationPassword(String password) {
-        if (!Pattern.matches(PASSWORD_PATTERN, password)) {
-            throw new ApiException(new ApiResponse(
-                    "La Contraseña '" + password + "' no es válida. La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial.",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-    }
-
-    /**
-     * Válida que el rol proporcionado sea un rol válido.
-     *
-     * @param role El rol a validar.
-     * @throws ApiException Si el rol no es válido.
-     */
-    @Override
-    public void ValidationRole(String role) {
-        if (role == null || role.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "El rol no puede estar vacío",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-        boolean isValidRole = Stream.of(Role.values())
-                .anyMatch(r -> r.name().equalsIgnoreCase(role));
-
-        if (!isValidRole) {
-            throw new ApiException(new ApiResponse(
-                    "El Rol '" + role + "' es no válido.",
-                    HttpStatus.BAD_REQUEST.value()));
-        }
-    }
-
-    /**
-     * Valida que el correo electrónico proporcionado no esté en uso.
-     *
-     * @param email El correo electrónico a verificar.
-     * @throws ApiException Si el correo ya está en uso.
-     */
-    @Override
-    public void isEmailExist(String email) {
-        if (!repositoryUser.findByEmail(email).isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "El email '" + email + "' ya está en uso.",
-                    HttpStatus.CONFLICT.value()
-            ));
-        }
+        this.validatorUser = validatorUser;
     }
 
     /**
@@ -202,15 +54,13 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentran usuarios en la base de datos.
      */
     @Override
-    public List<User> getAllUsers() {
-        List<User> users = repositoryUser.findAll();
-        if (users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún usuario en la db",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-        return users;
+    public List<UserDTO> getAllUsers() throws Exception {
+        return Optional.of(repositoryUser.findAll())
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapperUser::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No existe ningún usuario"));
     }
 
     /**
@@ -221,28 +71,30 @@ public class SUser implements SUserI {
      * @throws ApiException Sí ocurre algún error durante la creación.
      */
     @Override
-    public User CreateUser(UserDTO userDTO) {
-        ValidationName(userDTO.getName());
-        ValidationLastname(userDTO.getLastname());
-        ValidationEmail(userDTO.getEmail());
-        ValidationPassword(userDTO.getPassword());
-        ValidationRole(userDTO.getRole());
-        isEmailExist(userDTO.getEmail());
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        String hashedPassword = passwordEncoder.encode(userDTO.getPassword());
-        userDTO.setPassword(hashedPassword);
-
-        User newUser = new User(userDTO);
-        newUser.setCreateAt(new Date());
-
-        try {
-            return repositoryUser.save(newUser);
-        } catch (Exception e) {
-            log.error("e: ", e);
-            throw new ApiException(
-                    new ApiResponse("No se pudo crear el usuario.",
-                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+    public UserDTO CreateUser(UserDTO userDTO) throws Exception {
+        return Optional.of(userDTO)
+                .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
+                .map(ValidDTO -> {
+                    validatorUser.validateName(userDTO.getName());
+                    validatorUser.validateLastname(userDTO.getLastname());
+                    validatorUser.validateEmail(userDTO.getEmail());
+                    validatorUser.validatePassword(userDTO.getPassword());
+                    validatorUser.validateRole(userDTO.getRole());
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidDTO;
+                })
+                .map(dto -> {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    dto.setCreateAt(formatter.format(new Date()));
+                    return dto;
+                })
+                .map(mapperUser::toEntity)
+                .map(repositoryUser::save)
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El Usuario ya existe"));
     }
 
     /**
@@ -255,6 +107,14 @@ public class SUser implements SUserI {
     @Override
     public UserDTO getUserById(String id) throws Exception {
         return repositoryUser.findById(new ObjectId(id))
+                .map(ValidId -> {
+                    validatorUser.validateId(id);
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidId;
+                })
                 .map(mapperUser::toDTO)
                 .orElseThrow(() -> new Exception("El Usuario no existe"));
     }
@@ -268,6 +128,14 @@ public class SUser implements SUserI {
     @Override
     public UserDTO getUserByEmail(String email) throws Exception {
         return Optional.of(email)
+                .map(ValidEmail -> {
+                    validatorUser.validateEmail(email);
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidEmail;
+                })
                 .map(repositoryUser::findByEmail)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.get(0))
@@ -284,9 +152,9 @@ public class SUser implements SUserI {
      * @throws ApiException Si no se encuentra un usuario con el nombre y apellido proporcionados.
      */
     @Override
-    public List<User> getUsersByFullName(String name, String lastname) {
-        ValidationName(name);
-        ValidationLastname(lastname);
+    public List<User> getUsersByFullName(String name, String lastname) throws Exception {
+        validatorUser.validateName(name);
+        validatorUser.validateLastname(lastname);
 
         List<User> users = repositoryUser.findByFullName(name, lastname);
         if (users == null || users.isEmpty()) {
@@ -295,6 +163,7 @@ public class SUser implements SUserI {
                     HttpStatus.NOT_FOUND.value()
             ));
         }
+        validatorUser.Reset();
         return users;
     }
 
@@ -307,12 +176,21 @@ public class SUser implements SUserI {
      */
     @Override
     public List<UserDTO> getUsersByName(String name) throws Exception {
-        return Optional.ofNullable(repositoryUser.findByName(name))
+        return Optional.of(name)
+                .map(ValidName -> {
+                    validatorUser.validateName(ValidName);
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidName;
+                })
+                .map(repositoryUser::findByName)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
                         .map(mapperUser::toDTO)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el nombre"));
+                .orElseThrow(() -> new Exception("No existe ningún usuario con el nombre"));
     }
 
     /**
@@ -324,12 +202,21 @@ public class SUser implements SUserI {
      */
     @Override
     public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
-        return Optional.ofNullable(repositoryUser.findByLastname(lastname))
+        return Optional.of(lastname)
+                .map(ValidLastname -> {
+                    validatorUser.validateLastname(ValidLastname);
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidLastname;
+                })
+                .map(repositoryUser::findByLastname)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
                         .map(mapperUser::toDTO)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el apellido"));
+                .orElseThrow(() -> new Exception("No existe ningún usuario con el apellido"));
     }
 
     /**
@@ -343,12 +230,21 @@ public class SUser implements SUserI {
      */
     @Override
     public List<UserDTO> getUsersByRole(String role) throws Exception {
-        return Optional.ofNullable(repositoryUser.findByRole(role))
+        return Optional.of(role)
+                .map(ValidRole -> {
+                    validatorUser.validateRole(ValidRole);
+                    if (!validatorUser.valid) {
+                        throw new ValidationException(validatorUser.errors.toString());
+                    }
+                    validatorUser.Reset();
+                    return ValidRole;
+                })
+                .map(repositoryUser::findByRole)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
                         .map(mapperUser::toDTO)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new Exception("No se encontró ningún usuario con el rol"));
+                .orElseThrow(() -> new Exception("No existe ningún usuario con el rol"));
     }
 
     /**
@@ -364,32 +260,26 @@ public class SUser implements SUserI {
 
         if (updatedUser.getName() != null) {
             String name = updatedUser.getName();
-            ValidationName(name);
             existingUser.setName(name);
         }
 
         if (updatedUser.getLastname() != null) {
             String lastname = updatedUser.getLastname();
-            ValidationLastname(lastname);
             existingUser.setLastname(lastname);
         }
 
         if (updatedUser.getEmail() != null) {
             String email = updatedUser.getEmail();
-            ValidationEmail(email);
-            isEmailExist(email);
             existingUser.setEmail(updatedUser.getEmail());
         }
 
         if (updatedUser.getRole() != null) {
             String role = updatedUser.getRole();
-            ValidationRole(role);
             existingUser.setRole(Role.valueOf(role));
         }
 
         if (updatedUser.getPassword() != null) {
             if (!new BCryptPasswordEncoder().matches(updatedUser.getPassword(), existingUser.getPassword())) {
-                ValidationPassword(updatedUser.getPassword());
                 existingUser.setPassword(new BCryptPasswordEncoder().encode(updatedUser.getPassword()));
             }
         }

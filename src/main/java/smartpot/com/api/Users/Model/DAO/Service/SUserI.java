@@ -7,29 +7,15 @@ import smartpot.com.api.Users.Model.Entity.User;
 import java.util.List;
 
 public interface SUserI extends UserDetailsService {
-    void ValidationId(String id);
+    List<UserDTO> getAllUsers() throws Exception;
 
-    void ValidationName(String name);
-
-    void ValidationLastname(String lastname);
-
-    void ValidationEmail(String email);
-
-    void ValidationPassword(String password);
-
-    void ValidationRole(String role);
-
-    void isEmailExist(String email);
-
-    List<User> getAllUsers();
-
-    User CreateUser(UserDTO userDTO);
+    UserDTO CreateUser(UserDTO userDTO) throws Exception;
 
     UserDTO getUserById(String id) throws Exception;
 
     UserDTO getUserByEmail(String email) throws Exception;
 
-    List<User> getUsersByFullName(String name, String lastname);
+    List<User> getUsersByFullName(String name, String lastname) throws Exception;
 
     List<UserDTO> getUsersByName(String name) throws Exception;
 

@@ -1,5 +1,6 @@
 package smartpot.com.api.Users.Model.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,23 +8,32 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDTO {
-    @Schema(description = "ID del usuario", hidden = true)
+    @Schema(description = "ID único del usuario, generado automáticamente por la base de datos.",
+            example = "676ae2a9b909de5f9607fcb6", hidden = true)
     private String id = null;
 
+    @Schema(description = "Nombre del usuario. Este campo es obligatorio.",
+            example = "Juan")
     private String name;
 
+    @Schema(description = "Apellido del usuario. Este campo es obligatorio.",
+            example = "Pérez")
     private String lastname;
 
     @Schema(description = "Correo electrónico del usuario. Este campo es obligatorio y debe ser único.",
-            example = "usuario@ejemplo.com")
+            example = "usuario@example.com")
     private String email;
 
-    private String createAt;
+    @Schema(description = "Fecha de creación del usuario. Este campo es generado automáticamente en el momento de la creación y es oculto en las respuestas API.",
+            example = "2024-12-24 11:34:49")
+    private String createAt = null;
 
-    @Schema(description = "Contraseña del usuario. Este campo es obligatorio.",
-            example = "password123")
+    @Schema(description = "Contraseña del usuario. Este campo es obligatorio y debe ser segura. Se almacenará de forma cifrada.",
+            example = "Password123@")
     private String password;
+
+    @Schema(description = "Rol asignado al usuario. Este campo define los permisos del usuario en el sistema. Ejemplo de valores: 'USER', 'ADMIN'.",
+            example = "USER")
     private String role;
 }

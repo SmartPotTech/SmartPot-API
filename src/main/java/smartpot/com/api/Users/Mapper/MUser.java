@@ -8,16 +8,22 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 @Mapper(componentModel="spring")
 public interface MUser {
     MUser INSTANCE = Mappers.getMapper(MUser.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "password", target = "password", qualifiedByName = "encodePassword")
+    @Mapping(source = "createAt", target = "createAt", qualifiedByName = "stringToDate")
     public User toEntity(UserDTO userDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "password", target = "password", qualifiedByName = "decodePassword")
+    @Mapping(source = "createAt", target = "createAt", qualifiedByName = "dateToString")
     public UserDTO toDTO(User user);
 
     @org.mapstruct.Named("objectIdToString")
@@ -42,5 +48,18 @@ public interface MUser {
     @org.mapstruct.Named("decodePassword")
     default String decodePassword(String encodedPassword) {
         return encodedPassword;
+    }
+
+    @org.mapstruct.Named("stringToDate")
+    default Date stringToDate(String dateString) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.parse(dateString);
+    }
+
+    @org.mapstruct.Named("dateToString")
+    default String dateToString(Date date) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(date);
+
     }
 }
