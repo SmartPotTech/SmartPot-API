@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import static smartpot.com.api.Users.Validation.UserRegex.*;
 
 @Component
-public class VUser {
+public class VUser implements VUserI {
     public boolean valid;
     public List<String> errors;
 
@@ -20,6 +20,17 @@ public class VUser {
         this.errors = new ArrayList<>();
     }
 
+    @Override
+    public boolean isValid() {
+        return !valid;
+    }
+
+    @Override
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    @Override
     public void validateId(String id) {
         if (id == null || id.isEmpty()) {
             errors.add("El Id no puede estar vació");
@@ -31,11 +42,13 @@ public class VUser {
 
     }
 
+    @Override
     public void Reset() {
         valid = true;
         errors = new ArrayList<>();
     }
 
+    @Override
     public void validateName(String name) {
         if (name == null || !Pattern.matches(NAME_PATTERN, name)) {
             valid = false;
@@ -43,6 +56,7 @@ public class VUser {
         }
     }
 
+    @Override
     public void validateLastname(String lastname) {
         if (lastname == null || !Pattern.matches(LASTNAME_PATTERN, lastname)) {
             valid = false;
@@ -50,6 +64,7 @@ public class VUser {
         }
     }
 
+    @Override
     public void validateEmail(String email) {
         if (email == null || !Pattern.matches(EMAIL_PATTERN, email)) {
             valid = false;
@@ -57,6 +72,7 @@ public class VUser {
         }
     }
 
+    @Override
     public void validatePassword(String password) {
         if (password == null || !Pattern.matches(PASSWORD_PATTERN, password)) {
             valid = false;
@@ -64,6 +80,7 @@ public class VUser {
         }
     }
 
+    @Override
     public void validateRole(String role) {
         if (role == null || role.isEmpty()) {
             errors.add("El rol no puede estar vacío");

@@ -24,7 +24,7 @@ public class UserDTO {
     private String email;
 
     @Schema(description = "Fecha de creación del usuario. Este campo es generado automáticamente en el momento de la creación y es oculto en las respuestas API.",
-            example = "2024-12-24 11:34:49")
+            example = "2024-12-24 11:34:49", hidden = true)
     private String createAt = null;
 
     @Schema(description = "Contraseña del usuario. Este campo es obligatorio y debe ser segura. Se almacenará de forma cifrada.",
