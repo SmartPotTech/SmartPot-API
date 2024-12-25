@@ -14,7 +14,7 @@ public class SmartPotApiApplication {
         SpringApplication.run(SmartPotApiApplication.class, args);
     }
 
-    private static void loadEnv(){
+    private static void loadEnv() {
         Dotenv dotenv = Dotenv.load();
 
         dotenv.entries().forEach(entry -> {

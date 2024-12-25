@@ -7,15 +7,15 @@ import org.mapstruct.factory.Mappers;
 import smartpot.com.api.Sessions.Model.DTO.SessionDTO;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 
-@Mapper(componentModel="spring")
+@Mapper(componentModel = "spring")
 public interface MSession {
     MSession INSTANCE = Mappers.getMapper(MSession.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
-    public Session toEntity(SessionDTO sessionDTO);
+    Session toEntity(SessionDTO sessionDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
-    public SessionDTO toDTO(Session session);
+    SessionDTO toDTO(Session session);
 
     @org.mapstruct.Named("objectIdToString")
     default String objectIdToString(ObjectId objectId) {

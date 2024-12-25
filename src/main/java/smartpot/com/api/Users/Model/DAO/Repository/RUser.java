@@ -49,7 +49,7 @@ public interface RUser extends MongoRepository<User, ObjectId> {
      * Busca una lista de usuarios cuyo nombre y apellido coincidan con los patrones
      * proporcionados, realizando una búsqueda insensible a mayúsculas/minúsculas.
      *
-     * @param name El nombre o patrón a buscar en el campo 'name' de los usuarios.
+     * @param name     El nombre o patrón a buscar en el campo 'name' de los usuarios.
      * @param lastname El apellido o patrón a buscar en el campo 'lastname' de los usuarios.
      * @return Una lista de usuarios cuyo nombre y apellido coincidan con los patrones.
      */

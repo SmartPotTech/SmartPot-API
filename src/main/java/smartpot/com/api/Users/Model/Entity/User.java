@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+
 import java.io.Serializable;
 import java.util.Date;
 

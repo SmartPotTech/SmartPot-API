@@ -12,7 +12,6 @@ import smartpot.com.api.Sessions.Model.DAO.Repository.RSession;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.Date;
 import java.util.List;
@@ -21,7 +20,7 @@ import java.util.Optional;
 @Data
 @Builder
 @Service
-public class SSession implements SSessionI{
+public class SSession implements SSessionI {
 
     private final RSession repositorySession;
     private final SUserI user;

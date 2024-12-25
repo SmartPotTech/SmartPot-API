@@ -7,17 +7,17 @@ import org.mapstruct.factory.Mappers;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
 
-@Mapper(componentModel="spring")
+@Mapper(componentModel = "spring")
 public interface MCrop {
     MCrop INSTANCE = Mappers.getMapper(MCrop.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "user", target = "user", qualifiedByName = "stringToObjectId")
-    public Crop toEntity(CropDTO cropDTO);
+    Crop toEntity(CropDTO cropDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "user", target = "user", qualifiedByName = "objectIdToString")
-    public CropDTO toDTO(Crop crop);
+    CropDTO toDTO(Crop crop);
 
     @org.mapstruct.Named("objectIdToString")
     default String objectIdToString(ObjectId objectId) {

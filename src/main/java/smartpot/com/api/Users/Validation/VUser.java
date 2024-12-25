@@ -1,9 +1,7 @@
 package smartpot.com.api.Users.Validation;
 
-import jakarta.xml.bind.ValidationException;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.Role;
 
 import java.util.ArrayList;
@@ -22,30 +20,30 @@ public class VUser {
         this.errors = new ArrayList<>();
     }
 
-    public void validateId(String id){
+    public void validateId(String id) {
         if (id == null || id.isEmpty()) {
             errors.add("El Id no puede estar vació");
             valid = false;
-        }else if(!ObjectId.isValid(id)) {
+        } else if (!ObjectId.isValid(id)) {
             errors.add("El Id debe ser un hexadecimal de 24 caracteres");
             valid = false;
         }
 
     }
 
-    public void Reset(){
+    public void Reset() {
         valid = true;
         errors = new ArrayList<>();
     }
 
-    public void validateName(String name){
+    public void validateName(String name) {
         if (name == null || !Pattern.matches(NAME_PATTERN, name)) {
             valid = false;
             errors.add("El nombre debe tener entre 4 y 15 caracteres y solo letras");
         }
     }
 
-    public void validateLastname(String lastname){
+    public void validateLastname(String lastname) {
         if (lastname == null || !Pattern.matches(LASTNAME_PATTERN, lastname)) {
             valid = false;
             errors.add("El apellido debe tener entre 4 y 30 caracteres");
@@ -70,7 +68,7 @@ public class VUser {
         if (role == null || role.isEmpty()) {
             errors.add("El rol no puede estar vacío");
             valid = false;
-        }else{
+        } else {
             boolean isValidRole = false;
             for (String validRole : getRoleNames()) {
                 if (validRole.matches(role)) {

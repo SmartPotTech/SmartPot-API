@@ -7,11 +7,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
+import smartpot.com.api.Security.Service.JwtServiceI;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
-import smartpot.com.api.Security.Service.JwtServiceI;
 
 @RestController
 @RequestMapping("/auth")

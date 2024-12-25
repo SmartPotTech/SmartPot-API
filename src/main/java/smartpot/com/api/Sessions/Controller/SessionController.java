@@ -40,7 +40,7 @@ public class SessionController {
     public ResponseEntity<?> createSession(@RequestBody Session newSession) {
         try {
             return new ResponseEntity<>(session.createSession(newSession), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }

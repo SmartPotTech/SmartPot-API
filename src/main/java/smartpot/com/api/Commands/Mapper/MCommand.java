@@ -7,17 +7,17 @@ import org.mapstruct.factory.Mappers;
 import smartpot.com.api.Commands.Model.DTO.CommandDTO;
 import smartpot.com.api.Commands.Model.Entity.Command;
 
-@Mapper(componentModel="spring")
+@Mapper(componentModel = "spring")
 public interface MCommand {
     MCommand INSTANCE = Mappers.getMapper(MCommand.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "stringToObjectId")
-    public Command toEntity(CommandDTO commandDTO);
+    Command toEntity(CommandDTO commandDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "objectIdToString")
-    public CommandDTO toDTO(Command command);
+    CommandDTO toDTO(Command command);
 
     @org.mapstruct.Named("objectIdToString")
     default String objectIdToString(ObjectId objectId) {

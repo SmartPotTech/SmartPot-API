@@ -5,9 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
-import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
+import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Exception.ErrorResponse;
 
 import java.util.List;
@@ -76,7 +76,7 @@ public class CropController {
     public ResponseEntity<?> getCropByUser(@PathVariable String id) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByUser(id), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
@@ -91,7 +91,7 @@ public class CropController {
     public ResponseEntity<?> countCropsByUser(@PathVariable String id) {
         try {
             return new ResponseEntity<>(serviceCrop.countCropsByUser(id), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
@@ -107,7 +107,7 @@ public class CropController {
     public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
         try {
             return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
@@ -123,7 +123,7 @@ public class CropController {
     public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
         try {
             return new ResponseEntity<>(serviceCrop.updatedCrop(id, cropDetails), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }

@@ -16,9 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
-import smartpot.com.api.Security.Headers.CorsConfig;
 import smartpot.com.api.Security.Auth.JwtAuthFilter;
+import smartpot.com.api.Security.Headers.CorsConfig;
+import smartpot.com.api.Users.Model.DAO.Service.SUser;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,15 +31,14 @@ public class SecurityConfiguration {
     private final CorsConfig corsConfig;
     private final JwtAuthFilter jwtAuthFilter;
     private final SUser serviceUser;
+    @Value("${application.security.public.routes}")
+    private String publicRoutes;
 
     public SecurityConfiguration(CorsConfig corsConfig, JwtAuthFilter jwtAuthFilter, SUser serviceUser) {
         this.corsConfig = corsConfig;
         this.jwtAuthFilter = jwtAuthFilter;
         this.serviceUser = serviceUser;
     }
-
-    @Value("${application.security.public.routes}")
-    private String publicRoutes;
 
     /**
      * Configura la seguridad de las solicitudes HTTP para la aplicación.

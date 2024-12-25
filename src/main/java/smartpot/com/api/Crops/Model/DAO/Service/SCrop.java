@@ -9,16 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import smartpot.com.api.Exception.ApiException;
-import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Crops.Model.DAO.Repository.RCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Crop;
 import smartpot.com.api.Crops.Model.Entity.Status;
 import smartpot.com.api.Crops.Model.Entity.Type;
+import smartpot.com.api.Exception.ApiException;
+import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,7 @@ import java.util.stream.Stream;
 @Data
 @Builder
 @Service
-public class SCrop implements SCropI{
+public class SCrop implements SCropI {
 
     private final RCrop repositoryCrop;
     private final SUserI serviceUser;
@@ -139,7 +138,7 @@ public class SCrop implements SCropI{
      */
     @Override
     public long countCropsByUser(String id) throws Exception {
-        System.out.println("//////////////////////////////////////////////"+getCropsByUser(id).size());
+        System.out.println("//////////////////////////////////////////////" + getCropsByUser(id).size());
         return getCropsByUser(id).size();
 
     }

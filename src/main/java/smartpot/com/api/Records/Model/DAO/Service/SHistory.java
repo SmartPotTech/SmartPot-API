@@ -19,7 +19,6 @@ import smartpot.com.api.Records.Model.DTO.MeasuresDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
 import smartpot.com.api.Records.Model.Entity.DateRange;
 import smartpot.com.api.Records.Model.Entity.History;
-import smartpot.com.api.Records.Model.Entity.Measures;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -275,7 +274,7 @@ public class SHistory implements SHistoryI {
             List<History> histories = repositoryHistory.getHistoriesByCrop(crop.getId());
 
             for (History history : histories) {
-                records.add(new CropRecordDTO(crop,history));
+                records.add(new CropRecordDTO(crop, history));
             }
         }
         return records;

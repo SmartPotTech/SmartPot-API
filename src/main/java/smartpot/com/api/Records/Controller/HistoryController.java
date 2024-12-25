@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Exception.ErrorResponse;
 import smartpot.com.api.Records.Model.DAO.Service.SHistoryI;
-import smartpot.com.api.Records.Model.DTO.CropRecordDTO;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
 import smartpot.com.api.Records.Model.Entity.DateRange;
 import smartpot.com.api.Records.Model.Entity.History;
@@ -61,7 +60,7 @@ public class HistoryController {
     /**
      * Busca un histórico filtrando por un cultivo y por un rango de fechas.
      *
-     * @param id Identificador ObjectId del cultivo
+     * @param id     Identificador ObjectId del cultivo
      * @param ranges Rango de fechas
      * @return Los históricos encontrado
      */
@@ -80,7 +79,7 @@ public class HistoryController {
     public ResponseEntity<?> getByUser(@PathVariable String id) {
         try {
             return new ResponseEntity<>(serviceHistory.getByUser(id), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }

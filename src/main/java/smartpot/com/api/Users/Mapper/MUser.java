@@ -12,19 +12,19 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-@Mapper(componentModel="spring")
+@Mapper(componentModel = "spring")
 public interface MUser {
     MUser INSTANCE = Mappers.getMapper(MUser.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "password", target = "password", qualifiedByName = "encodePassword")
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "stringToDate")
-    public User toEntity(UserDTO userDTO);
+    User toEntity(UserDTO userDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "password", target = "password", qualifiedByName = "decodePassword")
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "dateToString")
-    public UserDTO toDTO(User user);
+    UserDTO toDTO(User user);
 
     @org.mapstruct.Named("objectIdToString")
     default String objectIdToString(ObjectId objectId) {

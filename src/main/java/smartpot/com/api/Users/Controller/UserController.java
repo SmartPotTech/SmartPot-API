@@ -63,7 +63,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -74,7 +74,7 @@ public class UserController {
      * se devolverá una lista vacía con código HTTP 200.
      *
      * @return Un objeto `ResponseEntity` que contiene una lista de todos los usuarios registrados (código HTTP 200).
-     *         En caso de error, se devolverá un mensaje de error con el código HTTP 404.
+     * En caso de error, se devolverá un mensaje de error con el código HTTP 404.
      * *
      * Respuestas posibles:
      * - **200 OK**: Se retorna una lista de objetos `UserDTO` con la información de todos los usuarios.
@@ -97,7 +97,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getAllUsers(), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -133,7 +133,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUserById(id), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con id '" + id + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -145,7 +145,7 @@ public class UserController {
      *
      * @param email La dirección de correo electrónico del usuario. Este debe ser único en el sistema.
      * @return Un objeto `ResponseEntity` que contiene el usuario con el correo electrónico proporcionado.
-     *         En caso de error, se devolverá un mensaje de error con el código HTTP 404.
+     * En caso de error, se devolverá un mensaje de error con el código HTTP 404.
      * *
      * Respuestas posibles:
      * - **200 OK**: Se retorna el usuario que coincide con el correo electrónico proporcionado.
@@ -167,7 +167,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con email '" + email + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con email '" + email + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -201,7 +201,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre '" + name + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre '" + name + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -211,6 +211,7 @@ public class UserController {
      * Recupera una lista de usuarios cuyo apellido coincide con el proporcionado.
      * Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.
      * *
+     *
      * @param lastname El apellido del usuario a buscar. Este parámetro puede ser el apellido completo o parte de él.
      * @return Una lista de usuarios que coinciden con el apellido proporcionado.
      * *
@@ -235,7 +236,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con apellido '" + lastname + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con apellido '" + lastname + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -245,7 +246,7 @@ public class UserController {
      * Recupera una lista de usuarios cuyo nombre y apellido coinciden con los parámetros proporcionados.
      * Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.
      *
-     * @param name El nombre del usuario a buscar.
+     * @param name     El nombre del usuario a buscar.
      * @param lastname El apellido del usuario a buscar.
      * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionados.
      * *
@@ -272,7 +273,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByFullName(name, lastname), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre completo '" + name + " " + lastname + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre completo '" + name + " " + lastname + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -306,7 +307,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" +e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -316,7 +317,7 @@ public class UserController {
      * Recupera un usuario utilizando su ID único y luego actualiza sus datos con la información proporcionada en el `UserDTO`.
      * Si el usuario no existe u ocurre un error durante la actualización, se devolverá un mensaje de error con el código HTTP 404.
      *
-     * @param id El identificador único del usuario que se desea actualizar. Este parámetro debe ser el ID del usuario a modificar.
+     * @param id          El identificador único del usuario que se desea actualizar. Este parámetro debe ser el ID del usuario a modificar.
      * @param updatedUser El objeto `UserDTO` que contiene la nueva información del usuario a actualizar.
      * @return Un objeto `ResponseEntity` con el usuario actualizado (código HTTP 200) o un mensaje de error (código HTTP 404).
      * *
@@ -374,7 +375,7 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceUser.deleteUser(id), HttpStatus.OK);
-        } catch (Exception e)            {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
