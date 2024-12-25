@@ -305,7 +305,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(serviceUser.updateUser(id, updatedUser), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -329,16 +329,16 @@ public class UserController {
             responses = {
                     @ApiResponse(description = "Usuario eliminado",
                             responseCode = "200",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))),
+                            content = @Content(mediaType = "application/plane", schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "404",
-                            description = "No se pudo eliminar el usuario. El usuario puede no existir.",
+                            description = "No se pudo eliminar el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceUser.deleteUser(id), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse("Error al eliminar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 }
