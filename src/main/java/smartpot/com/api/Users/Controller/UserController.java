@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ErrorResponse;
-import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
@@ -241,43 +240,6 @@ public class UserController {
     }
 
     /**
-     * Busca todos los usuarios cuyo nombre y apellido coincidan con los proporcionados.
-     * *
-     * Recupera una lista de usuarios cuyo nombre y apellido coinciden con los parámetros proporcionados.
-     * Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.
-     *
-     * @param name     El nombre del usuario a buscar.
-     * @param lastname El apellido del usuario a buscar.
-     * @return Una lista de usuarios que coinciden con el nombre y apellido proporcionados.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna una lista de objetos `UserDTO` con los usuarios cuyo nombre y apellido coinciden con los proporcionados.
-     * - **404 Not Found**: No se encontraron usuarios con el nombre y apellido proporcionados.
-     */
-    @GetMapping("/fullname/{name}/{lastname}")
-    @Operation(summary = "Buscar usuarios por nombre y apellido",
-            description = "Recupera usuarios cuyo nombre y apellido coinciden con los proporcionados. "
-                    + "Si no se encuentran usuarios, se devolverá una lista vacía.",
-            responses = {
-                    @ApiResponse(description = "Usuarios encontrados",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = UserDTO.class)))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se encontraron usuarios con el nombre y apellido proporcionados.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> getUsersByFullName(
-            @PathVariable @Parameter(description = "Nombre del usuario a buscar.", required = true) String name,
-            @PathVariable @Parameter(description = "Apellido del usuario a buscar.", required = true) String lastname) {
-        try {
-            return new ResponseEntity<>(serviceUser.getUsersByFullName(name, lastname), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre completo '" + name + " " + lastname + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    /**
      * Busca todos los usuarios que tengan el rol especificado.
      * *
      * Recupera una lista de usuarios que tienen el rol proporcionado.
@@ -341,7 +303,7 @@ public class UserController {
             @PathVariable @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) String id,
             @RequestBody @Parameter(description = "Datos actualizados del usuario.") UserDTO updatedUser) {
         try {
-            return new ResponseEntity<>(serviceUser.updateUser(MUser.INSTANCE.toEntity(serviceUser.getUserById(id)), updatedUser), HttpStatus.OK);
+            return new ResponseEntity<>(serviceUser.updateUser(id, updatedUser), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

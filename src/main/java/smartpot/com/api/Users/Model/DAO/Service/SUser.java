@@ -9,16 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.Role;
 import smartpot.com.api.Users.Model.Entity.User;
-import smartpot.com.api.Users.Validation.VUser;
+import smartpot.com.api.Users.Validation.VUserI;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -38,20 +36,33 @@ import java.util.stream.Collectors;
 public class SUser implements SUserI {
     private final RUser repositoryUser;
     private final MUser mapperUser;
-    private final VUser validatorUser;
+    private final VUserI validatorUser;
 
+    /**
+     * Constructor que inyecta las dependencias del servicio.
+     *
+     * @param repositoryUser repositorio que maneja las operaciones de base de datos.
+     * @param mapperUser     mapeador que convierte entidades User a UserDTO.
+     * @param validatorUser  validador que valida los datos de usuario.
+     */
     @Autowired
-    public SUser(RUser repositoryUser, MUser mapperUser, VUser validatorUser) {
+    public SUser(RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
         this.repositoryUser = repositoryUser;
         this.mapperUser = mapperUser;
         this.validatorUser = validatorUser;
     }
 
     /**
-     * Obtiene todos los usuarios registrados en la base de datos.
+     * Obtiene todos los usuarios de la base de datos y los convierte a DTOs.
+     * *
+     * Este método consulta todos los usuarios almacenados en la base de datos utilizando el
+     * repositorio `repositoryUser`. Si la lista de usuarios está vacía, lanza una excepción.
+     * Los usuarios obtenidos se mapean a objetos `UserDTO` utilizando el objeto `mapperUser`.
      *
-     * @return Lista de usuarios.
-     * @throws ApiException Si no se encuentran usuarios en la base de datos.
+     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
+     * @throws Exception si no se encuentran usuarios en la base de datos.
+     *
+     * @see UserDTO
      */
     @Override
     public List<UserDTO> getAllUsers() throws Exception {
@@ -64,11 +75,21 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Crea un nuevo usuario, validando los datos antes de guardarlos.
-     *
-     * @param userDTO El usuario a crear.
-     * @return El usuario creado.
-     * @throws ApiException Sí ocurre algún error durante la creación.
+     * Crea un nuevo usuario en la base de datos a partir de un objeto {@link UserDTO}.
+     * *
+     * Este método valida que el usuario no exista previamente en la base de datos mediante su email.
+     * Luego, realiza una serie de validaciones sobre los datos del usuario, como el nombre, apellido,
+     * correo electrónico, contraseña y rol. Si las validaciones son exitosas, el usuario se crea y
+     * se guarda en la base de datos. Si el usuario ya existe o si las validaciones fallan, se lanza una
+     * excepción correspondiente.
+     * *
+     * @param userDTO el objeto {@link UserDTO} que contiene los datos del nuevo usuario.
+     * @return un objeto {@link UserDTO} que representa al usuario creado.
+     * @throws Exception si el usuario ya existe en la base de datos (por email) o si hay un error de validación.
+     * @throws ValidationException si las validaciones de los campos del usuario no son exitosas.
+     * *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public UserDTO CreateUser(UserDTO userDTO) throws Exception {
@@ -80,8 +101,8 @@ public class SUser implements SUserI {
                     validatorUser.validateEmail(userDTO.getEmail());
                     validatorUser.validatePassword(userDTO.getPassword());
                     validatorUser.validateRole(userDTO.getRole());
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidDTO;
@@ -98,19 +119,28 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Obtiene un usuario por su ID. Si el ID es válido, se busca el usuario en la base de datos.
+     * Obtiene un usuario de la base de datos a partir de su ID.
+     * *
+     * Este método busca un usuario en la base de datos utilizando el ID proporcionado.
+     * Si el usuario existe, se valida el ID utilizando el validador. Si el ID es válido,
+     * se convierte el usuario de entidad a DTO y se devuelve. Si el usuario no existe o
+     * el ID no es válido, se lanza una excepción correspondiente.
      *
-     * @param id El identificador del usuario a buscar.
-     * @return El usuario encontrado.
-     * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
+     * @param id el ID del usuario que se desea obtener. El ID debe ser una cadena que representa un {@link ObjectId}.
+     * @return un objeto {@link UserDTO} que representa al usuario encontrado.
+     * @throws Exception si el usuario no existe en la base de datos o si el ID no es válido.
+     * @throws ValidationException si el ID proporcionado no es válido según las reglas de validación.
+     *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public UserDTO getUserById(String id) throws Exception {
         return repositoryUser.findById(new ObjectId(id))
                 .map(ValidId -> {
                     validatorUser.validateId(id);
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidId;
@@ -120,18 +150,29 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Obtiene un usuario por su correo electrónico.
+     * Obtiene un usuario de la base de datos a partir de su correo electrónico.
+     * *
+     * Este método busca un usuario en la base de datos utilizando su correo electrónico.
+     * Primero, valida que el correo proporcionado sea válido. Si el correo es válido,
+     * realiza una búsqueda en la base de datos. Si el usuario con el correo electrónico
+     * proporcionado existe, se convierte a un objeto {@link UserDTO} y se devuelve.
+     * Si el correo no es válido o el usuario no existe, se lanzará una excepción correspondiente.
      *
-     * @param email El correo electrónico del usuario a buscar.
-     * @return El usuario encontrado.
+     * @param email el correo electrónico del usuario que se desea obtener.
+     * @return un objeto {@link UserDTO} que representa al usuario encontrado.
+     * @throws Exception si el usuario no existe en la base de datos o si el correo no es válido.
+     * @throws ValidationException si el correo electrónico proporcionado no es válido según las reglas de validación.
+     *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public UserDTO getUserByEmail(String email) throws Exception {
         return Optional.of(email)
                 .map(ValidEmail -> {
                     validatorUser.validateEmail(email);
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidEmail;
@@ -144,43 +185,29 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Obtiene una lista de usuarios filtrados por su nombre completo.
+     * Obtiene una lista de usuarios de la base de datos a partir de su nombre.
+     * *
+     * Este método busca usuarios en la base de datos utilizando el nombre proporcionado.
+     * Primero, valida que el nombre proporcionado sea válido. Si el nombre es válido,
+     * realiza una búsqueda en la base de datos. Si existen usuarios con el nombre proporcionado,
+     * se convierten a una lista de objetos {@link UserDTO} y se devuelven. Si el nombre no es válido
+     * o no se encuentran usuarios con ese nombre, se lanza una excepción correspondiente.
      *
-     * @param name     El nombre del usuario.
-     * @param lastname El apellido del usuario.
-     * @return Lista de usuarios que coinciden con el nombre y apellido.
-     * @throws ApiException Si no se encuentra un usuario con el nombre y apellido proporcionados.
-     */
-    @Override
-    public List<User> getUsersByFullName(String name, String lastname) throws Exception {
-        validatorUser.validateName(name);
-        validatorUser.validateLastname(lastname);
-
-        List<User> users = repositoryUser.findByFullName(name, lastname);
-        if (users == null || users.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún usuario con el nombre '" + name + "' y apellido '" + lastname + "'.",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-        validatorUser.Reset();
-        return users;
-    }
-
-    /**
-     * Obtiene una lista de usuarios filtrados por su nombre.
+     * @param name el nombre del usuario que se desea obtener.
+     * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
+     * @throws Exception si no existen usuarios con el nombre proporcionado o si el nombre no es válido.
+     * @throws ValidationException si el nombre proporcionado no es válido según las reglas de validación.
      *
-     * @param name El nombre del usuario.
-     * @return Lista de usuarios que coinciden con el nombre.
-     * @throws ApiException Si no se encuentra un usuario con el nombre proporcionado.
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public List<UserDTO> getUsersByName(String name) throws Exception {
         return Optional.of(name)
                 .map(ValidName -> {
                     validatorUser.validateName(ValidName);
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidName;
@@ -194,19 +221,29 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Obtiene una lista de usuarios filtrados por su apellido.
+     * Obtiene una lista de usuarios de la base de datos a partir de su apellido.
+     * *
+     * Este método busca usuarios en la base de datos utilizando el apellido proporcionado.
+     * Primero, valida que el apellido proporcionado sea válido. Si el apellido es válido,
+     * realiza una búsqueda en la base de datos. Si existen usuarios con el apellido proporcionado,
+     * se convierten a una lista de objetos {@link UserDTO} y se devuelven. Si el apellido no es válido
+     * o no se encuentran usuarios con ese apellido, se lanza una excepción correspondiente.
      *
-     * @param lastname El apellido del usuario.
-     * @return Lista de usuarios que coinciden con el apellido.
-     * @throws ApiException Si no se encuentra un usuario con el apellido proporcionado.
+     * @param lastname el apellido del usuario o los usuarios que se desea obtener.
+     * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
+     * @throws Exception si no existen usuarios con el apellido proporcionado o si el apellido no es válido.
+     * @throws ValidationException si el apellido proporcionado no es válido según las reglas de validación.
+     *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
         return Optional.of(lastname)
                 .map(ValidLastname -> {
                     validatorUser.validateLastname(ValidLastname);
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidLastname;
@@ -220,21 +257,29 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Obtiene una lista de usuarios filtrados por su rol.
-     * Este método permite recuperar todos los usuarios que tiene asignado un rol especifico.
-     * Si no se encuentran usuarios con el rol proporcionado, se lanza una excepción.
+     * Obtiene una lista de usuarios de la base de datos a partir de su rol.
+     * *
+     * Este método busca usuarios en la base de datos utilizando el rol proporcionado.
+     * Primero, valida que el rol proporcionado sea válido. Si el rol es válido,
+     * realiza una búsqueda en la base de datos. Si existen usuarios con ese rol,
+     * se convierten a una lista de objetos {@link UserDTO} y se devuelven. Si el rol no es válido
+     * o no se encuentran usuarios con ese rol, se lanza una excepción correspondiente.
      *
-     * @param role El rol que se utilizará para filtrar los usuarios. Este valor debe ser una cadena que corresponda con uno de los roles definidos en la enumeración `Role`.
-     * @return Una lista de usuarios que tienen el rol especificado.
-     * @throws ApiException Si no se encuentran usuarios con el rol proporcionado.
+     * @param role el rol del usuario o los usuarios que se desea obtener.
+     * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
+     * @throws Exception si no existen usuarios con el rol proporcionado o si el rol no es válido.
+     * @throws ValidationException si el rol proporcionado no es válido según las reglas de validación.
+     *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
     public List<UserDTO> getUsersByRole(String role) throws Exception {
         return Optional.of(role)
                 .map(ValidRole -> {
                     validatorUser.validateRole(ValidRole);
-                    if (!validatorUser.valid) {
-                        throw new ValidationException(validatorUser.errors.toString());
+                    if (validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
                     return ValidRole;
@@ -248,57 +293,65 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Actualiza la información de un usuario existente.
+     * Actualiza la información de un usuario en la base de datos.
+     * *
+     * Este método permite actualizar los detalles de un usuario existente en la base de datos. Primero,
+     * se busca el usuario por su ID. Si el usuario existe, se actualizan los campos del usuario con los
+     * valores proporcionados en el objeto {@link UserDTO}. Luego, se validan los nuevos valores antes de
+     * guardar el usuario actualizado. Si alguno de los valores es inválido, se lanza una excepción de validación.
      *
-     * @param existingUser El User del usuario a actualizar.
-     * @param updatedUser  Los nuevos datos del usuario.
-     * @return El usuario actualizado.
-     * @throws ApiException Sí ocurre algún error durante la actualización.
+     * @param id el identificador del usuario a actualizar.
+     * @param updatedUser el objeto {@link UserDTO} que contiene los nuevos valores para el usuario.
+     * @return un objeto {@link UserDTO} con la información actualizada del usuario.
+     * @throws Exception si el usuario no se pudo actualizar debido a algún error general.
+     * @throws ValidationException si alguno de los campos del usuario proporcionado no es válido según las reglas de validación.
+     *
+     * @see UserDTO
+     * @see ValidationException
      */
     @Override
-    public User updateUser(User existingUser, UserDTO updatedUser) {
+    public UserDTO updateUser(String id, UserDTO updatedUser) throws Exception {
+        UserDTO existingUser = getUserById(id);
+        return Optional.of(updatedUser)
+                .map(dto -> {
+                    existingUser.setName(dto.getName() != null ? dto.getName() : existingUser.getName());
+                    existingUser.setLastname(dto.getLastname() != null ? dto.getLastname() : existingUser.getLastname());
+                    existingUser.setEmail(dto.getEmail() != null ? dto.getEmail() : existingUser.getEmail());
+                    existingUser.setPassword(dto.getPassword() != null ? dto.getPassword() : existingUser.getPassword());
+                    existingUser.setRole(dto.getRole() != null ? dto.getRole() : existingUser.getRole());
+                    return existingUser;
+                })
+                .map(dto -> {
+                    validatorUser.validateName(dto.getName());
+                    validatorUser.validateLastname(dto.getLastname());
+                    validatorUser.validateEmail(dto.getEmail());
+                    validatorUser.validatePassword(dto.getPassword());
+                    validatorUser.validateRole(dto.getRole());
+                    if (!validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
+                    }
 
-        if (updatedUser.getName() != null) {
-            String name = updatedUser.getName();
-            existingUser.setName(name);
-        }
-
-        if (updatedUser.getLastname() != null) {
-            String lastname = updatedUser.getLastname();
-            existingUser.setLastname(lastname);
-        }
-
-        if (updatedUser.getEmail() != null) {
-            String email = updatedUser.getEmail();
-            existingUser.setEmail(updatedUser.getEmail());
-        }
-
-        if (updatedUser.getRole() != null) {
-            String role = updatedUser.getRole();
-            existingUser.setRole(Role.valueOf(role));
-        }
-
-        if (updatedUser.getPassword() != null) {
-            if (!new BCryptPasswordEncoder().matches(updatedUser.getPassword(), existingUser.getPassword())) {
-                existingUser.setPassword(new BCryptPasswordEncoder().encode(updatedUser.getPassword()));
-            }
-        }
-
-        try {
-            return repositoryUser.save(existingUser);
-        } catch (Exception e) {
-            log.error("e: ", e);
-            throw new ApiException(
-                    new ApiResponse("No se pudo actualizar el usuario con ID '" + existingUser.getId() + "'.",
-                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+                    validatorUser.Reset();
+                    return dto;
+                })
+                .map(mapperUser::toEntity)
+                .map(repositoryUser::save)
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
     }
 
     /**
-     * Elimina un usuario por su ID.
+     * Elimina un usuario de la base de datos.
+     * *
+     * Este método permite eliminar un usuario de la base de datos utilizando su ID. Primero, se verifica
+     * si el usuario existe. Si el usuario existe, se elimina de la base de datos. Si no se encuentra
+     * el usuario con el ID proporcionado, se lanza una excepción indicando que el usuario no existe.
      *
-     * @param id del usuario con la finalidad de validar si existe, para poder eliminarlo.
-     * @throws ApiException Si no se encuentra el usuario con el ID proporcionado.
+     * @param id el identificador del usuario que se desea eliminar.
+     * @return un mensaje indicando que el usuario ha sido eliminado correctamente.
+     * @throws Exception si el usuario no existe o si ocurre un error durante el proceso de eliminación.
+     *
+     * @see UserDTO
      */
     @Override
     public String deleteUser(String id) throws Exception {
@@ -311,14 +364,19 @@ public class SUser implements SUserI {
     }
 
     /**
-     * Carga un usuario basado en su nombre de usuario (en este caso, el correo electrónico).
-     * Este método es parte de la implementación de `UserDetailsService` de Spring Security.
-     * Busca un usuario en la base de datos utilizando el correo electrónico como nombre de usuario.
-     * Si no se encuentra un usuario con el correo electrónico proporcionado, se lanza una excepción `UsernameNotFoundException`.
+     * Carga los detalles del usuario a partir de su nombre de usuario (en este caso, el correo electrónico).
+     * *
+     * Este método implementa la interfaz  UserDetailsService de Spring Security y se utiliza para cargar
+     * la información del usuario desde la base de datos a través de su nombre de usuario. El nombre de usuario
+     * es en este caso el correo electrónico del usuario. Si no se encuentra un usuario con el correo electrónico
+     * proporcionado, se lanza una excepción {@link UsernameNotFoundException}.
      *
-     * @param username El nombre de usuario (correo electrónico) con el que se desea autenticar al usuario.
-     * @return Un objeto `UserDetails` que contiene la información del usuario autenticado, como su correo electrónico, contraseña y roles.
-     * @throws UsernameNotFoundException Si no se encuentra un usuario con el correo electrónico proporcionado.
+     * @param username el correo electrónico del usuario que se desea cargar.
+     * @return un objeto {@link UserDetails} que contiene la información del usuario cargado.
+     * @throws UsernameNotFoundException si no se encuentra un usuario con el correo electrónico proporcionado.
+     *
+     * @see UserDetails
+     * @see UsernameNotFoundException
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
