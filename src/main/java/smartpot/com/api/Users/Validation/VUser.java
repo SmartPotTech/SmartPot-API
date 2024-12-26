@@ -10,44 +10,90 @@ import java.util.regex.Pattern;
 
 import static smartpot.com.api.Users.Validation.UserRegex.*;
 
+/**
+ * Clase de validación para los usuarios.
+ * <p>
+ * Esta clase proporciona métodos para validar diferentes campos de un usuario, como el ID, nombre, apellido, correo electrónico,
+ * contraseña y rol. Si algún campo no cumple con las restricciones definidas, se añaden errores a la lista de errores.
+ * </p>
+ * <p>
+ * Los métodos de validación devuelven los errores como una lista de cadenas y mantienen un estado de validez.
+ * </p>
+ */
 @Component
 public class VUser implements VUserI {
+
+    /** Indica si la validación fue exitosa. */
     public boolean valid;
+
+    /** Lista de errores de validación. */
     public List<String> errors;
 
+    /**
+     * Constructor de la clase de validación de usuario.
+     * Inicializa el estado de validación a "válido" y crea una lista vacía de errores.
+     */
     public VUser() {
         this.valid = true;
         this.errors = new ArrayList<>();
     }
 
+    /**
+     * Devuelve el estado de validez.
+     *
+     * @return <code>true</code> si el usuario es válido, <code>false</code> si hay errores de validación.
+     */
     @Override
     public boolean isValid() {
         return !valid;
     }
 
+    /**
+     * Obtiene la lista de errores encontrados durante la validación.
+     *
+     * @return Una lista de cadenas con los mensajes de error.
+     */
     @Override
     public List<String> getErrors() {
         return errors;
     }
 
+    /**
+     * Válida el ID de un usuario.
+     * <p>
+     * El ID debe ser una cadena no vacía y debe ser un identificador hexadecimal válido de 24 caracteres.
+     * </p>
+     *
+     * @param id El identificador único del usuario a validar.
+     */
     @Override
     public void validateId(String id) {
         if (id == null || id.isEmpty()) {
-            errors.add("El Id no puede estar vació");
+            errors.add("El Id no puede estar vacío");
             valid = false;
         } else if (!ObjectId.isValid(id)) {
             errors.add("El Id debe ser un hexadecimal de 24 caracteres");
             valid = false;
         }
-
     }
 
+    /**
+     * Resetea el estado de la validación, marcando el usuario como válido y limpiando la lista de errores.
+     */
     @Override
     public void Reset() {
         valid = true;
         errors = new ArrayList<>();
     }
 
+    /**
+     * Válida el nombre de un usuario.
+     * <p>
+     * El nombre debe tener entre 4 y 15 caracteres y solo puede contener letras.
+     * </p>
+     *
+     * @param name El nombre del usuario a validar.
+     */
     @Override
     public void validateName(String name) {
         if (name == null || !Pattern.matches(NAME_PATTERN, name)) {
@@ -56,6 +102,14 @@ public class VUser implements VUserI {
         }
     }
 
+    /**
+     * Válida el apellido de un usuario.
+     * <p>
+     * El apellido debe tener entre 4 y 30 caracteres.
+     * </p>
+     *
+     * @param lastname El apellido del usuario a validar.
+     */
     @Override
     public void validateLastname(String lastname) {
         if (lastname == null || !Pattern.matches(LASTNAME_PATTERN, lastname)) {
@@ -64,6 +118,14 @@ public class VUser implements VUserI {
         }
     }
 
+    /**
+     * Válida el correo electrónico de un usuario.
+     * <p>
+     * El correo electrónico debe seguir un patrón de formato válido de correo electrónico.
+     * </p>
+     *
+     * @param email El correo electrónico del usuario a validar.
+     */
     @Override
     public void validateEmail(String email) {
         if (email == null || !Pattern.matches(EMAIL_PATTERN, email)) {
@@ -72,6 +134,14 @@ public class VUser implements VUserI {
         }
     }
 
+    /**
+     * Válida la contraseña de un usuario.
+     * <p>
+     * La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial.
+     * </p>
+     *
+     * @param password La contraseña del usuario a validar.
+     */
     @Override
     public void validatePassword(String password) {
         if (password == null || !Pattern.matches(PASSWORD_PATTERN, password)) {
@@ -80,6 +150,14 @@ public class VUser implements VUserI {
         }
     }
 
+    /**
+     * Válida el rol de un usuario.
+     * <p>
+     * El rol debe ser uno de los roles definidos en el sistema. Si el rol no es válido, se añade un error a la lista.
+     * </p>
+     *
+     * @param role El rol del usuario a validar.
+     */
     @Override
     public void validateRole(String role) {
         if (role == null || role.isEmpty()) {
@@ -101,6 +179,11 @@ public class VUser implements VUserI {
         }
     }
 
+    /**
+     * Obtiene la lista de nombres de roles definidos en el sistema.
+     *
+     * @return Una lista con los nombres de los roles.
+     */
     private List<String> getRoleNames() {
         List<String> roleNames = new ArrayList<>();
         for (Role role : Role.values()) {
