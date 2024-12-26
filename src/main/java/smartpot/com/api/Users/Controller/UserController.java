@@ -15,6 +15,11 @@ import smartpot.com.api.Exception.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
+/**
+ * Controlador REST para las operaciones relacionadas con los usuarios.
+ * <p>Este controlador proporciona una serie de métodos para gestionar usuarios en el sistema.</p>
+ * @see SUserI
+ */
 @RestController
 @RequestMapping("/Users")
 @Tag(name = "Usuarios", description = "Operaciones relacionadas con usuarios")
@@ -22,6 +27,15 @@ public class UserController {
 
     private final SUserI serviceUser;
 
+    /**
+     * Constructor del controlador {@link UserController}.
+     * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link SUserI} que gestionará las operaciones
+     * relacionadas con los usuarios.</p>
+     *
+     * @param serviceUser El servicio que contiene la lógica de negocio para manejar usuarios.
+     * @throws NullPointerException Si el servicio proporcionado es {@code null}.
+     * @see SUserI
+     */
     @Autowired
     public UserController(SUserI serviceUser) {
         this.serviceUser = serviceUser;
@@ -29,19 +43,20 @@ public class UserController {
 
     /**
      * Crea un nuevo usuario en el sistema con la información proporcionada.
-     * *
-     * Recupera los datos del usuario desde el `UserDTO` proporcionado en el cuerpo de la solicitud.
-     * El correo electrónico debe ser único y el sistema validará los campos obligatorios como nombre y apellido.
-     * Si se crea con éxito, se devolverá el usuario generado con el código HTTP 201.
-     * En caso de error (por ejemplo, correo electrónico duplicado), se devolverá un mensaje de error con el código HTTP 404.
+     * <p>Recupera los datos del usuario desde el objeto {@link UserDTO} proporcionado en el cuerpo de la solicitud.</p>
+     * <p>El correo electrónico debe ser único, y el sistema validará que los campos obligatorios como el nombre y el apellido estén completos.</p>
+     * <p>Si se crea con éxito, se devolverá el usuario generado con el código HTTP 201.</p>
+     * <p>En caso de error (por ejemplo, si el correo electrónico ya está registrado), se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param userDTO El objeto `UserDTO` que contiene la información del nuevo usuario.
+     * @param userDTO El objeto {@link UserDTO} que contiene la información del nuevo usuario.
      *                Este objeto debe contener todos los campos obligatorios, como nombre, apellido y correo electrónico.
-     * @return Un objeto `ResponseEntity` con el usuario creado (código HTTP 201) o un mensaje de error (código HTTP 404).
-     * *
-     * Respuestas posibles:
-     * - **201 Created**: El usuario fue creado correctamente y se retorna un objeto `UserDTO` con los datos del usuario.
-     * - **404 Not Found**: Error al generar el usuario, como un correo electrónico duplicado.
+     * @return Un objeto {@link ResponseEntity} con el usuario creado (código HTTP 201) o un mensaje de error (código HTTP 404).
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>201 Created</b>: El usuario fue creado correctamente y se retorna un objeto {@link UserDTO} con los datos del usuario.<br></li>
+     *   <li><b>404 Not Found</b>: Error al generar el usuario, por ejemplo, si el correo electrónico ya está registrado o faltan datos obligatorios.<br></li>
+     * </ul>
      */
     @PostMapping("/Create")
     @Operation(summary = "Crear un nuevo usuario",
@@ -53,7 +68,7 @@ public class UserController {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = UserDTO.class))),
                     @ApiResponse(responseCode = "404",
-                            description = "No se pudo crear el usuario, asegúrese de que el correo sea único y los datos sean correctos.",
+                            description = "No se pudo crear el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> createUser(
@@ -68,16 +83,19 @@ public class UserController {
 
     /**
      * Recupera todos los usuarios registrados en el sistema.
-     * *
-     * Este método devuelve una lista con todos los usuarios que están registrados en el sistema. Si no se encuentran usuarios,
-     * se devolverá una lista vacía con código HTTP 200.
+     * <p>Este método devuelve una lista con todos los usuarios que están registrados en el sistema.</p>
+     * <p>Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.</p>
+     * <p>En caso de error (por ejemplo, problemas con la conexión a la base de datos o un fallo en el servicio),
+     * se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @return Un objeto `ResponseEntity` que contiene una lista de todos los usuarios registrados (código HTTP 200).
+     * @return Un objeto {@link ResponseEntity} que contiene una lista de todos los usuarios registrados (código HTTP 200).
      * En caso de error, se devolverá un mensaje de error con el código HTTP 404.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna una lista de objetos `UserDTO` con la información de todos los usuarios.
-     * - **404 Not Found**: No se encontraron usuarios registrados.
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Se retorna una lista de objetos {@link UserDTO} con la información de todos los usuarios registrados.<br></li>
+     *   <li><b>404 Not Found</b>: No se encontraron usuarios registrados o hubo un error al recuperar los datos.<br></li>
+     * </ul>
      */
     @GetMapping("/All")
     @Operation(summary = "Obtener todos los usuarios",
@@ -102,19 +120,22 @@ public class UserController {
 
     /**
      * Busca un usuario utilizando su ID único.
-     * *
-     * Recuperar un usuario de la base de datos proporcionando su identificador único.
-     * Si el usuario con el ID proporcionado existe, se devolverá un objeto `UserDTO` con la información del usuario.
-     * En caso de que el usuario no sea encontrado, se devolverá un mensaje de error con el código HTTP 404.
+     * <p>Este método recupera un usuario de la base de datos utilizando su identificador único. Si el usuario con el ID proporcionado existe, se devolverá un objeto {@link UserDTO} con la información del usuario.</p>
+     * <p>Si no se encuentra un usuario con el ID proporcionado, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param id El identificador único del usuario que se desea recuperar. Este parámetro debe ser el ID del usuario.
-     * @return Un objeto `ResponseEntity` que contiene:
-     * - El usuario correspondiente al ID si se encuentra (código HTTP 200).
-     * - Un mensaje de error si no se encuentra el usuario (código HTTP 404).
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: El usuario se encuentra, se retorna un objeto `UserDTO` con la información del usuario.
-     * - **404 Not Found**: No se encuentra ningún usuario con el ID proporcionado, se retorna un objeto `ErrorResponse` con el mensaje de error.
+     * @param id El identificador único del usuario que se desea recuperar. Este parámetro debe ser el ID único del usuario.
+     *           El ID es obligatorio para la búsqueda del usuario.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>El usuario correspondiente al ID si se encuentra (código HTTP 200).</li>
+     *           <li>Un mensaje de error si no se encuentra el usuario (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si el usuario es encontrado, se retorna un objeto {@link UserDTO} con los detalles del usuario.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentra el usuario con el ID proporcionado, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
      */
     @GetMapping("/id/{id}")
     @Operation(summary = "Buscar usuario por ID",
@@ -137,18 +158,22 @@ public class UserController {
     }
 
     /**
-     * Busca un usuario por su dirección de correo electrónico.
-     * *
-     * Recupera un usuario del sistema utilizando su correo electrónico único.
-     * Si no se encuentra el usuario con el correo electrónico proporcionado, se devolverá un error con el código HTTP 404.
+     * Busca un usuario por su dirección de correo electrónico único.
+     * <p>Este método recupera un usuario del sistema utilizando su correo electrónico único. Si el usuario con el correo electrónico proporcionado existe, se devolverá un objeto {@link UserDTO} con la información del usuario.</p>
+     * <p>Si no se encuentra un usuario con el correo electrónico proporcionado, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param email La dirección de correo electrónico del usuario. Este debe ser único en el sistema.
-     * @return Un objeto `ResponseEntity` que contiene el usuario con el correo electrónico proporcionado.
-     * En caso de error, se devolverá un mensaje de error con el código HTTP 404.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna el usuario que coincide con el correo electrónico proporcionado.
-     * - **404 Not Found**: No se encuentra ningún usuario con el correo electrónico proporcionado.
+     * @param email La dirección de correo electrónico del usuario. Este parámetro debe ser único en el sistema y se utilizará para buscar al usuario.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>El usuario correspondiente al correo electrónico proporcionado si se encuentra (código HTTP 200).</li>
+     *           <li>Un mensaje de error si no se encuentra el usuario (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si el usuario es encontrado, se retorna un objeto {@link UserDTO} con los detalles del usuario.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentra el usuario con el correo electrónico proporcionado, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
      */
     @GetMapping("/email/{email}")
     @Operation(summary = "Buscar usuario por correo electrónico",
@@ -172,16 +197,22 @@ public class UserController {
 
     /**
      * Busca todos los usuarios cuyo nombre coincida con el proporcionado.
-     * *
-     * Recupera una lista de usuarios que coinciden con el nombre proporcionado.
-     * Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.
+     * <p>Este método recupera una lista de usuarios que coinciden con el nombre proporcionado. Puede ser el primer nombre o cualquier parte del nombre del usuario.</p>
+     * <p>Si no se encuentran usuarios con el nombre proporcionado, se devolverá una lista vacía con el código HTTP 200.</p>
      *
-     * @param name El nombre del usuario a buscar. Puede ser el primer nombre o cualquier parte del nombre.
-     * @return Una lista de usuarios con el nombre proporcionado.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna una lista de objetos `UserDTO` con los usuarios que coinciden con el nombre proporcionado.
-     * - **404 Not Found**: No se encontraron usuarios con el nombre proporcionado.
+     * @param name El nombre del usuario a buscar. Este parámetro puede ser el primer nombre o cualquier parte del nombre completo del usuario.
+     *             El nombre es obligatorio para realizar la búsqueda.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de objetos {@link UserDTO} con los usuarios que coinciden con el nombre proporcionado (código HTTP 200).</li>
+     *           <li>Un mensaje de error si no se encuentran usuarios con el nombre proporcionado (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran usuarios con el nombre proporcionado, se retorna una lista de objetos {@link UserDTO} con la información de los usuarios.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran usuarios con el nombre proporcionado, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
      */
     @GetMapping("/name/{name}")
     @Operation(summary = "Buscar usuarios por nombre",
@@ -206,17 +237,22 @@ public class UserController {
 
     /**
      * Busca todos los usuarios cuyo apellido coincida con el proporcionado.
-     * *
-     * Recupera una lista de usuarios cuyo apellido coincide con el proporcionado.
-     * Si no se encuentran usuarios, se devolverá una lista vacía con el código HTTP 200.
-     * *
+     * <p>Este método recupera una lista de usuarios que coinciden con el apellido proporcionado. Puede ser el apellido completo o parte de él.</p>
+     * <p>Si no se encuentran usuarios con el apellido proporcionado, se devolverá una lista vacía con el código HTTP 200.</p>
      *
      * @param lastname El apellido del usuario a buscar. Este parámetro puede ser el apellido completo o parte de él.
-     * @return Una lista de usuarios que coinciden con el apellido proporcionado.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna una lista de objetos `UserDTO` con los usuarios cuyo apellido coincide con el proporcionado.
-     * - **404 Not Found**: No se encontraron usuarios con el apellido proporcionado.
+     *                 El apellido es obligatorio para realizar la búsqueda.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de objetos {@link UserDTO} con los usuarios cuyo apellido coincide con el proporcionado (código HTTP 200).</li>
+     *           <li>Un mensaje de error si no se encuentran usuarios con el apellido proporcionado (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran usuarios con el apellido proporcionado, se retorna una lista de objetos {@link UserDTO} con la información de los usuarios.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran usuarios con el apellido proporcionado, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
      */
     @GetMapping("/lastname/{lastname}")
     @Operation(summary = "Buscar usuarios por apellido",
@@ -241,16 +277,21 @@ public class UserController {
 
     /**
      * Busca todos los usuarios que tengan el rol especificado.
-     * *
-     * Recupera una lista de usuarios que tienen el rol proporcionado.
-     * Si no se encuentran usuarios con ese rol, se devolverá una lista vacía con el código HTTP 200.
+     * <p>Este método recupera una lista de usuarios que tienen el rol proporcionado. El rol debe coincidir exactamente con el rol de los usuarios.</p>
+     * <p>Si no se encuentran usuarios con el rol proporcionado, se devolverá una lista vacía con el código HTTP 200.</p>
      *
-     * @param role El rol que se desea buscar. Este parámetro debe coincidir exactamente con el rol de los usuarios.
-     * @return Una lista de usuarios que tienen el rol especificado.
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: Se retorna una lista de objetos `UserDTO` con los usuarios que tienen el rol proporcionado.
-     * - **404 Not Found**: No se encontraron usuarios con el rol proporcionado.
+     * @param role El rol que se desea buscar. Este parámetro debe coincidir exactamente con el rol de los usuarios en el sistema.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de objetos {@link UserDTO} con los usuarios que tienen el rol especificado (código HTTP 200).</li>
+     *           <li>Un mensaje de error si no se encuentran usuarios con el rol especificado (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran usuarios con el rol proporcionado, se retorna una lista de objetos {@link UserDTO} con la información de los usuarios.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran usuarios con el rol proporcionado, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
      */
     @GetMapping("/role/{role}")
     @Operation(summary = "Buscar usuarios por rol",
@@ -275,17 +316,23 @@ public class UserController {
 
     /**
      * Actualiza la información de un usuario existente.
-     * *
-     * Recupera un usuario utilizando su ID único y luego actualiza sus datos con la información proporcionada en el `UserDTO`.
-     * Si el usuario no existe u ocurre un error durante la actualización, se devolverá un mensaje de error con el código HTTP 404.
+     * <p>Este método recibe un ID de usuario y un objeto {@link UserDTO} con los datos actualizados.
+     * Si el usuario con el ID proporcionado existe, sus datos se actualizan con la información proporcionada.</p>
+     * <p>Si el usuario no existe o si ocurre algún error durante el proceso de actualización, se devuelve un mensaje de error con el código HTTP 404.</p>
      *
      * @param id          El identificador único del usuario que se desea actualizar. Este parámetro debe ser el ID del usuario a modificar.
-     * @param updatedUser El objeto `UserDTO` que contiene la nueva información del usuario a actualizar.
-     * @return Un objeto `ResponseEntity` con el usuario actualizado (código HTTP 200) o un mensaje de error (código HTTP 404).
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: El usuario fue actualizado correctamente y se retorna un objeto `UserDTO` con los datos actualizados del usuario.
-     * - **404 Not Found**: No se encontró el usuario con el ID proporcionado o hubo un error al actualizarlo.
+     * @param updatedUser El objeto {@link UserDTO} que contiene la nueva información del usuario a actualizar.
+     * @return Un objeto {@link ResponseEntity} con:
+     *         <ul>
+     *           <li>El usuario actualizado con el código HTTP 200 si la actualización es exitosa.</li>
+     *           <li>Un mensaje de error con el código HTTP 404 si no se encuentra el usuario o si ocurre un error.</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: El usuario fue actualizado correctamente y se retorna un objeto {@link UserDTO} con los datos actualizados del usuario.<br></li>
+     *   <li><b>404 Not Found</b>: No se pudo actualizar el usuario. El usuario puede no existir o los datos pueden ser incorrectos.<br></li>
+     * </ul>
      */
     @PutMapping("/Update/{id}")
     @Operation(summary = "Actualizar un usuario",
@@ -311,16 +358,21 @@ public class UserController {
 
     /**
      * Elimina un usuario existente por su ID.
-     * *
-     * Este método permite eliminar a un usuario de la base de datos utilizando su ID único.
-     * Si el usuario no se encuentra o hay un error durante la eliminación, se devolverá un mensaje de error con el código HTTP 404.
+     * <p>Este método permite eliminar a un usuario de la base de datos utilizando su ID único.
+     * Si el usuario no se encuentra o si ocurre un error durante la eliminación, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
      * @param id El identificador único del usuario que se desea eliminar. Este parámetro debe ser el ID del usuario a eliminar.
-     * @return Un objeto `ResponseEntity` con un mensaje indicando el éxito de la eliminación (código HTTP 200) o un error si no se pudo eliminar (código HTTP 404).
-     * *
-     * Respuestas posibles:
-     * - **200 OK**: El usuario fue eliminado exitosamente.
-     * - **404 Not Found**: No se encontró el usuario con el ID proporcionado o hubo un error al eliminarlo.
+     * @return Un objeto {@link ResponseEntity} con:
+     *         <ul>
+     *           <li>Un mensaje indicando el éxito de la eliminación con el código HTTP 200.</li>
+     *           <li>Un mensaje de error si no se pudo eliminar el usuario, con el código HTTP 404.</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: El usuario fue eliminado exitosamente.<br></li>
+     *   <li><b>404 Not Found</b>: No se encontró el usuario con el ID proporcionado o hubo un error al eliminarlo.<br></li>
+     * </ul>
      */
     @DeleteMapping("/Delete/{id}")
     @Operation(summary = "Eliminar un usuario",
