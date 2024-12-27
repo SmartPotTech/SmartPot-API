@@ -10,6 +10,24 @@ import java.util.List;
 @RestController
 @RequestMapping("/Notificaciones")
 public class NotificationController {
+    
+    /**
+     * TODO: Implementar integración con Spring Mail para enviar notificaciones por correo electrónico.
+     * <p>Usar la dependencia `spring-boot-starter-mail` para configurar el servicio de correo en la aplicación.</p>
+     * <p>Se debe crear un servicio de correo que envíe mensajes de notificación a los usuarios cuando se realicen acciones importantes en la plataforma.</p>
+     *
+     * Requisitos:
+     * 1. Configurar las propiedades de SMTP en el archivo `application.properties` o `application.yml`, como el servidor de correo, puerto, usuario, y contraseña.
+     * 2. Crear una clase `EmailService` que se encargue de enviar correos electrónicos.
+     * 3. El servicio debe permitir enviar correos a una o más direcciones, con asunto y cuerpo personalizados.
+     * 4. Considerar la posibilidad de enviar correos HTML o correos con archivos adjuntos.
+     * 5. Implementar un sistema de plantillas para personalizar los correos electrónicos según el tipo de notificación.
+     *
+     * Preguntas:
+     * - ¿Qué tipo de notificaciones necesitan ser enviadas por correo electrónico (registro de usuario, cambios en el perfil, alertas, etc.)?
+     * - ¿Cómo manejaremos la seguridad de los datos (por ejemplo, contraseñas, tokens) en los correos electrónicos?
+     * - ¿Cómo gestionaremos los errores de envío de correos electrónicos?
+     */
 
     private final SNotificationI serviceNotification;
 
