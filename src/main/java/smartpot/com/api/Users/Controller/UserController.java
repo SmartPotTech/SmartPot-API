@@ -11,7 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Exception.ErrorResponse;
+import smartpot.com.api.Responses.DeleteResponse;
+import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
@@ -357,7 +358,7 @@ public class UserController {
             @PathVariable @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) String id,
             @RequestBody @Parameter(description = "Datos actualizados del usuario.") UserDTO updatedUser) {
         try {
-            return new ResponseEntity<>(serviceUser.updateUser(id, updatedUser), HttpStatus.OK);
+            return new ResponseEntity<>(serviceUser.UpdateUser(id, updatedUser), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -388,14 +389,14 @@ public class UserController {
             responses = {
                     @ApiResponse(description = "Usuario eliminado",
                             responseCode = "200",
-                            content = @Content(mediaType = "application/plane", schema = @Schema(implementation = String.class))),
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeleteResponse.class))),
                     @ApiResponse(responseCode = "404",
                             description = "No se pudo eliminar el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
         try {
-            return new ResponseEntity<>(serviceUser.deleteUser(id), HttpStatus.OK);
+            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceUser.DeleteUser(id) + "]"), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al eliminar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

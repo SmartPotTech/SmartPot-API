@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
-import smartpot.com.api.Exception.ErrorResponse;
+import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
 @RestController
@@ -34,6 +34,46 @@ public class CropController {
     @Autowired
     public CropController(SCropI serviceCrop) {
         this.serviceCrop = serviceCrop;
+    }
+
+    /**
+     * Crea un nuevo cultivo en el sistema.
+     * <p>Este método permite crear un nuevo cultivo en la base de datos utilizando la información proporcionada en el objeto {@link CropDTO}.
+     * Si el cultivo es creado exitosamente, se devolverá el objeto con la información del cultivo recién creado.</p>
+     * <p>En caso de que ocurra un error durante la creación del cultivo, se devolverá un mensaje de error con el código HTTP 404.</p>
+     *
+     * @param newCropDto El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>El cultivo recién creado (código HTTP 201).</li>
+     *           <li>Un mensaje de error en caso de que no se pueda crear el cultivo (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>201 Created</b>: Si el cultivo es creado exitosamente, se retorna un objeto {@link CropDTO} con los detalles del cultivo creado.<br></li>
+     *   <li><b>404 Not Found</b>: Si ocurre un error durante la creación del cultivo, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @PostMapping("/Create")
+    @Operation(summary = "Crear un nuevo cultivo",
+            description = "Crea un nuevo cultivo utilizando los datos proporcionados en el objeto CropDTO. "
+                    + "Si la creación es exitosa, se devuelve el cultivo recién creado.",
+            responses = {
+                    @ApiResponse(description = "Cultivo creado",
+                            responseCode = "201",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CropDTO.class))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se pudo crear el cultivo debido a un error.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
+        try {
+            return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+
+        }
     }
 
     /**
@@ -268,49 +308,6 @@ public class CropController {
             return new ResponseEntity<>(new ErrorResponse("Error al contar los cultivos del usuario con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
-
-
-    /**
-     * Crea un nuevo cultivo en el sistema.
-     * <p>Este método permite crear un nuevo cultivo en la base de datos utilizando la información proporcionada en el objeto {@link CropDTO}.
-     * Si el cultivo es creado exitosamente, se devolverá el objeto con la información del cultivo recién creado.</p>
-     * <p>En caso de que ocurra un error durante la creación del cultivo, se devolverá un mensaje de error con el código HTTP 404.</p>
-     *
-     * @param newCropDto El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
-     * @return Un objeto {@link ResponseEntity} que contiene:
-     *         <ul>
-     *           <li>El cultivo recién creado (código HTTP 201).</li>
-     *           <li>Un mensaje de error en caso de que no se pueda crear el cultivo (código HTTP 404).</li>
-     *         </ul>
-     *
-     * <p><b>Respuestas posibles:</b></p>
-     * <ul>
-     *   <li><b>201 Created</b>: Si el cultivo es creado exitosamente, se retorna un objeto {@link CropDTO} con los detalles del cultivo creado.<br></li>
-     *   <li><b>404 Not Found</b>: Si ocurre un error durante la creación del cultivo, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
-     * </ul>
-     */
-    @PostMapping("/Create")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Crear un nuevo cultivo",
-            description = "Crea un nuevo cultivo utilizando los datos proporcionados en el objeto CropDTO. "
-                    + "Si la creación es exitosa, se devuelve el cultivo recién creado.",
-            responses = {
-                    @ApiResponse(description = "Cultivo creado",
-                            responseCode = "201",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CropDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo crear el cultivo debido a un error.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
-        try {
-            return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al crear el cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-
-        }
-    }
-
 
     /**
      * Actualiza un cultivo existente en el sistema.

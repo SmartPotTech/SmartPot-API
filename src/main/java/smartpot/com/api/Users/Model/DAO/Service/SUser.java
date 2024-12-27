@@ -6,16 +6,12 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Exception.ApiException;
-import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.User;
 import smartpot.com.api.Users.Validation.VUserI;
 
 import java.text.SimpleDateFormat;
@@ -136,15 +132,18 @@ public class SUser implements SUserI {
      */
     @Override
     public UserDTO getUserById(String id) throws Exception {
-        return repositoryUser.findById(new ObjectId(id))
+        return Optional.of(id)
                 .map(ValidId -> {
                     validatorUser.validateId(id);
                     if (validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
-                    return ValidId;
+                    return new ObjectId(ValidId);
                 })
+                .map(repositoryUser::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .map(mapperUser::toDTO)
                 .orElseThrow(() -> new Exception("El Usuario no existe"));
     }
@@ -310,7 +309,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    public UserDTO updateUser(String id, UserDTO updatedUser) throws Exception {
+    public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
                 .map(dto -> {
@@ -354,10 +353,10 @@ public class SUser implements SUserI {
      * @see UserDTO
      */
     @Override
-    public String deleteUser(String id) throws Exception {
+    public String DeleteUser(String id) throws Exception {
         return Optional.of(getUserById(id))
-                .map(product -> {
-                    repositoryUser.deleteById(new ObjectId(id));
+                .map(user -> {
+                    repositoryUser.deleteById(new ObjectId(user.getId()));
                     return "El Usuario con ID '" + id + "' fue eliminado.";
                 })
                 .orElseThrow(() -> new Exception("El Usuario no existe."));

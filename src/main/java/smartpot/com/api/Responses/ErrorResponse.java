@@ -1,4 +1,4 @@
-package smartpot.com.api.Exception;
+package smartpot.com.api.Responses;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

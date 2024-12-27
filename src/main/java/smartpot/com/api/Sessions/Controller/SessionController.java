@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Exception.ErrorResponse;
+import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Sessions.Model.DAO.Service.SSessionI;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 

@@ -2,7 +2,6 @@ package smartpot.com.api.Users.Model.DAO.Service;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.User;
 
 import java.util.List;
 
@@ -85,7 +84,7 @@ public interface SUserI extends UserDetailsService {
      * @return el objeto {@link UserDTO} con los datos del usuario actualizado.
      * @throws Exception si no se encuentra el usuario o si ocurre un error durante la actualización.
      */
-    UserDTO updateUser(String id, UserDTO updatedUser) throws Exception;
+    UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception;
 
     /**
      * Elimina un usuario del sistema.
@@ -94,5 +93,5 @@ public interface SUserI extends UserDetailsService {
      * @return un mensaje indicando que el usuario fue eliminado.
      * @throws Exception si no se encuentra el usuario o si ocurre un error durante la eliminación.
      */
-    String deleteUser(String id) throws Exception;
+    String DeleteUser(String id) throws Exception;
 }

@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Exception.ErrorResponse;
+import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Records.Model.DAO.Service.SHistoryI;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
 import smartpot.com.api.Records.Model.Entity.DateRange;

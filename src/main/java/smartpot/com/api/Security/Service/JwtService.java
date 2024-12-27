@@ -4,15 +4,23 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Users.Model.Entity.User;
+import smartpot.com.api.Users.Mapper.MUser;
+import smartpot.com.api.Users.Model.DAO.Repository.RUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Validation.VUserI;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class JwtService implements JwtServiceI {
@@ -23,14 +31,35 @@ public class JwtService implements JwtServiceI {
     @Value("${application.security.jwt.expiration}")
     private long expiration;
 
+    private final SUserI serviceUser;
+
+    /**
+     * Constructor que inyecta las dependencias del servicio.
+     *
+     * @param serviceUser servicio que maneja las operaciones de base de datos.
+     */
+    @Autowired
+    public JwtService(SUserI serviceUser) {
+        this.serviceUser = serviceUser;
+    }
+
     @Override
-    public String generateToken(User user) {
+    public String login(UserDTO reqUser) throws Exception {
+        return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
+                .filter( userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
+                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .orElseThrow(() -> new Exception("Credenciales Invalidas"));
+
+    }
+
+
+    private String generateToken(String id, String email) {
         // TODO: Refine token (email != subject)
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", user.getId());
-        claims.put("email", user.getEmail());
+        claims.put("id", id);
+        claims.put("email", email);
         // claims.put("roles", user.getAuthorities());
-        return createToken(claims, user.getEmail());
+        return createToken(claims, email);
         // createToken (CustomClaims, subjectClaim)
     }
 
