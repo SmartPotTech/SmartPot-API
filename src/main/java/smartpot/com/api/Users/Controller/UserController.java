@@ -25,6 +25,13 @@ import smartpot.com.api.Users.Model.DTO.UserDTO;
 @Tag(name = "Usuarios", description = "Operaciones relacionadas con usuarios")
 public class UserController {
 
+    /**
+     * TODO: Refactorizar métodos para lanzar excepciones personalizadas en lugar de manejar errores con try-catch.
+     * TODO: Considerar lanzar una excepción `ConflictException` si el correo electrónico ya está registrado en el sistema por ejemplo.
+     * ! Asegurarse de que el flujo de errores sea consistente y se maneje correctamente en el controlador global.
+     * ? ¿Qué tipo de error se debe lanzar si el correo electrónico no está válido o es incorrecto (formato de email inválido)?
+     */
+
     private final SUserI serviceUser;
 
     /**
