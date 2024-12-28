@@ -1,7 +1,8 @@
 name: Deploy to Render
 
 on:
-  workflow_dispatch: # Este workflow será disparado por el workflow general
+  repository_dispatch:
+    types: [ render-deploy-event ]
 
 jobs:
   deploy:

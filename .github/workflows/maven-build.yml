@@ -1,7 +1,8 @@
 name: Build with Maven
 
 on:
-  workflow_dispatch:  # Este workflow será disparado por el workflow general
+  repository_dispatch:
+    types: [ maven-build-event ]
 
 jobs:
   build:
