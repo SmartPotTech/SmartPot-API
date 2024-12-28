@@ -1,0 +1,18 @@
+name: Deploy to Render
+
+on:
+  workflow_dispatch: # Este workflow será disparado por el workflow general
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy to Render
+        run: |
+          response=$(curl -s -w "%{http_code}" -o /dev/null -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key=${{ secrets.RENDER_DEPLOY_KEY }})
+          if [[ "$response" -ne 200 ]]; then
+            echo "Deploy failed with status code $response"
+            exit 1
+          else
+            echo "Deploy successful!"
+          fi

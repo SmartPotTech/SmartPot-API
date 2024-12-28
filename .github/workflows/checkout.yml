@@ -1,0 +1,11 @@
+name: Checkout Code
+
+on:
+  workflow_dispatch:  # Este workflow será disparado por el workflow general
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
