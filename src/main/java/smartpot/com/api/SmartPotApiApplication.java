@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 public class SmartPotApiApplication {
 
     public static void main(String[] args) {
-        loadEnv();
+        //loadEnv();
         SpringApplication.run(SmartPotApiApplication.class, args);
     }
 
