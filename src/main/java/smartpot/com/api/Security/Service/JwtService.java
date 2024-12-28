@@ -6,17 +6,16 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Users.Mapper.MUser;
-import smartpot.com.api.Users.Model.DAO.Repository.RUser;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Exception.InvalidTokenException;
+import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Validation.VUserI;
-
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public String login(UserDTO reqUser) throws Exception {
+    public String Login(UserDTO reqUser) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
                 .filter( userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
@@ -64,13 +63,37 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public Boolean validateToken(String token, UserDetails userDetails) {
+    public UserDTO validateAuthHeader(String authHeader) throws Exception, InvalidTokenException {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new Exception("El encabezado de autorización es inválido. Se esperaba 'Bearer <token>'.");
+        }
+
+        String token = authHeader.split(" ")[1];
+        String email = extractEmail(token);
+        UserDetails user = serviceUser.loadUserByUsername(email);
+        if (email == null) {
+            throw new InvalidTokenException("Correo no encontrado.");
+        }
+
+        if (!validateToken(token, user)) {
+            throw new InvalidTokenException("Se ha expirado.");
+        }
+
+        UserDTO finalUser = serviceUser.getUserByEmail(email);
+        finalUser.setPassword("");
+        return finalUser;
+
+    }
+
+    private Boolean validateToken(String token, UserDetails userDetails) {
         Date expirationDate = extractExpiration(token);
         if (expirationDate.before(new Date())) {
             return false;
         }
         String username = extractUsername(token);
         return userDetails.getUsername().equals(username) && !expirationDate.before(new Date());
+
+
     }
 
     private String createToken(Map<String, Object> claims, String username) {
@@ -84,31 +107,28 @@ public class JwtService implements JwtServiceI {
                 .compact();
     }
 
-    private Key getSignKey() {
+    private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(getSignKey())
+                .verifyWith(getSignKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    @Override
-    public Date extractExpiration(String token) {
+    private Date extractExpiration(String token) {
         return extractAllClaims(token).getExpiration();
     }
 
-    @Override
-    public String extractUsername(String token) {
+    private String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-    @Override
-    public String extractEmail(String token) {
+    private String extractEmail(String token) {
         return extractAllClaims(token).get("email", String.class);
     }
 

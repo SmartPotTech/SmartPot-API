@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Responses.TokenResponse;
 import smartpot.com.api.Security.Service.JwtServiceI;
@@ -51,7 +52,7 @@ public class AuthController {
     )
     public ResponseEntity<?> login(@RequestBody UserDTO reqUser) {
         try {
-            return new ResponseEntity<>(new TokenResponse(jwtService.login(reqUser)), HttpStatus.OK);
+            return new ResponseEntity<>(new TokenResponse(jwtService.Login(reqUser)), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al iniciar sesion [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
         }
@@ -79,20 +80,13 @@ public class AuthController {
                     )
             }
     )
-    public ResponseEntity<?> verify(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<?> verify(@RequestHeader("Authorization") String authHeader) {
         try {
-            String token = bearerToken.split(" ")[1];
-            String email = jwtService.extractEmail(token);
-            UserDetails user = serviceUser.loadUserByUsername(email);
-
-            if (jwtService.validateToken(token, user)) {
-                UserDTO finalUser = serviceUser.getUserByEmail(email);
-                finalUser.setPassword("");
-                return new ResponseEntity<>(finalUser, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(new ErrorResponse("Token invalido.", HttpStatus.I_AM_A_TEAPOT.value()), HttpStatus.I_AM_A_TEAPOT);
-            }
-        } catch (Exception e) {
+            return new ResponseEntity<>(jwtService.validateAuthHeader(authHeader), HttpStatus.OK);
+        }catch (InvalidTokenException e) {
+            return new ResponseEntity<>(new ErrorResponse("Token Invalido [" + e.getMessage() + "]", HttpStatus.I_AM_A_TEAPOT.value()), HttpStatus.I_AM_A_TEAPOT);
+        }
+        catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al verificar token [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
         }
 

@@ -6,13 +6,8 @@ import smartpot.com.api.Users.Model.DTO.UserDTO;
 import java.util.Date;
 
 public interface JwtServiceI {
-    String login(UserDTO reqUser) throws Exception;
+    String Login(UserDTO reqUser) throws Exception;
 
-    Boolean validateToken(String token, UserDetails userDetails);
+    UserDTO validateAuthHeader(String token) throws Exception;
 
-    Date extractExpiration(String token);
-
-    String extractUsername(String token);
-
-    String extractEmail(String token);
 }
