@@ -12,5 +12,4 @@ updates:
       interval: "weekly"  # Puedes cambiarlo a "daily", "monthly", etc.
     commit-message:
       prefix: "deps"  # Prefijo de mensaje para las actualizaciones de dependencias
-    versioning-strategy: "increase"  # Estrategia para manejar versiones (recomendada: increase)
 
