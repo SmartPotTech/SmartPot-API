@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Checkout Workflow
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           repository: ${{ github.repository }}
           workflow: checkout.yml
@@ -22,7 +22,7 @@ jobs:
     needs: trigger_checkout  # Este trabajo depende de 'trigger_checkout'
     steps:
       - name: Trigger Maven Build Workflow
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           repository: ${{ github.repository }}
           workflow: maven-build.yml
@@ -33,7 +33,7 @@ jobs:
     needs: trigger_maven_build  # Depende de 'trigger_maven_build'
     steps:
       - name: Trigger Docker Build Workflow
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           repository: ${{ github.repository }}
           workflow: docker-build.yml
@@ -44,7 +44,7 @@ jobs:
     needs: trigger_docker_build  # Depende de 'trigger_docker_build'
     steps:
       - name: Trigger Docker Push Workflow
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           repository: ${{ github.repository }}
           workflow: docker-push.yml
@@ -55,7 +55,7 @@ jobs:
     needs: trigger_docker_push  # Depende de 'trigger_docker_push'
     steps:
       - name: Trigger Deploy to Render
-        uses: peter-evans/workflow-dispatch@v1
+        uses: peter-evans/workflow-dispatch@v3
         with:
           repository: ${{ github.repository }}
           workflow: render-deploy.yml
