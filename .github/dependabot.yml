@@ -9,7 +9,7 @@ updates:
   - package-ecosystem: "maven"
     directory: "/"  # El archivo pom.xml está en la raíz del repositorio
     schedule:
-      interval: "weekly"  # Puedes cambiarlo a "daily", "monthly", etc.
+      interval: "weekly"  # Modos "daily", "monthly".
     commit-message:
       prefix: "deps"  # Prefijo de mensaje para las actualizaciones de dependencias
 
