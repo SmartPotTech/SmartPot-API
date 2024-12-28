@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Checkout Workflow
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: checkout-event
           repository: ${{ github.repository }}
@@ -21,7 +21,7 @@ jobs:
     needs: trigger_checkout
     steps:
       - name: Trigger Maven Build Workflow
-        uses: peter-evans/workflow-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: maven-build-event
           repository: ${{ github.repository }}
@@ -31,7 +31,7 @@ jobs:
     needs: trigger_maven_build
     steps:
       - name: Trigger Docker Build Workflow
-        uses: peter-evans/workflow-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: docker-build-event
           repository: ${{ github.repository }}
@@ -41,7 +41,7 @@ jobs:
     needs: trigger_docker_build
     steps:
       - name: Trigger Docker Push Workflow
-        uses: peter-evans/workflow-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: docker-push-event
           repository: ${{ github.repository }}
@@ -51,7 +51,7 @@ jobs:
     needs: trigger_docker_push
     steps:
       - name: Trigger Deploy to Render
-        uses: peter-evans/workflow-dispatch@v3
+        uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: render-deploy-event
           repository: ${{ github.repository }}
