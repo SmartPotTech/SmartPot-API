@@ -47,7 +47,7 @@ public class SCommand implements SCommandI {
     }
 
     @Override
-    public Command updateCommand(String id, Command upCommand) {
+    public Command updateCommand(String id, Command upCommand) throws Exception {
         if (!ObjectId.isValid(id)) {
             throw new ApiException(new ApiResponse(
                     "El ID '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",

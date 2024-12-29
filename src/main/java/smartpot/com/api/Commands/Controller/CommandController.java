@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Commands.Model.DAO.Service.SCommandI;
 import smartpot.com.api.Commands.Model.Entity.Command;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
-import smartpot.com.api.Crops.Model.Entity.Crop;
+import smartpot.com.api.Crops.Model.DTO.CropDTO;
 
 import java.util.Date;
 import java.util.List;
@@ -39,8 +39,8 @@ public class CommandController {
 
     @PostMapping("/commandCreate/{cropId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) {
-        Optional<Crop> cropOpt = Optional.ofNullable(serviceCrop.getCropById(cropId));
+    public ResponseEntity<Command> createCommand(@PathVariable String cropId, @RequestBody Command newCommand) throws Exception {
+        Optional<CropDTO> cropOpt = Optional.ofNullable(serviceCrop.getCropById(cropId));
         if (cropOpt.isPresent()) {
             newCommand.setCrop(new ObjectId(cropId));
             newCommand.setDateCreated(new Date());
@@ -53,7 +53,7 @@ public class CommandController {
     }
 
     @PutMapping("/{id}/ejecutar")
-    public ResponseEntity<Command> executeCommand(@PathVariable String id) {
+    public ResponseEntity<Command> executeCommand(@PathVariable String id) throws Exception {
         Command command = serviceCommand.getCommandById(id);
         if (command != null) {
             command.setStatus("EXECUTED");
@@ -77,7 +77,7 @@ public class CommandController {
     }
 
     @PutMapping("/Update/{id}")
-    public Command updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) {
+    public Command updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) throws Exception {
         return serviceCommand.updateCommand(id, updatedCommad);
     }
 

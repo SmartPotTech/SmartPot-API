@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -41,7 +40,10 @@ public class Crop implements Serializable {
     @Field("type")
     private Type type;
 
-    @DBRef
+    /**
+     * ! No se puede hacer referencia a los objetos, dado que obliga a usar la entidad completa, no solo el ObjectId.
+     */
+    //@DBRef
     @NotNull(message = "El cultivo debe pertenecer a un usuario")
     @Field("user")
     private ObjectId user;

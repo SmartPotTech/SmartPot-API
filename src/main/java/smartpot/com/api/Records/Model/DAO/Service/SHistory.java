@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
-import smartpot.com.api.Crops.Model.Entity.Crop;
+import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Records.Mapper.MRecords;
@@ -212,8 +212,8 @@ public class SHistory implements SHistoryI {
      * @throws ApiException Si el cultivo con el ID proporcionado no se encuentra o si ocurre un error en la consulta.
      */
     @Override
-    public List<History> getByCrop(String cropId) {
-        return repositoryHistory.getHistoriesByCrop(serviceCrop.getCropById(cropId).getId());
+    public List<History> getByCrop(String cropId) throws Exception {
+        return repositoryHistory.getHistoriesByCrop(new ObjectId(serviceCrop.getCropById(cropId).getId()));
     }
 
     /**
@@ -262,7 +262,7 @@ public class SHistory implements SHistoryI {
     @Override
     public List<CropRecordDTO> getByUser(String id) throws Exception {
         List<CropRecordDTO> records = new ArrayList<>();
-        List<Crop> crops = serviceCrop.getCropsByUser(id);
+        List<CropDTO> crops = serviceCrop.getCropsByUser(id);
         // Verificar si el usuario tiene cultivos
         if (crops.isEmpty()) {
             throw new ApiException(new ApiResponse(
@@ -270,8 +270,8 @@ public class SHistory implements SHistoryI {
                     HttpStatus.NOT_FOUND.value()
             ));
         }
-        for (Crop crop : crops) {
-            List<History> histories = repositoryHistory.getHistoriesByCrop(crop.getId());
+        for (CropDTO crop : crops) {
+            List<History> histories = repositoryHistory.getHistoriesByCrop(new ObjectId(crop.getId()));
 
             for (History history : histories) {
                 records.add(new CropRecordDTO(crop, history));
@@ -288,7 +288,7 @@ public class SHistory implements SHistoryI {
      * @return El histórico creado
      */
     @Override
-    public History Createhistory(RecordDTO recordDTO) {
+    public History Createhistory(RecordDTO recordDTO) throws Exception {
         ValidationMesuares(recordDTO.getMeasures());
         serviceCrop.getCropById(recordDTO.getCrop());
         History history = MRecords.INSTANCE.toEntity(recordDTO);

@@ -14,13 +14,13 @@ public interface SHistoryI {
 
     History getHistoryById(String id);
 
-    List<History> getByCrop(String cropId);
+    List<History> getByCrop(String cropId) throws Exception;
 
     List<History> getHistoriesByCropAndDateBetween(String cropId, DateRange ranges);
 
     List<CropRecordDTO> getByUser(String id) throws Exception;
 
-    History Createhistory(RecordDTO recordDTO);
+    History Createhistory(RecordDTO recordDTO) throws Exception;
 
     History updatedHistory(History existingHistory, RecordDTO updateHistory);
 

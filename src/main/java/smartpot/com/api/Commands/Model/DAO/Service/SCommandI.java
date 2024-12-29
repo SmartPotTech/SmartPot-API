@@ -11,7 +11,7 @@ public interface SCommandI {
 
     Command createCommand(Command newCommand);
 
-    Command updateCommand(String id, Command upCommand);
+    Command updateCommand(String id, Command upCommand) throws Exception;
 
     void deleteCommand(String id);
 }

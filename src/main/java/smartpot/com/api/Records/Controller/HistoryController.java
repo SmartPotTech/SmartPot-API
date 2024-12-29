@@ -5,11 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.ApiResponse;
-import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Records.Model.DAO.Service.SHistoryI;
 import smartpot.com.api.Records.Model.DTO.RecordDTO;
 import smartpot.com.api.Records.Model.Entity.DateRange;
 import smartpot.com.api.Records.Model.Entity.History;
+import smartpot.com.api.Responses.ErrorResponse;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class HistoryController {
      */
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
-    public History createHistory(@RequestBody RecordDTO newHistory) {
+    public History createHistory(@RequestBody RecordDTO newHistory) throws Exception {
         return serviceHistory.Createhistory(newHistory);
     }
 
@@ -53,7 +53,7 @@ public class HistoryController {
      * @return Los históricos encontrado
      */
     @GetMapping("/crop/{id}")
-    public List<History> getByCrop(@PathVariable String id) {
+    public List<History> getByCrop(@PathVariable String id) throws Exception {
         return serviceHistory.getByCrop(id);
     }
 

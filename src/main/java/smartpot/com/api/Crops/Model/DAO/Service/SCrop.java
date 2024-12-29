@@ -244,9 +244,7 @@ public class SCrop implements SCropI {
      */
     @Override
     public long countCropsByUser(String id) throws Exception {
-        return Optional.of(getCropsByUser(id))
-                .stream()
-                .count();
+        return getCropsByUser(id).size();
     }
 
     /**
