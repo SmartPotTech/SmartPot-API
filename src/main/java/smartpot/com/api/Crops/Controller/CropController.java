@@ -1,6 +1,7 @@
 package smartpot.com.api.Crops.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -67,7 +68,8 @@ public class CropController {
                             description = "No se pudo crear el cultivo debido a un error.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
+    public ResponseEntity<?> createCrop(@Parameter(description = "Datos del nuevo cultivo que se va a crear. Debe incluir tipo y usuario asociado.",
+            required = true) @RequestBody CropDTO newCropDto) {
         try {
             return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -107,7 +109,7 @@ public class CropController {
             })
     public ResponseEntity<?> getAllCrops() {
         try {
-            return new ResponseEntity<>(serviceCrop.getCrops(), HttpStatus.OK);
+            return new ResponseEntity<>(serviceCrop.getAllCrops(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -145,7 +147,7 @@ public class CropController {
                             description = "Cultivo no encontrado con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropById(@PathVariable String id) {
+    public ResponseEntity<?> getCropById(@Parameter(description = "ID único del cultivo", required = true) @PathVariable String id) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropById(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -183,7 +185,7 @@ public class CropController {
                             description = "No se encontraron cultivos con el estado proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropsByStatus(@PathVariable String status) {
+    public ResponseEntity<?> getCropsByStatus(@Parameter(description = "Estado de los cultivos a buscar", required = true) @PathVariable String status) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByStatus(status), HttpStatus.OK);
         } catch (Exception e) {
@@ -221,7 +223,7 @@ public class CropController {
                             description = "No se encontraron cultivos con el tipo proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropsByType(@PathVariable String type) {
+    public ResponseEntity<?> getCropsByType(@Parameter(description = "Tipo de los cultivos a buscar", required = true) @PathVariable String type) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByType(type), HttpStatus.OK);
         } catch (Exception e) {
@@ -260,7 +262,7 @@ public class CropController {
                             description = "No se encontraron cultivos para el usuario con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropByUser(@PathVariable String id) {
+    public ResponseEntity<?> getCropByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -301,7 +303,7 @@ public class CropController {
                             description = "No se encontraron cultivos para el usuario con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> countCropsByUser(@PathVariable String id) {
+    public ResponseEntity<?> countCropsByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceCrop.countCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -342,7 +344,7 @@ public class CropController {
                             description = "Cultivo no encontrado o error en la actualización.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
+    public ResponseEntity<?> updateCrop(@Parameter(description = "ID único del cultivo a actualizar", required = true) @PathVariable String id, @Parameter(description = "Información del cultivo a actualizar", required = true) @RequestBody CropDTO cropDetails) {
         try {
             return new ResponseEntity<>(serviceCrop.updatedCrop(id, cropDetails), HttpStatus.OK);
         } catch (Exception e) {
@@ -382,9 +384,9 @@ public class CropController {
                             description = "Cultivo no encontrado o error en la eliminación.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> deleteCrop(@PathVariable String id) {
+    public ResponseEntity<?> deleteCrop(@Parameter(description = "ID único del cultivo a eliminar", required = true) @PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.deleteCrop(serviceCrop.getCropById(id)), HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(serviceCrop.deleteCrop(id), HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al eliminar el cultivo con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

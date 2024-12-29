@@ -45,7 +45,7 @@ public class VUser implements VUserI {
      */
     @Override
     public boolean isValid() {
-        return !valid;
+        return valid;
     }
 
     /**

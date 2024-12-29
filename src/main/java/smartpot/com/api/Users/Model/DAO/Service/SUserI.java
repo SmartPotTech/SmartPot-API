@@ -15,14 +15,6 @@ import java.util.List;
  */
 public interface SUserI extends UserDetailsService {
     /**
-     * Obtiene todos los usuarios registrados en el sistema.
-     *
-     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
-     * @throws Exception si ocurre un error al obtener los usuarios.
-     */
-    List<UserDTO> getAllUsers() throws Exception;
-
-    /**
      * Crea un nuevo usuario en el sistema.
      *
      * @param userDTO el objeto que contiene los datos del nuevo usuario a crear.
@@ -30,6 +22,14 @@ public interface SUserI extends UserDetailsService {
      * @throws Exception si el usuario ya existe o si ocurre un error durante la creación.
      */
     UserDTO CreateUser(UserDTO userDTO) throws Exception;
+
+    /**
+     * Obtiene todos los usuarios registrados en el sistema.
+     *
+     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
+     * @throws Exception si ocurre un error al obtener los usuarios.
+     */
+    List<UserDTO> getAllUsers() throws Exception;
 
     /**
      * Obtiene un usuario por su ID.

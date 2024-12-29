@@ -195,7 +195,7 @@ public class UserController {
                             description = "Usuario no encontrado con el correo electrónico proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByEmail(@PathVariable @Parameter(description = "Correo electrónico del usuario", required = true) String email) {
+    public ResponseEntity<?> getUsersByEmail(@Parameter(description = "Correo electrónico del usuario", required = true) @PathVariable String email) {
         try {
             return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
         } catch (Exception e) {
@@ -235,7 +235,7 @@ public class UserController {
                             description = "No se encontraron usuarios con el nombre proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByName(@PathVariable @Parameter(description = "Nombre del usuario a buscar.", required = true) String name) {
+    public ResponseEntity<?> getUsersByName(@Parameter(description = "Nombre del usuario a buscar.", required = true) @PathVariable String name) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
         } catch (Exception e) {
@@ -275,7 +275,7 @@ public class UserController {
                             description = "No se encontraron usuarios con el apellido proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByLastname(@PathVariable @Parameter(description = "Apellido del usuario a buscar", required = true) String lastname) {
+    public ResponseEntity<?> getUsersByLastname(@Parameter(description = "Apellido del usuario a buscar", required = true) @PathVariable String lastname) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
         } catch (Exception e) {
@@ -314,7 +314,7 @@ public class UserController {
                             description = "No se encontraron usuarios con el rol proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByRole(@PathVariable @Parameter(description = "Rol del usuario a buscar", required = true) String role) {
+    public ResponseEntity<?> getUsersByRole(@Parameter(description = "Rol del usuario a buscar", required = true) @PathVariable String role) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
         } catch (Exception e) {
@@ -355,8 +355,8 @@ public class UserController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> updateUser(
-            @PathVariable @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) String id,
-            @RequestBody @Parameter(description = "Datos actualizados del usuario.") UserDTO updatedUser) {
+            @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) @PathVariable String id,
+            @Parameter(description = "Datos actualizados del usuario.") @RequestBody UserDTO updatedUser) {
         try {
             return new ResponseEntity<>(serviceUser.UpdateUser(id, updatedUser), HttpStatus.OK);
         } catch (Exception e) {
@@ -394,7 +394,7 @@ public class UserController {
                             description = "No se pudo eliminar el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
+    public ResponseEntity<?> deleteUser(@Parameter(description = "ID único del usuario que se desea eliminar.", required = true) @PathVariable String id) {
         try {
             return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceUser.DeleteUser(id) + "]"), HttpStatus.OK);
         } catch (Exception e) {

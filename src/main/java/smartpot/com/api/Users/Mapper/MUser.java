@@ -3,7 +3,6 @@ package smartpot.com.api.Users.Mapper;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.User;
@@ -14,8 +13,6 @@ import java.util.Date;
 
 @Mapper(componentModel = "spring")
 public interface MUser {
-    MUser INSTANCE = Mappers.getMapper(MUser.class);
-
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "password", target = "password", qualifiedByName = "encodePassword")
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "stringToDate")

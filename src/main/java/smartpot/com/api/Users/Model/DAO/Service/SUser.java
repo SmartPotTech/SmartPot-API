@@ -38,7 +38,7 @@ public class SUser implements SUserI {
      * Constructor que inyecta las dependencias del servicio.
      *
      * @param repositoryUser repositorio que maneja las operaciones de base de datos.
-     * @param mapperUser     mapeador que convierte entidades User a UserDTO.
+     * @param mapperUser convertidor que convierte entidades User a UserDTO.
      * @param validatorUser  validador que valida los datos de usuario.
      */
     @Autowired
@@ -46,28 +46,6 @@ public class SUser implements SUserI {
         this.repositoryUser = repositoryUser;
         this.mapperUser = mapperUser;
         this.validatorUser = validatorUser;
-    }
-
-    /**
-     * Obtiene todos los usuarios de la base de datos y los convierte a DTOs.
-     * *
-     * Este método consulta todos los usuarios almacenados en la base de datos utilizando el
-     * repositorio `repositoryUser`. Si la lista de usuarios está vacía, lanza una excepción.
-     * Los usuarios obtenidos se mapean a objetos `UserDTO` utilizando el objeto `mapperUser`.
-     *
-     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
-     * @throws Exception si no se encuentran usuarios en la base de datos.
-     *
-     * @see UserDTO
-     */
-    @Override
-    public List<UserDTO> getAllUsers() throws Exception {
-        return Optional.of(repositoryUser.findAll())
-                .filter(users -> !users.isEmpty())
-                .map(users -> users.stream()
-                        .map(mapperUser::toDTO)
-                        .collect(Collectors.toList()))
-                .orElseThrow(() -> new Exception("No existe ningún usuario"));
     }
 
     /**
@@ -92,12 +70,12 @@ public class SUser implements SUserI {
         return Optional.of(userDTO)
                 .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
                 .map(ValidDTO -> {
-                    validatorUser.validateName(userDTO.getName());
-                    validatorUser.validateLastname(userDTO.getLastname());
-                    validatorUser.validateEmail(userDTO.getEmail());
-                    validatorUser.validatePassword(userDTO.getPassword());
-                    validatorUser.validateRole(userDTO.getRole());
-                    if (validatorUser.isValid()) {
+                    validatorUser.validateName(ValidDTO.getName());
+                    validatorUser.validateLastname(ValidDTO.getLastname());
+                    validatorUser.validateEmail(ValidDTO.getEmail());
+                    validatorUser.validatePassword(ValidDTO.getPassword());
+                    validatorUser.validateRole(ValidDTO.getRole());
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
@@ -112,6 +90,28 @@ public class SUser implements SUserI {
                 .map(repositoryUser::save)
                 .map(mapperUser::toDTO)
                 .orElseThrow(() -> new Exception("El Usuario ya existe"));
+    }
+
+
+    /**
+     * Obtiene todos los usuarios de la base de datos y los convierte a DTOs.
+     * *
+     * Este método consulta todos los usuarios almacenados en la base de datos utilizando el
+     * repositorio `repositoryUser`. Si la lista de usuarios está vacía, lanza una excepción.
+     * Los usuarios obtenidos se mapean a objetos `UserDTO` utilizando el objeto `mapperUser`.
+     *
+     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
+     * @throws Exception si no se encuentran usuarios en la base de datos.
+     * @see UserDTO
+     */
+    @Override
+    public List<UserDTO> getAllUsers() throws Exception {
+        return Optional.of(repositoryUser.findAll())
+                .filter(users -> !users.isEmpty())
+                .map(users -> users.stream()
+                        .map(mapperUser::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No existe ningún usuario"));
     }
 
     /**
@@ -134,8 +134,8 @@ public class SUser implements SUserI {
     public UserDTO getUserById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidId -> {
-                    validatorUser.validateId(id);
-                    if (validatorUser.isValid()) {
+                    validatorUser.validateId(ValidId);
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
@@ -170,7 +170,7 @@ public class SUser implements SUserI {
         return Optional.of(email)
                 .map(ValidEmail -> {
                     validatorUser.validateEmail(email);
-                    if (validatorUser.isValid()) {
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
@@ -205,7 +205,7 @@ public class SUser implements SUserI {
         return Optional.of(name)
                 .map(ValidName -> {
                     validatorUser.validateName(ValidName);
-                    if (validatorUser.isValid()) {
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
@@ -241,7 +241,7 @@ public class SUser implements SUserI {
         return Optional.of(lastname)
                 .map(ValidLastname -> {
                     validatorUser.validateLastname(ValidLastname);
-                    if (validatorUser.isValid()) {
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();
@@ -277,7 +277,7 @@ public class SUser implements SUserI {
         return Optional.of(role)
                 .map(ValidRole -> {
                     validatorUser.validateRole(ValidRole);
-                    if (validatorUser.isValid()) {
+                    if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
                     validatorUser.Reset();

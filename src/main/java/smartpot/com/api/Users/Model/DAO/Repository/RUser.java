@@ -1,6 +1,5 @@
 package smartpot.com.api.Users.Model.DAO.Repository;
 
-
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -75,5 +74,14 @@ public interface RUser extends MongoRepository<User, ObjectId> {
     @Query("{ 'role' : ?0 }")
     List<User> findByRole(String role);
 
+    /**
+     * Verifica si existe un usuario con el correo electrónico proporcionado.
+     *
+     * <p>Este método devuelve {@code true} si existe un usuario con el correo electrónico especificado,
+     * y {@code false} en caso contrario.</p>
+     *
+     * @param email El correo electrónico a verificar.
+     * @return {@code true} si existe un usuario con el correo electrónico proporcionado, {@code false} en caso contrario.
+     */
     boolean existsByEmail(String email);
 }
