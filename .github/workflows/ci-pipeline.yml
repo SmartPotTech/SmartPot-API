@@ -1,4 +1,4 @@
-name: General CI Pipeline
+name: CI/CD Pipeline for Docker and Render Deployment
 
 on:
   push:
@@ -7,45 +7,58 @@ on:
     branches: [ "main" ]
 
 jobs:
-  trigger_maven_build:
+  trigger_checkout:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Maven Build Workflow
-        uses: peter-evans/repository-dispatch@v3.0.0
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+  trigger_maven_build:
+    runs-on: ubuntu-latest
+    needs: trigger_checkout
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          event-type: maven-build-event
-          repository: ${{ github.repository }}
-          token: ${{ secrets.PAT }}
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests -P docker -f pom.xml
 
   trigger_docker_build:
     runs-on: ubuntu-latest
     needs: trigger_maven_build
     steps:
-      - name: Trigger Docker Build Workflow
-        uses: peter-evans/repository-dispatch@v3.0.0
-        with:
-          event-type: docker-build-event
-          repository: ${{ github.repository }}
-          token: ${{ secrets.PAT }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build the Docker image
+        run: docker build --platform linux/amd64 -t ${{secrets.DOCKER_USERNAME}}/${{secrets.DOCKER_APP_NAME}}:${{secrets.DOCKER_APP_TAG}} .
 
   trigger_docker_push:
     runs-on: ubuntu-latest
     needs: trigger_docker_build
     steps:
-      - name: Trigger Docker Push Workflow
-        uses: peter-evans/repository-dispatch@v3.0.0
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
-          event-type: docker-push-event
-          repository: ${{ github.repository }}
-          token: ${{ secrets.PAT }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_APP_NAME }}:${{ secrets.DOCKER_APP_TAG }}
 
   trigger_render_deploy:
     runs-on: ubuntu-latest
     needs: trigger_docker_push
     steps:
-      - name: Trigger Deploy to Render
-        uses: peter-evans/repository-dispatch@v3.0.0
-        with:
-          event-type: render-deploy-event
-          repository: ${{ github.repository }}
-          token: ${{ secrets.PAT }}
+      - name: Trigger deploy to Render
+        run: |
+          response=$(curl -s -w "%{http_code}" -o /dev/null -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key=${{ secrets.RENDER_DEPLOY_KEY }})
+          if [[ "$response" -ne 200 ]]; then
+            echo "Deploy failed with status code $response"
+            exit 1
+          else
+            echo "Deploy successful!"
+          fi
