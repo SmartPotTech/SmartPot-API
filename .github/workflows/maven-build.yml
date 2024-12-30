@@ -15,4 +15,4 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean package -DskipTests -f /SmartPotTech/SmartPot-API/
+        run: mvn clean package -DskipTests -f /SmartPotTech/SmartPot-API/pom.xml
