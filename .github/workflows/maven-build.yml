@@ -15,4 +15,4 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean package -DskipTests -P docker --file pom.xml
+        run: mvn clean package -DskipTests -P docker
