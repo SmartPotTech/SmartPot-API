@@ -1,4 +1,4 @@
-package smartpot.com.api.Crops.Validation;
+package smartpot.com.api.Users.Controller;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class VCropTest {
+class UserControllerTest {
 
     @BeforeEach
     void setUp() {
@@ -17,30 +17,38 @@ class VCropTest {
     }
 
     @Test
-    void isValid() {
+    void createUser() {
     }
 
     @Test
-    void validateId() {
+    void getAllUsers() {
     }
 
     @Test
-    void getErrors() {
+    void getUserById() {
     }
 
     @Test
-    void reset() {
+    void getUsersByEmail() {
     }
 
     @Test
-    void validateType() {
+    void getUsersByName() {
     }
 
     @Test
-    void validateStatus() {
+    void getUsersByLastname() {
     }
 
     @Test
-    void validateUser() {
+    void getUsersByRole() {
+    }
+
+    @Test
+    void updateUser() {
+    }
+
+    @Test
+    void deleteUser() {
     }
 }

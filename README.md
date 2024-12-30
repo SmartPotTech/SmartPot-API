@@ -1,7 +1,12 @@
 # SmartPot-API
 
 ## Deployment
-[![Docker Image CI](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/docker-image.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/docker-image.yml)
+
+[![General CI Pipeline](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci-pipeline.yml)
+
+[![Checkout Code](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml)
+
+
 
 ### 1. Compilación de la Aplicación
 
