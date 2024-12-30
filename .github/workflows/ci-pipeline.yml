@@ -7,19 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  trigger_checkout:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Checkout Workflow
-        uses: peter-evans/repository-dispatch@v3.0.0
-        with:
-          event-type: checkout-event
-          repository: ${{ github.repository }}
-          token: ${{ secrets.PAT }}
-
   trigger_maven_build:
     runs-on: ubuntu-latest
-    needs: trigger_checkout
     steps:
       - name: Trigger Maven Build Workflow
         uses: peter-evans/repository-dispatch@v3.0.0
