@@ -1,10 +1,7 @@
 package smartpot.com.api.Crops.Model.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 
 /**
@@ -14,9 +11,8 @@ import lombok.Setter;
  * o manipulación en las operaciones CRUD de cultivos.
  */
 @Data
+@AllArgsConstructor
 @RequiredArgsConstructor
-@Getter
-@Setter
 public class CropDTO {
 
     @Schema(description = "ID único del cultivo, generado automáticamente por la base de datos.",
