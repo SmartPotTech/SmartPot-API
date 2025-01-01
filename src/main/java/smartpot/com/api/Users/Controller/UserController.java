@@ -108,7 +108,7 @@ public class UserController {
     @GetMapping("/All")
     @Operation(summary = "Obtener todos los usuarios",
             description = "Recupera todos los usuarios registrados en el sistema. "
-                    + "En caso de no haber usuarios, se devolverá una lista vacía.",
+                    + "En caso de no haber usuarios, se devolverá una excepción.",
             responses = {
                     @ApiResponse(description = "Usuarios encontrados",
                             responseCode = "200",
@@ -125,6 +125,7 @@ public class UserController {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
+
 
     /**
      * Busca un usuario utilizando su ID único.
@@ -319,6 +320,44 @@ public class UserController {
             return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Recupera todos los roles de usuario registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los roles de usuario disponibles en el sistema. Si no se encuentran roles,
+     * se devolverá una lista vacía con el código HTTP 200.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los roles de usuario (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los roles o no se encuentran roles registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran roles registrados, se retorna una lista de cadenas con los nombres de los roles en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran roles o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/role/All")
+    @Operation(summary = "Obtener todos los roles de usuario",
+            description = "Recupera todos los roles de usuario registrados en el sistema. "
+                    + "En caso de no haber roles de usuario, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Roles encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron roles registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllRoles() {
+        try {
+            return new ResponseEntity<>(serviceUser.getAllRoles(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los roles [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 

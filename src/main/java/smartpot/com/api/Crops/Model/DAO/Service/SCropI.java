@@ -12,15 +12,20 @@ public interface SCropI {
 
     List<CropDTO> getCropsByUser(String id) throws Exception;
 
-    List<CropDTO> getCropsByType(String type) throws Exception;
-
     long countCropsByUser(String id) throws Exception;
 
+    List<CropDTO> getCropsByType(String type) throws Exception;
+
+    List<String> getAllTypes() throws Exception;
+
     List<CropDTO> getCropsByStatus(String status) throws Exception;
+
+    List<String> getAllStatus() throws Exception;
 
     CropDTO createCrop(CropDTO newCropDto) throws Exception;
 
     CropDTO updatedCrop(String id, CropDTO cropDto) throws Exception;
 
     String deleteCrop(String id) throws Exception;
+
 }

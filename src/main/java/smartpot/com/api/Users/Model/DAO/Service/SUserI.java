@@ -77,6 +77,14 @@ public interface SUserI extends UserDetailsService {
     List<UserDTO> getUsersByRole(String role) throws Exception;
 
     /**
+     * Obtiene todos los roles de usuario registrados en el sistema.
+     *
+     * @return una lista de objetos {@link String} que representan a todos los roles de usuario.
+     * @throws Exception si ocurre un error al obtener los roles de usuario.
+     */
+    List<String> getAllRoles() throws Exception;
+
+    /**
      * Actualiza los datos de un usuario.
      *
      * @param id el identificador único del usuario a actualizar.
@@ -94,4 +102,5 @@ public interface SUserI extends UserDetailsService {
      * @throws Exception si no se encuentra el usuario o si ocurre un error durante la eliminación.
      */
     String DeleteUser(String id) throws Exception;
+
 }

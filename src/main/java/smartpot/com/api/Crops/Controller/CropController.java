@@ -97,7 +97,7 @@ public class CropController {
     @GetMapping("/All")
     @Operation(summary = "Obtener todos los cultivos",
             description = "Recupera todos los cultivos registrados en el sistema. "
-                    + "En caso de no haber cultivos, se devolverá una lista vacía.",
+                    + "En caso de no haber cultivos, se devolverá una excepción.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Cultivos encontrados",
                             responseCode = "200",
@@ -194,6 +194,44 @@ public class CropController {
     }
 
     /**
+     * Recupera todos los estados de cultivo registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los estados de cultivo disponibles en el sistema. Si no se encuentran estados de cultivo,
+     * se lanzará una excepción y se devolverá un código HTTP 404 con un mensaje de error.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los estados de cultivo (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los estados de cultivo o no se encuentran registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran estados de cultivo registrados, se retorna una lista de cadenas con los nombres de los estados de cultivo en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran estados de cultivo registrados o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/status/All")
+    @Operation(summary = "Obtener todos los estados de cultivo",
+            description = "Recupera todos los estados de cultivos registrados en el sistema. "
+                    + "En caso de no haber estados de cultivos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Estados de cultivo encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron estados de cultivo registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllStatus() {
+        try {
+            return new ResponseEntity<>(serviceCrop.getAllStatus(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los estados de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
      * Busca cultivos por su tipo.
      * <p>Este método recupera una lista de cultivos en el sistema filtrados por su tipo. El parámetro `type` es utilizado para determinar el tipo de los cultivos que se desean recuperar. Si se encuentran cultivos con el tipo especificado, se devolverá una lista de objetos {@link CropDTO} que representan los cultivos encontrados.</p>
      * <p>Si no se encuentran cultivos con el tipo proporcionado, se devolverá un mensaje de error con el código HTTP 404.</p>
@@ -228,6 +266,44 @@ public class CropController {
             return new ResponseEntity<>(serviceCrop.getCropsByType(type), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar cultivos con tipo '" + type + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Recupera todos los tipos de cultivo registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los tipos de cultivo disponibles en el sistema. Si no se encuentran tipos de cultivo,
+     * se lanzará una excepción y se devolverá un código HTTP 404 con un mensaje de error.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los tipos de cultivo (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los tipos de cultivo o no se encuentran registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran tipos de cultivo registrados, se retorna una lista de cadenas con los nombres de los tipos de cultivo en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran tipos de cultivo registrados o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/type/All")
+    @Operation(summary = "Obtener todos los tipos de cultivo",
+            description = "Recupera todos los tipos de cultivos registrados en el sistema. "
+                    + "En caso de no haber tipos de cultivos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Tipos de cultivo encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron tipos de cultivo registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllTypes() {
+        try {
+            return new ResponseEntity<>(serviceCrop.getAllTypes(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los tipos de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 

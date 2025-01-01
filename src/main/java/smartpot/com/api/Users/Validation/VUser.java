@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 import smartpot.com.api.Users.Model.Entity.Role;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static smartpot.com.api.Users.Validation.UserRegex.*;
@@ -55,7 +57,9 @@ public class VUser implements VUserI {
      */
     @Override
     public List<String> getErrors() {
-        return errors;
+        List<String> currentErrors = errors;
+        Reset();
+        return currentErrors;
     }
 
     /**
@@ -163,32 +167,14 @@ public class VUser implements VUserI {
         if (role == null || role.isEmpty()) {
             errors.add("El rol no puede estar vacío");
             valid = false;
-        } else {
-            boolean isValidRole = false;
-            for (String validRole : getRoleNames()) {
-                if (validRole.matches(role)) {
-                    isValidRole = true;
-                    break;
-                }
-            }
-
-            if (!isValidRole) {
-                errors.add("El Rol debe ser uno de los siguientes: " + String.join(", ", getRoleNames()));
-                valid = false;
-            }
+            return;
         }
-    }
 
-    /**
-     * Obtiene la lista de nombres de roles definidos en el sistema.
-     *
-     * @return Una lista con los nombres de los roles.
-     */
-    private List<String> getRoleNames() {
-        List<String> roleNames = new ArrayList<>();
-        for (Role role : Role.values()) {
-            roleNames.add(role.name());
+        Set<String> validRoles = new HashSet<>(Role.getRoleNames());
+
+        if (!validRoles.contains(role)) {
+            errors.add("El Rol debe ser uno de los siguientes: " + String.join(", ", validRoles));
+            valid = false;
         }
-        return roleNames;
     }
 }

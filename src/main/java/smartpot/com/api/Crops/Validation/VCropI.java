@@ -14,6 +14,4 @@ public interface VCropI {
     void validateType(String type);
 
     void validateStatus(String validStatus);
-
-    void validateUser(String user);
 }

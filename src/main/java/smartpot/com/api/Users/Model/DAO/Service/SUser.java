@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Model.Entity.Role;
 import smartpot.com.api.Users.Validation.VUserI;
 
 import java.text.SimpleDateFormat;
@@ -289,6 +290,23 @@ public class SUser implements SUserI {
                         .map(mapperUser::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún usuario con el rol"));
+    }
+
+    /**
+     * Obtiene todos los roles de usuario de la base de datos.
+     * *
+     * Este método consulta todos los roles de usuario almacenados en la base de datos utilizando el
+     * enum `Role`. Si la lista de roles de usuario está vacía, lanza una excepción.
+     *
+     * @return una lista de objetos {@link String} que representan a todos los roles de usuario.
+     * @throws Exception si no se encuentra ningún rol de usuario en la base de datos.
+     * @see Role
+     */
+    @Override
+    public List<String> getAllRoles() throws Exception {
+        return Optional.of(Role.getRoleNames())
+                .filter(roles -> !roles.isEmpty())
+                .orElseThrow(() -> new Exception("No existe ningún rol"));
     }
 
     /**

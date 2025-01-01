@@ -10,9 +10,10 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Crops.Mapper.MCrop;
 import smartpot.com.api.Crops.Model.DAO.Repository.RCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
+import smartpot.com.api.Crops.Model.Entity.Status;
+import smartpot.com.api.Crops.Model.Entity.Type;
 import smartpot.com.api.Crops.Validation.VCropI;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -83,7 +84,12 @@ public class SCrop implements SCropI {
         return Optional.of(cropDTO)
                 .map(ValidCropDTO -> {
                     validatorCrop.validateType(ValidCropDTO.getType());
-                    validatorCrop.validateUser(ValidCropDTO.getUser());
+                    try {
+                        serviceUser.getUserById(ValidCropDTO.getUser());
+                    } catch (Exception e) {
+                        throw new ValidationException("Error"+e);
+                    }
+
                     if (validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }
@@ -192,6 +198,23 @@ public class SCrop implements SCropI {
     }
 
     /**
+     * Cuenta la cantidad de cultivos asociados a un usuario específico.
+     *
+     * <p>Este método obtiene la lista de cultivos asociados a un usuario mediante su ID utilizando el método
+     * {@link #getCropsByUser(String)}, y luego cuenta la cantidad de cultivos encontrados. Si el usuario no tiene cultivos,
+     * el método devolverá un valor de 0.</p>
+     *
+     * @param id El identificador del usuario cuyos cultivos se desean contar. El ID debe ser una cadena que representa un {@link ObjectId}.
+     * @return El número de cultivos asociados al usuario especificado.
+     * @throws Exception Sí ocurre algún error al obtener los cultivos del usuario.
+     * @see #getCropsByUser(String)
+     */
+    @Override
+    public long countCropsByUser(String id) throws Exception {
+        return getCropsByUser(id).size();
+    }
+
+    /**
      * Obtiene una lista de cultivos de la base de datos según el tipo proporcionado.
      *
      * <p>Este método busca cultivos en la base de datos utilizando el tipo de cultivo proporcionado como parámetro.
@@ -230,22 +253,24 @@ public class SCrop implements SCropI {
     }
 
     /**
-     * Cuenta la cantidad de cultivos asociados a un usuario específico.
+     * Obtiene una lista de todos los tipos de cultivo registrados en el sistema.
      *
-     * <p>Este método obtiene la lista de cultivos asociados a un usuario mediante su ID utilizando el método
-     * {@link #getCropsByUser(String)}, y luego cuenta la cantidad de cultivos encontrados. Si el usuario no tiene cultivos,
-     * el método devolverá un valor de 0.</p>
+     * <p>Este método consulta todos los tipos de cultivo disponibles. Si no se encuentran tipos de cultivo,
+     * se lanza una excepción que indica que no existen tipos registrados.</p>
      *
-     * @param id El identificador del usuario cuyos cultivos se desean contar. El ID debe ser una cadena que representa un {@link ObjectId}.
-     * @return El número de cultivos asociados al usuario especificado.
-     * @throws Exception Sí ocurre algún error al obtener los cultivos del usuario.
+     * @return Una lista de cadenas {@link String} que representan los nombres de los tipos de cultivo encontrados.
+     * @throws Exception Si ocurre un error al obtener los tipos de cultivo o si no se encuentran tipos registrados.
      *
-     * @see #getCropsByUser(String)
+     * @see String
+     * @see Type
      */
     @Override
-    public long countCropsByUser(String id) throws Exception {
-        return getCropsByUser(id).size();
+    public List<String> getAllTypes() throws Exception {
+        return Optional.of(Type.getTypeNames())
+                .filter(types -> !types.isEmpty())
+                .orElseThrow(() -> new Exception("No existe ningún tipo de cultivo"));
     }
+
 
     /**
      * Obtiene una lista de cultivos de la base de datos según el estado proporcionado.
@@ -286,6 +311,25 @@ public class SCrop implements SCropI {
     }
 
     /**
+     * Obtiene una lista de todos los estados de cultivo registrados en la base de datos.
+     *
+     * <p>Este método consulta los estados de cultivo disponibles en la base de datos. Si no se encuentran estados de cultivo,
+     * se lanza una excepción que indica que no existen estados registrados.</p>
+     *
+     * @return Una lista de cadenas {@link String} que representan los estados de cultivo encontrados.
+     * @throws Exception Si ocurre un error al buscar los estados de cultivo o si no se encuentran estados registrados.
+     *
+     * @see String
+     * @see Status
+     */
+    @Override
+    public List<String> getAllStatus() throws Exception {
+        return Optional.of(Status.getStatusNames())
+                .filter(status -> !status.isEmpty())
+                .orElseThrow(() -> new Exception("No existe ningún estados para los cultivos"));
+    }
+
+    /**
      * Actualiza un cultivo existente en la base de datos con los nuevos datos proporcionados en un objeto {@link CropDTO}.
      *
      * <p>Este método recibe el ID del cultivo a actualizar y un objeto {@link CropDTO} con los nuevos datos.
@@ -322,7 +366,11 @@ public class SCrop implements SCropI {
                 .map(dto -> {
                     validatorCrop.validateStatus(dto.getStatus());
                     validatorCrop.validateType(dto.getType());
-                    validatorCrop.validateUser(dto.getUser());
+                    try {
+                        serviceUser.getUserById(existingCrop.getId());
+                    } catch (Exception e) {
+                        throw new ValidationException("Error"+e);
+                    }
                     if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }

@@ -1,9 +1,14 @@
 package smartpot.com.api.Crops.Validation;
 
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
+import smartpot.com.api.Crops.Model.Entity.Status;
+import smartpot.com.api.Crops.Model.Entity.Type;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class VCrop implements VCropI {
@@ -38,7 +43,13 @@ public class VCrop implements VCropI {
 
     @Override
     public void validateId(String id) {
-
+        if (id == null || id.isEmpty()) {
+            errors.add("El Id no puede estar vacío");
+            valid = false;
+        } else if (!ObjectId.isValid(id)) {
+            errors.add("El Id debe ser un hexadecimal de 24 caracteres");
+            valid = false;
+        }
     }
 
     /**
@@ -48,7 +59,9 @@ public class VCrop implements VCropI {
      */
     @Override
     public List<String> getErrors() {
-        return errors;
+        List<String> currentErrors = errors;
+        Reset();
+        return currentErrors;
     }
 
     /**
@@ -62,16 +75,31 @@ public class VCrop implements VCropI {
 
     @Override
     public void validateType(String type) {
+        if (type == null || type.isEmpty()) {
+            errors.add("El tipo de cultivo no puede estar vacío");
+            valid = false;
+        }
 
+        Set<String> validTypes = new HashSet<>(Type.getTypeNames());
+
+        if (!validTypes.contains(type)) {
+            errors.add("El Tipo de cultivo debe ser uno de los siguientes: " + String.join(", ", validTypes));
+            valid = false;
+        }
     }
 
     @Override
-    public void validateStatus(String validStatus) {
+    public void validateStatus(String status) {
+        if (status == null || status.isEmpty()) {
+            errors.add("El Estado del cultivo no puede estar vacío");
+            valid = false;
+        }
+        Set<String> validStatus = new HashSet<>(Status.getStatusNames());
 
+        if (!validStatus.contains(status)) {
+            errors.add("El Estado del cultivo debe ser uno de los siguientes: " + String.join(", ", validStatus));
+            valid = false;
+        }
     }
 
-    @Override
-    public void validateUser(String user) {
-
-    }
 }
