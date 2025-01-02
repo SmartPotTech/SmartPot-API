@@ -1,4 +1,4 @@
-package smartpot.com.api.Crops.Validation;
+package smartpot.com.api.Crops.Validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;

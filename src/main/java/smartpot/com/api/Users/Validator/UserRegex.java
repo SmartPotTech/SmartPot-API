@@ -1,4 +1,4 @@
-package smartpot.com.api.Users.Validation;
+package smartpot.com.api.Users.Validator;
 
 /**
  * Contiene las expresiones regulares para la validación de los campos de usuario.

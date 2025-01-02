@@ -1,4 +1,4 @@
-package smartpot.com.api.Users.Validation;
+package smartpot.com.api.Users.Validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static smartpot.com.api.Users.Validation.UserRegex.*;
+import static smartpot.com.api.Users.Validator.UserRegex.*;
 
 /**
  * Clase de validación para los usuarios.

@@ -20,7 +20,7 @@ public class CropDTO {
     private String id;
 
     @Schema(description = "Estado actual del cultivo.",
-            example = "Perfect_plant", hidden = true)
+            example = "Perfect_plant")
     private String status;
 
     @Schema(description = "Tipo de cultivo.",

@@ -1,4 +1,4 @@
-package smartpot.com.api.Users.Validation;
+package smartpot.com.api.Users.Validator;
 
 import java.util.List;
 

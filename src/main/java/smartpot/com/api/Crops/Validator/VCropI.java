@@ -1,4 +1,4 @@
-package smartpot.com.api.Crops.Validation;
+package smartpot.com.api.Crops.Validator;
 
 import java.util.List;
 

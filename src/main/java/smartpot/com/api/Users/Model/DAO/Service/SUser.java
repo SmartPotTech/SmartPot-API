@@ -13,7 +13,7 @@ import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.Role;
-import smartpot.com.api.Users.Validation.VUserI;
+import smartpot.com.api.Users.Validator.VUserI;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

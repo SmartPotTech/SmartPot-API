@@ -12,7 +12,7 @@ import smartpot.com.api.Crops.Model.DAO.Repository.RCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.Status;
 import smartpot.com.api.Crops.Model.Entity.Type;
-import smartpot.com.api.Crops.Validation.VCropI;
+import smartpot.com.api.Crops.Validator.VCropI;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import java.util.List;
 import java.util.Optional;
@@ -87,10 +87,10 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(ValidCropDTO.getUser());
                     } catch (Exception e) {
-                        throw new ValidationException("Error"+e);
+                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente.");
                     }
 
-                    if (validatorCrop.isValid()) {
+                    if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }
                     validatorCrop.Reset();
@@ -154,7 +154,7 @@ public class SCrop implements SCropI {
         return Optional.of(id)
                 .map(ValidCropId -> {
                     validatorCrop.validateId(ValidCropId);
-                    if (validatorCrop.isValid()) {
+                    if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }
                     validatorCrop.Reset();
@@ -238,7 +238,7 @@ public class SCrop implements SCropI {
         return Optional.of(type)
                 .map(ValidType -> {
                     validatorCrop.validateType(ValidType);
-                    if (validatorCrop.isValid()) {
+                    if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }
                     validatorCrop.Reset();
@@ -296,7 +296,7 @@ public class SCrop implements SCropI {
         return Optional.of(status)
                 .map(ValidStatus -> {
                     validatorCrop.validateStatus(ValidStatus);
-                    if (validatorCrop.isValid()) {
+                    if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
                     }
                     validatorCrop.Reset();
@@ -369,7 +369,7 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(existingCrop.getId());
                     } catch (Exception e) {
-                        throw new ValidationException("Error"+e);
+                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente.");
                     }
                     if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
