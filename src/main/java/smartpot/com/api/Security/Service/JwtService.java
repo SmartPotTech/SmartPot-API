@@ -50,7 +50,9 @@ public class JwtService implements JwtServiceI {
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
                 .map(validToken -> {
                     emailService.sendSimpleMail(
-                            new EmailDetails("smartpottech@gmail.com",
+                            new EmailDetails(
+                                    null,
+                                    "smartpottech@gmail.com",
                                     "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '"+validToken+"'",
                                     "Inicio de Sesion en Smartpot",
                                     ""
