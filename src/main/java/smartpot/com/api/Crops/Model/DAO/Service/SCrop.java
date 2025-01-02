@@ -87,7 +87,7 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(ValidCropDTO.getUser());
                     } catch (Exception e) {
-                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente.");
+                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente");
                     }
 
                     if (!validatorCrop.isValid()) {
@@ -369,7 +369,7 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(existingCrop.getId());
                     } catch (Exception e) {
-                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente.");
+                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente");
                     }
                     if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
