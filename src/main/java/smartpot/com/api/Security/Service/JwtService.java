@@ -14,6 +14,7 @@ import smartpot.com.api.Mail.Model.DAO.Service.EmailServiceI;
 import smartpot.com.api.Mail.Model.Entity.EmailDetails;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
@@ -75,7 +76,7 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public UserDTO validateAuthHeader(String authHeader) throws Exception, InvalidTokenException {
+    public UserDTO validateAuthHeader(String authHeader) throws Exception {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("El encabezado de autorización es inválido. Se esperaba 'Bearer <token>'.");
         }
