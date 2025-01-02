@@ -8,13 +8,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Responses.TokenResponse;
 import smartpot.com.api.Security.Service.JwtServiceI;
-import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
 @RestController
@@ -22,12 +20,10 @@ import smartpot.com.api.Users.Model.DTO.UserDTO;
 @Tag(name = "Autentificación", description = "Operaciones relacionadas con autentificación de usuarios")
 public class AuthController {
 
-    private final SUserI serviceUser;
     private final JwtServiceI jwtService;
 
     @Autowired
-    public AuthController(final SUserI serviceUser, final JwtServiceI jwtService) {
-        this.serviceUser = serviceUser;
+    public AuthController(JwtServiceI jwtService) {
         this.jwtService = jwtService;
     }
 

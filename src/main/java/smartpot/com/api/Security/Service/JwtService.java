@@ -6,13 +6,12 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.InvalidTokenException;
-import smartpot.com.api.Responses.ErrorResponse;
+import smartpot.com.api.Mail.Model.DAO.Service.EmailServiceI;
+import smartpot.com.api.Mail.Model.Entity.EmailDetails;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import javax.crypto.SecretKey;
@@ -31,6 +30,7 @@ public class JwtService implements JwtServiceI {
     private long expiration;
 
     private final SUserI serviceUser;
+    private final EmailServiceI emailService;
 
     /**
      * Constructor que inyecta las dependencias del servicio.
@@ -38,8 +38,9 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser) {
+    public JwtService(SUserI serviceUser, EmailServiceI emailService) {
         this.serviceUser = serviceUser;
+        this.emailService = emailService;
     }
 
     @Override
@@ -47,6 +48,15 @@ public class JwtService implements JwtServiceI {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
                 .filter( userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(validToken -> {
+                    emailService.sendSimpleMail(
+                            new EmailDetails("smartpottech@gmail.com",
+                                    "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '"+validToken+"'",
+                                    "Inicio de Sesion en Smartpot",
+                                    ""
+                            ));
+                            return validToken;
+                })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
 
     }
