@@ -1,5 +1,7 @@
 package smartpot.com.api.Mail.Config;
 
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.Async;
@@ -66,5 +68,25 @@ public class AsyncConfig {
         executor.setThreadNamePrefix("Async-Executor-");
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * Método de cierre que se invoca al destruir la aplicación.
+     * Asegura que el {@link ThreadPoolTaskExecutor} se detenga correctamente, evitando fugas de memoria.
+     */
+    @PreDestroy
+    public void shutdownExecutor() {
+        ThreadPoolTaskExecutor executor = (ThreadPoolTaskExecutor) taskExecutor();
+        if (executor != null) {
+            executor.shutdown();
+            try {
+                if (!executor.getThreadPoolExecutor().awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+                    executor.getThreadPoolExecutor().shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.getThreadPoolExecutor().shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
