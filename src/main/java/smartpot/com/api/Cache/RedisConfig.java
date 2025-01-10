@@ -5,6 +5,7 @@ import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -36,14 +37,14 @@ public class RedisConfig {
     @Bean
     JedisConnectionFactory jedisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
-        redisStandaloneConfiguration.setUsername(username);
-        redisStandaloneConfiguration.setPassword(password);
-        redisStandaloneConfiguration.setDatabase(Integer.parseInt(database));
         redisStandaloneConfiguration.setHostName(host);
-        redisStandaloneConfiguration.setPort(Integer.valueOf(port));
+        redisStandaloneConfiguration.setPort(Integer.parseInt(port));
+        redisStandaloneConfiguration.setDatabase(Integer.parseInt(database));
+        redisStandaloneConfiguration.setUsername(username);
+        redisStandaloneConfiguration.setPassword(RedisPassword.of(password));
 
         JedisClientConfiguration.JedisClientConfigurationBuilder jedisClientConfiguration = JedisClientConfiguration.builder();
-        jedisClientConfiguration.connectTimeout(Duration.ofSeconds(Integer.valueOf(timeout)));
+        jedisClientConfiguration.connectTimeout(Duration.ofSeconds(Long.parseLong(timeout)));
 
         return new JedisConnectionFactory(redisStandaloneConfiguration,
                 jedisClientConfiguration.build());
