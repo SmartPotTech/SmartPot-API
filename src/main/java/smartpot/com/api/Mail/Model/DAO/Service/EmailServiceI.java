@@ -11,5 +11,5 @@ public interface EmailServiceI {
 
     void sendMailWithAttachment(EmailDetails details);
 
-    List<EmailDTO> getAllEmails() throws Exception;
+    List<EmailDTO> getAllMails() throws Exception;
 }

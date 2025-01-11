@@ -67,7 +67,7 @@ public class EmailController {
             })
     public ResponseEntity<?> getAllCrops() {
         try {
-            return new ResponseEntity<>(emailServiceI.getAllEmails(), HttpStatus.OK);
+            return new ResponseEntity<>(emailServiceI.getAllMails(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

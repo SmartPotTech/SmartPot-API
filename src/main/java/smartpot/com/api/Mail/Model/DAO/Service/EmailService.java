@@ -89,7 +89,7 @@ public class EmailService implements EmailServiceI {
      * @see EmailMapper
      */
     @Override
-    public List<EmailDTO> getAllEmails() throws Exception {
+    public List<EmailDTO> getAllMails() throws Exception {
         return Optional.of(emailRepository.findAll())
                 .filter(emails -> !emails.isEmpty())
                 .map(emails -> emails.stream()
