@@ -1,5 +1,6 @@
 package smartpot.com.api.Users.Model.DAO.Service;
 
+import jakarta.validation.ValidationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
@@ -21,7 +22,7 @@ public interface SUserI extends UserDetailsService {
      * @return el objeto {@link UserDTO} del usuario creado.
      * @throws Exception si el usuario ya existe o si ocurre un error durante la creación.
      */
-    UserDTO CreateUser(UserDTO userDTO) throws Exception;
+    UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException;
 
     /**
      * Obtiene todos los usuarios registrados en el sistema.

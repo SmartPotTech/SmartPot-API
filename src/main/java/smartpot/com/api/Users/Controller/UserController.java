@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.http.HttpStatus;
@@ -78,8 +79,11 @@ public class UserController {
                             responseCode = "201",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = UserDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo crear el usuario.",
+                    @ApiResponse(responseCode = "403",
+                            description = "No se pudo crear el usuario, error de validación",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409",
+                            description = "Conflicto al crear el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> createUser(
@@ -87,8 +91,10 @@ public class UserController {
                     required = true) @RequestBody UserDTO userDTO) {
         try {
             return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        } catch (ValidationException e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.FORBIDDEN.value()), HttpStatus.FORBIDDEN);
+        } catch (IllegalStateException e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
         }
     }
 

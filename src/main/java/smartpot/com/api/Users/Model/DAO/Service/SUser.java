@@ -72,7 +72,7 @@ public class SUser implements SUserI {
      */
     @Override
     @CachePut(value = "users", key = "#userDTO.id")
-    public UserDTO CreateUser(UserDTO userDTO) throws Exception {
+    public UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException {
         return Optional.of(userDTO)
                 .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
                 .map(ValidDTO -> {
@@ -95,7 +95,7 @@ public class SUser implements SUserI {
                 .map(mapperUser::toEntity)
                 .map(repositoryUser::save)
                 .map(mapperUser::toDTO)
-                .orElseThrow(() -> new Exception("El Usuario ya existe"));
+                .orElseThrow(() -> new IllegalStateException("El Usuario ya existe"));
     }
 
 
