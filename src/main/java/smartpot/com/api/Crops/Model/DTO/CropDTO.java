@@ -1,7 +1,9 @@
 package smartpot.com.api.Crops.Model.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 
 /**

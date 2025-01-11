@@ -42,7 +42,7 @@ public class SUser implements SUserI {
      * Constructor que inyecta las dependencias del servicio.
      *
      * @param repositoryUser repositorio que maneja las operaciones de base de datos.
-     * @param mapperUser convertidor que convierte entidades User a UserDTO.
+     * @param mapperUser     convertidor que convierte entidades User a UserDTO.
      * @param validatorUser  validador que valida los datos de usuario.
      */
     @Autowired
@@ -61,11 +61,12 @@ public class SUser implements SUserI {
      * se guarda en la base de datos. Si el usuario ya existe o si las validaciones fallan, se lanza una
      * excepción correspondiente.
      * *
+     *
      * @param userDTO el objeto {@link UserDTO} que contiene los datos del nuevo usuario.
      * @return un objeto {@link UserDTO} que representa al usuario creado.
-     * @throws Exception si el usuario ya existe en la base de datos (por email) o si hay un error de validación.
+     * @throws Exception           si el usuario ya existe en la base de datos (por email) o si hay un error de validación.
      * @throws ValidationException si las validaciones de los campos del usuario no son exitosas.
-     * *
+     *                             *
      * @see UserDTO
      * @see ValidationException
      */
@@ -130,9 +131,8 @@ public class SUser implements SUserI {
      *
      * @param id el ID del usuario que se desea obtener. El ID debe ser una cadena que representa un {@link ObjectId}.
      * @return un objeto {@link UserDTO} que representa al usuario encontrado.
-     * @throws Exception si el usuario no existe en la base de datos o si el ID no es válido.
+     * @throws Exception           si el usuario no existe en la base de datos o si el ID no es válido.
      * @throws ValidationException si el ID proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -166,9 +166,8 @@ public class SUser implements SUserI {
      *
      * @param email el correo electrónico del usuario que se desea obtener.
      * @return un objeto {@link UserDTO} que representa al usuario encontrado.
-     * @throws Exception si el usuario no existe en la base de datos o si el correo no es válido.
+     * @throws Exception           si el usuario no existe en la base de datos o si el correo no es válido.
      * @throws ValidationException si el correo electrónico proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -202,9 +201,8 @@ public class SUser implements SUserI {
      *
      * @param name el nombre del usuario que se desea obtener.
      * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
-     * @throws Exception si no existen usuarios con el nombre proporcionado o si el nombre no es válido.
+     * @throws Exception           si no existen usuarios con el nombre proporcionado o si el nombre no es válido.
      * @throws ValidationException si el nombre proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -239,9 +237,8 @@ public class SUser implements SUserI {
      *
      * @param lastname el apellido del usuario o los usuarios que se desea obtener.
      * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
-     * @throws Exception si no existen usuarios con el apellido proporcionado o si el apellido no es válido.
+     * @throws Exception           si no existen usuarios con el apellido proporcionado o si el apellido no es válido.
      * @throws ValidationException si el apellido proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -276,9 +273,8 @@ public class SUser implements SUserI {
      *
      * @param role el rol del usuario o los usuarios que se desea obtener.
      * @return una lista de objetos {@link UserDTO} que representan a los usuarios encontrados.
-     * @throws Exception si no existen usuarios con el rol proporcionado o si el rol no es válido.
+     * @throws Exception           si no existen usuarios con el rol proporcionado o si el rol no es válido.
      * @throws ValidationException si el rol proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -328,12 +324,11 @@ public class SUser implements SUserI {
      * valores proporcionados en el objeto {@link UserDTO}. Luego, se validan los nuevos valores antes de
      * guardar el usuario actualizado. Si alguno de los valores es inválido, se lanza una excepción de validación.
      *
-     * @param id el identificador del usuario a actualizar.
+     * @param id          el identificador del usuario a actualizar.
      * @param updatedUser el objeto {@link UserDTO} que contiene los nuevos valores para el usuario.
      * @return un objeto {@link UserDTO} con la información actualizada del usuario.
-     * @throws Exception si el usuario no se pudo actualizar debido a algún error general.
+     * @throws Exception           si el usuario no se pudo actualizar debido a algún error general.
      * @throws ValidationException si alguno de los campos del usuario proporcionado no es válido según las reglas de validación.
-     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -379,7 +374,6 @@ public class SUser implements SUserI {
      * @param id el identificador del usuario que se desea eliminar.
      * @return un mensaje indicando que el usuario ha sido eliminado correctamente.
      * @throws Exception si el usuario no existe o si ocurre un error durante el proceso de eliminación.
-     *
      * @see UserDTO
      */
     @Override
@@ -404,7 +398,6 @@ public class SUser implements SUserI {
      * @param username el correo electrónico del usuario que se desea cargar.
      * @return un objeto {@link UserDetails} que contiene la información del usuario cargado.
      * @throws UsernameNotFoundException si no se encuentra un usuario con el correo electrónico proporcionado.
-     *
      * @see UserDetails
      * @see UsernameNotFoundException
      */

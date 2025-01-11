@@ -1,6 +1,5 @@
 package smartpot.com.api.Mail.Model.DAO.Service;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,12 +24,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class EmailService implements EmailServiceI {
-    @Value("${spring.mail.username}")
-    private String sender;
-
     private final JavaMailSender javaMailSender;
     private final EmailRepository emailRepository;
     private final EmailMapper emailMapper;
+    @Value("${spring.mail.username}")
+    private String sender;
 
     @Autowired
     public EmailService(JavaMailSender javaMailSender, EmailRepository emailRepository, EmailMapper emailMapper) {
@@ -52,7 +50,7 @@ public class EmailService implements EmailServiceI {
             emailRepository.save(details);
             log.warn("Correo Enviado Exitosamente");
         } catch (Exception e) {
-            log.error("Error al Enviar Correo "+e.getMessage());
+            log.error("Error al Enviar Correo " + e.getMessage());
         }
     }
 
@@ -73,7 +71,7 @@ public class EmailService implements EmailServiceI {
             emailRepository.save(details);
             log.warn("Correo Enviado Exitosamente");
         } catch (Exception e) {
-            log.error("Error al Enviar Correo "+e.getMessage());
+            log.error("Error al Enviar Correo " + e.getMessage());
         }
     }
 

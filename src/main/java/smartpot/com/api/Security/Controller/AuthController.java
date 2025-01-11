@@ -79,10 +79,9 @@ public class AuthController {
     public ResponseEntity<?> verify(@RequestHeader("Authorization") String authHeader) {
         try {
             return new ResponseEntity<>(jwtService.validateAuthHeader(authHeader), HttpStatus.OK);
-        }catch (InvalidTokenException e) {
+        } catch (InvalidTokenException e) {
             return new ResponseEntity<>(new ErrorResponse("Token Invalido [" + e.getMessage() + "]", HttpStatus.I_AM_A_TEAPOT.value()), HttpStatus.I_AM_A_TEAPOT);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al verificar token [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
         }
 

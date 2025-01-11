@@ -14,6 +14,7 @@ import smartpot.com.api.Crops.Model.Entity.Status;
 import smartpot.com.api.Crops.Model.Entity.Type;
 import smartpot.com.api.Crops.Validator.VCropI;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -87,7 +88,7 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(ValidCropDTO.getUser());
                     } catch (Exception e) {
-                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente");
+                        throw new ValidationException(e.getMessage() + ", asocia el cultivo a un usuario existente");
                     }
 
                     if (!validatorCrop.isValid()) {
@@ -115,7 +116,6 @@ public class SCrop implements SCropI {
      *
      * @return Una lista de objetos {@link CropDTO} que representan todos los cultivos en la base de datos.
      * @throws Exception Si no existen cultivos registrados en la base de datos.
-     *
      * @see CropDTO
      * @see RCrop
      * @see MCrop
@@ -141,9 +141,8 @@ public class SCrop implements SCropI {
      *
      * @param id El identificador del cultivo que se desea obtener. El ID debe ser una cadena que representa un {@link ObjectId}.
      * @return Un objeto {@link CropDTO} que representa el cultivo encontrado.
-     * @throws Exception Si el cultivo no existe en la base de datos o si el ID no es válido.
+     * @throws Exception           Si el cultivo no existe en la base de datos o si el ID no es válido.
      * @throws ValidationException Si el ID proporcionado no es válido según las reglas de validación del validador {@link VCropI}.
-     *
      * @see CropDTO
      * @see VCropI
      * @see RCrop
@@ -179,7 +178,6 @@ public class SCrop implements SCropI {
      * @param id El identificador del usuario cuyos cultivos se desean obtener. El ID debe ser una cadena que representa un {@link ObjectId}.
      * @return Una lista de objetos {@link CropDTO} que representan los cultivos asociados al usuario.
      * @throws Exception Si el usuario no tiene cultivos o si el ID del usuario es inválido o no existe.
-     *
      * @see CropDTO
      * @see SUserI
      * @see RCrop
@@ -225,9 +223,8 @@ public class SCrop implements SCropI {
      *
      * @param type El tipo de cultivo que se desea obtener.
      * @return Una lista de objetos {@link CropDTO} que representan los cultivos encontrados con el tipo proporcionado.
-     * @throws Exception Si no se encuentran cultivos con el tipo proporcionado o si ocurre algún otro error.
+     * @throws Exception           Si no se encuentran cultivos con el tipo proporcionado o si ocurre algún otro error.
      * @throws ValidationException Si el tipo de cultivo proporcionado no es válido según las reglas de validación del validador {@link VCropI}.
-     *
      * @see CropDTO
      * @see VCropI
      * @see RCrop
@@ -260,7 +257,6 @@ public class SCrop implements SCropI {
      *
      * @return Una lista de cadenas {@link String} que representan los nombres de los tipos de cultivo encontrados.
      * @throws Exception Si ocurre un error al obtener los tipos de cultivo o si no se encuentran tipos registrados.
-     *
      * @see String
      * @see Type
      */
@@ -283,9 +279,8 @@ public class SCrop implements SCropI {
      *
      * @param status El estado del cultivo que se desea obtener.
      * @return Una lista de objetos {@link CropDTO} que representan los cultivos encontrados con el estado proporcionado.
-     * @throws Exception Si no se encuentran cultivos con el estado proporcionado o si ocurre algún otro error.
+     * @throws Exception           Si no se encuentran cultivos con el estado proporcionado o si ocurre algún otro error.
      * @throws ValidationException Si el estado proporcionado no es válido según las reglas de validación del validador {@link VCropI}.
-     *
      * @see CropDTO
      * @see VCropI
      * @see RCrop
@@ -318,7 +313,6 @@ public class SCrop implements SCropI {
      *
      * @return Una lista de cadenas {@link String} que representan los estados de cultivo encontrados.
      * @throws Exception Si ocurre un error al buscar los estados de cultivo o si no se encuentran estados registrados.
-     *
      * @see String
      * @see Status
      */
@@ -341,13 +335,12 @@ public class SCrop implements SCropI {
      * <p>Si las validaciones no pasan o si ocurre un error durante el proceso de actualización, se lanza una
      * {@link ValidationException} o una {@link Exception}, respectivamente.</p>
      *
-     * @param id El ID único del cultivo que se desea actualizar. Este parámetro es obligatorio.
+     * @param id         El ID único del cultivo que se desea actualizar. Este parámetro es obligatorio.
      * @param updateCrop El objeto {@link CropDTO} que contiene los nuevos datos para actualizar el cultivo.
      *                   Los campos nulos no modificarán el valor existente.
      * @return El objeto {@link CropDTO} actualizado que representa el cultivo después de la actualización.
-     * @throws Exception Si ocurre un error al intentar actualizar el cultivo, como si el cultivo no existe.
+     * @throws Exception           Si ocurre un error al intentar actualizar el cultivo, como si el cultivo no existe.
      * @throws ValidationException Si alguna de las validaciones del estado, tipo o usuario falla según el validador {@link VCropI}.
-     *
      * @see CropDTO
      * @see VCropI
      * @see RCrop
@@ -369,7 +362,7 @@ public class SCrop implements SCropI {
                     try {
                         serviceUser.getUserById(existingCrop.getId());
                     } catch (Exception e) {
-                        throw new ValidationException(e.getMessage()+", asocia el cultivo a un usuario existente");
+                        throw new ValidationException(e.getMessage() + ", asocia el cultivo a un usuario existente");
                     }
                     if (!validatorCrop.isValid()) {
                         throw new ValidationException(validatorCrop.getErrors().toString());
@@ -396,7 +389,6 @@ public class SCrop implements SCropI {
      * @param id El ID único del cultivo que se desea eliminar.
      * @return Un mensaje de confirmación que indica que el cultivo con el ID proporcionado fue eliminado correctamente.
      * @throws Exception Si el cultivo no existe en la base de datos o si ocurre algún otro error durante la eliminación.
-     *
      * @see RCrop
      */
     @Override

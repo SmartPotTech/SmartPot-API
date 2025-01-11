@@ -393,8 +393,8 @@ public class CropController {
      * Si el cultivo con el ID proporcionado existe, se actualizarán sus detalles con la información proporcionada en el objeto {@link CropDTO}.</p>
      * <p>Si el cultivo no existe o si ocurre algún error durante el proceso de actualización, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param id El identificador único del cultivo que se desea actualizar. Este parámetro es obligatorio para identificar el cultivo en la base de datos.
-     *           El ID debe ser válido y hacer referencia a un cultivo existente.
+     * @param id          El identificador único del cultivo que se desea actualizar. Este parámetro es obligatorio para identificar el cultivo en la base de datos.
+     *                    El ID debe ser válido y hacer referencia a un cultivo existente.
      * @param cropDetails El objeto {@link CropDTO} que contiene los nuevos datos del cultivo que se desean actualizar. Este objeto debe incluir toda la información que reemplazará los detalles actuales del cultivo.
      * @return Un objeto {@link ResponseEntity} que contiene:
      *         <ul>

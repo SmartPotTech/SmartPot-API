@@ -25,10 +25,14 @@ import static smartpot.com.api.Users.Validator.UserRegex.*;
 @Component
 public class VUser implements VUserI {
 
-    /** Indica si la validación fue exitosa. */
+    /**
+     * Indica si la validación fue exitosa.
+     */
     public boolean valid;
 
-    /** Lista de errores de validación. */
+    /**
+     * Lista de errores de validación.
+     */
     public List<String> errors;
 
     /**

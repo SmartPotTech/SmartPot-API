@@ -9,13 +9,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Responses.CResponseEntity;
 import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
@@ -24,6 +20,7 @@ import smartpot.com.api.Users.Model.DTO.UserDTO;
 /**
  * Controlador REST para las operaciones relacionadas con los usuarios.
  * <p>Este controlador proporciona una serie de métodos para gestionar usuarios en el sistema.</p>
+ *
  * @see SUserI
  */
 @RestController

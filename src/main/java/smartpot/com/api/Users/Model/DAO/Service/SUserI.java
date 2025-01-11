@@ -87,7 +87,7 @@ public interface SUserI extends UserDetailsService {
     /**
      * Actualiza los datos de un usuario.
      *
-     * @param id el identificador único del usuario a actualizar.
+     * @param id          el identificador único del usuario a actualizar.
      * @param updatedUser un objeto {@link UserDTO} con los datos actualizados del usuario.
      * @return el objeto {@link UserDTO} con los datos del usuario actualizado.
      * @throws Exception si no se encuentra el usuario o si ocurre un error durante la actualización.

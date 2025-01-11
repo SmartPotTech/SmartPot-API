@@ -24,14 +24,12 @@ import java.util.Optional;
 @Service
 public class JwtService implements JwtServiceI {
 
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
-
-    @Value("${application.security.jwt.expiration}")
-    private long expiration;
-
     private final SUserI serviceUser;
     private final EmailServiceI emailService;
+    @Value("${application.security.jwt.secret-key}")
+    private String secretKey;
+    @Value("${application.security.jwt.expiration}")
+    private long expiration;
 
     /**
      * Constructor que inyecta las dependencias del servicio.
@@ -47,18 +45,18 @@ public class JwtService implements JwtServiceI {
     @Override
     public String Login(UserDTO reqUser) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
-                .filter( userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
+                .filter(userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
                 .map(validToken -> {
                     emailService.sendSimpleMail(
                             new EmailDetails(
                                     null,
                                     "smartpottech@gmail.com",
-                                    "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '"+validToken+"'",
+                                    "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '" + validToken + "'",
                                     "Inicio de Sesion en Smartpot",
                                     ""
                             ));
-                            return validToken;
+                    return validToken;
                 })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
 
