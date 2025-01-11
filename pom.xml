@@ -77,15 +77,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-redis</artifactId> <!-- Spring Data Redis client -->
-            <version>3.4.1</version>
-        </dependency>
-
-        <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId> <!-- Redis client library -->
-            <version>4.0.0</version>
+            <version>5.2.0</version>
         </dependency>
 
         <!-- ===================== Security Dependencies ===================== -->

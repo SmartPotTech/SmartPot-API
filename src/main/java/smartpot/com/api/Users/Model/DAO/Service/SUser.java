@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -67,6 +70,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @CachePut(value = "users", key = "#userDTO.id")
     public UserDTO CreateUser(UserDTO userDTO) throws Exception {
         return Optional.of(userDTO)
                 .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
@@ -106,6 +110,7 @@ public class SUser implements SUserI {
      * @see UserDTO
      */
     @Override
+    @Cacheable(value = "users", key = "'all_users'")
     public List<UserDTO> getAllUsers() throws Exception {
         return Optional.of(repositoryUser.findAll())
                 .filter(users -> !users.isEmpty())
@@ -132,6 +137,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @Cacheable(value = "users", key = "#id")
     public UserDTO getUserById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidId -> {
@@ -167,6 +173,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @Cacheable(value = "users", key = "#email")
     public UserDTO getUserByEmail(String email) throws Exception {
         return Optional.of(email)
                 .map(ValidEmail -> {
@@ -202,6 +209,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @Cacheable(value = "users", key = "#name")
     public List<UserDTO> getUsersByName(String name) throws Exception {
         return Optional.of(name)
                 .map(ValidName -> {
@@ -238,6 +246,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @Cacheable(value = "users", key = "#lastname")
     public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
         return Optional.of(lastname)
                 .map(ValidLastname -> {
@@ -274,6 +283,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @Cacheable(value = "users", key = "#role")
     public List<UserDTO> getUsersByRole(String role) throws Exception {
         return Optional.of(role)
                 .map(ValidRole -> {
@@ -303,6 +313,7 @@ public class SUser implements SUserI {
      * @see Role
      */
     @Override
+    @Cacheable(value = "users", key = "'all_rols'")
     public List<String> getAllRoles() throws Exception {
         return Optional.of(Role.getRoleNames())
                 .filter(roles -> !roles.isEmpty())
@@ -327,6 +338,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
+    @CachePut(value = "users", key = "#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
@@ -371,6 +383,7 @@ public class SUser implements SUserI {
      * @see UserDTO
      */
     @Override
+    @CacheEvict(cacheNames = "users", allEntries = true)
     public String DeleteUser(String id) throws Exception {
         return Optional.of(getUserById(id))
                 .map(user -> {

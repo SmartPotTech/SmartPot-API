@@ -15,6 +15,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Responses.CResponseEntity;
 import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
@@ -72,7 +73,6 @@ public class UserController {
      * </ul>
      */
     @PostMapping("/Create")
-    @CachePut(value = "users", key = "#userDTO.id")
     @Operation(summary = "Crear un nuevo usuario",
             description = "Crea un nuevo usuario con la información proporcionada. "
                     + "El correo electrónico debe ser único y los campos obligatorios deben estar completos.",
@@ -112,7 +112,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/All")
-    @Cacheable(value = "users", key = "'all_users'")
     @Operation(summary = "Obtener todos los usuarios",
             description = "Recupera todos los usuarios registrados en el sistema. "
                     + "En caso de no haber usuarios, se devolverá una excepción.",
@@ -154,7 +153,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/id/{id}")
-    @Cacheable(value = "users", key = "#id")
     @Operation(summary = "Buscar usuario por ID",
             description = "Recupera un usuario utilizando su ID único. "
                     + "Si el usuario no existe, se devolverá un error con el código HTTP 404.",
@@ -193,7 +191,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/email/{email}")
-    @Cacheable(value = "users", key = "#email")
     @Operation(summary = "Buscar usuario por correo electrónico",
             description = "Recupera un usuario utilizando su correo electrónico único. "
                     + "Si no se encuentra el usuario, se devolverá un error.",
@@ -233,7 +230,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/name/{name}")
-    @Cacheable(value = "users", key = "#name")
     @Operation(summary = "Buscar usuarios por nombre",
             description = "Recupera usuarios cuyo nombre coincide con el proporcionado. "
                     + "Si no se encuentran usuarios, se devolverá una lista vacía.",
@@ -274,7 +270,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/lastname/{lastname}")
-    @Cacheable(value = "users", key = "#lastname")
     @Operation(summary = "Buscar usuarios por apellido",
             description = "Recupera usuarios cuyo apellido coincide con el proporcionado. "
                     + "Si no se encuentran usuarios, se devolverá una lista vacía.",
@@ -314,7 +309,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/role/{role}")
-    @Cacheable(value = "users", key = "#role")
     @Operation(summary = "Buscar usuarios por rol",
             description = "Recupera usuarios cuyo rol coincide con el proporcionado. "
                     + "Si no se encuentran usuarios, se devolverá una lista vacía.",
@@ -353,7 +347,6 @@ public class UserController {
      * </ul>
      */
     @GetMapping("/role/All")
-    @Cacheable(value = "users", key = "'all_rols'")
     @Operation(summary = "Obtener todos los roles de usuario",
             description = "Recupera todos los roles de usuario registrados en el sistema. "
                     + "En caso de no haber roles de usuario, se devolverá una excepción.",
@@ -395,7 +388,6 @@ public class UserController {
      * </ul>
      */
     @PutMapping("/Update/{id}")
-    @CachePut(value = "users", key = "#id")
     @Operation(summary = "Actualizar un usuario",
             description = "Actualiza los datos de un usuario existente utilizando su ID. "
                     + "Si el usuario no existe o hay un error, se devolverá un error con código HTTP 404.",
@@ -436,7 +428,6 @@ public class UserController {
      * </ul>
      */
     @DeleteMapping("/Delete/{id}")
-    @CacheEvict(cacheNames = "users", allEntries = true)
     @Operation(summary = "Eliminar un usuario",
             description = "Elimina un usuario existente utilizando su ID. "
                     + "Si el usuario no existe o hay un error, se devolverá un error con código HTTP 404.",

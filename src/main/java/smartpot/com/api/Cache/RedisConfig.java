@@ -1,15 +1,23 @@
 package smartpot.com.api.Cache;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
@@ -31,11 +39,23 @@ public class RedisConfig {
     @Value("${spring.data.redis.database}")
     private String database;
 
-    @Value(value="${spring.data.redis.timeout}")
-    private String timeout;
+    @Value("${spring.data.redis.timeout}")
+    private long timeout;
+
+    @Value("${CACHE_LETTUCE_POOL_MAX_ACTIVE}")
+    private int maxActive;
+
+    @Value("${CACHE_LETTUCE_POOL_MAX_WAIT}")
+    private long maxWaitMillis;
+
+    @Value("${CACHE_LETTUCE_POOL_MAX_IDLE}")
+    private int maxIdle;
+
+    @Value("${CACHE_LETTUCE_POOL_MIN_IDLE}")
+    private int minIdle;
 
     @Bean
-    JedisConnectionFactory jedisConnectionFactory() {
+    public LettuceConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setHostName(host);
         redisStandaloneConfiguration.setPort(Integer.parseInt(port));
@@ -43,17 +63,26 @@ public class RedisConfig {
         redisStandaloneConfiguration.setUsername(username);
         redisStandaloneConfiguration.setPassword(RedisPassword.of(password));
 
-        JedisClientConfiguration.JedisClientConfigurationBuilder jedisClientConfiguration = JedisClientConfiguration.builder();
-        jedisClientConfiguration.connectTimeout(Duration.ofSeconds(Long.parseLong(timeout)));
+        GenericObjectPoolConfig<RedisConnection> poolConfig = new GenericObjectPoolConfig<>();
+        poolConfig.setMaxTotal(maxActive);
+        poolConfig.setMaxIdle(maxIdle);
+        poolConfig.setMinIdle(minIdle);
+        poolConfig.setBlockWhenExhausted(true);
+        poolConfig.setMaxWait(Duration.ofMillis(maxWaitMillis));
 
-        return new JedisConnectionFactory(redisStandaloneConfiguration,
-                jedisClientConfiguration.build());
+        LettucePoolingClientConfiguration clientConfig = LettucePoolingClientConfiguration.builder()
+                .poolConfig(poolConfig)
+                .commandTimeout(Duration.ofMillis(timeout))
+                .shutdownTimeout(Duration.ofMillis(timeout))
+                .build();
+
+        return new LettuceConnectionFactory(redisStandaloneConfiguration, clientConfig);
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate() {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(jedisConnectionFactory());
+        template.setConnectionFactory(factory);
         return template;
     }
 }
