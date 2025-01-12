@@ -2,8 +2,8 @@ package smartpot.com.api.Notifications.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Notifications.Model.DAO.Service.SNotificationI;
 import smartpot.com.api.Notifications.Model.Entity.Notification;
+import smartpot.com.api.Notifications.Service.SNotificationI;
 
 import java.util.List;
 

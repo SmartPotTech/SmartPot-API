@@ -16,9 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import smartpot.com.api.Security.Filter.JwtAuthFilter;
-import smartpot.com.api.Security.Headers.CorsConfig;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Security.Service.JwtAuthFilter;
+import smartpot.com.api.Users.Service.SUser;
 
 import java.util.Arrays;
 import java.util.List;

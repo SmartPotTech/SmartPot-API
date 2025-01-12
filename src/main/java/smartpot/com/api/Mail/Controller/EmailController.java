@@ -12,8 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import smartpot.com.api.Mail.Model.DAO.Service.EmailServiceI;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
+import smartpot.com.api.Mail.Service.EmailServiceI;
 import smartpot.com.api.Responses.ErrorResponse;
 
 @RestController

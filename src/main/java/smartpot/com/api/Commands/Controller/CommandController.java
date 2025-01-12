@@ -10,9 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Commands.Model.DAO.Service.SCommandI;
 import smartpot.com.api.Commands.Model.DTO.CommandDTO;
 import smartpot.com.api.Commands.Model.Entity.Command;
+import smartpot.com.api.Commands.Service.SCommandI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Responses.ErrorResponse;
 

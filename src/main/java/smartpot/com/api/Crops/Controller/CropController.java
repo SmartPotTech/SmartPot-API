@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
+import smartpot.com.api.Crops.Service.SCropI;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 

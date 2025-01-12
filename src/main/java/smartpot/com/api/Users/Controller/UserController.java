@@ -15,8 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
-import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Service.SUserI;
 
 /**
  * Controlador REST para las operaciones relacionadas con los usuarios.

@@ -10,10 +10,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.InvalidTokenException;
-import smartpot.com.api.Mail.Model.DAO.Service.EmailServiceI;
 import smartpot.com.api.Mail.Model.Entity.EmailDetails;
-import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+import smartpot.com.api.Mail.Service.EmailServiceI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Service.SUserI;
 
 import javax.crypto.SecretKey;
 import java.util.Date;

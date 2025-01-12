@@ -5,8 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Responses.ErrorResponse;
-import smartpot.com.api.Sessions.Model.DAO.Service.SSessionI;
 import smartpot.com.api.Sessions.Model.Entity.Session;
+import smartpot.com.api.Sessions.Service.SSessionI;
 
 import java.util.List;
 
