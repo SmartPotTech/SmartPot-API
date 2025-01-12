@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 @Builder
 @Service
 public class SUser implements SUserI {
+
+    private final SUser serviceUser;
     private final RUser repositoryUser;
     private final MUser mapperUser;
     private final VUserI validatorUser;
@@ -46,7 +48,8 @@ public class SUser implements SUserI {
      * @param validatorUser  validador que valida los datos de usuario.
      */
     @Autowired
-    public SUser(RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
+    public SUser(SUser serviceUser,RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
+        this.serviceUser = serviceUser;
         this.repositoryUser = repositoryUser;
         this.mapperUser = mapperUser;
         this.validatorUser = validatorUser;
@@ -64,9 +67,10 @@ public class SUser implements SUserI {
      *
      * @param userDTO el objeto {@link UserDTO} que contiene los datos del nuevo usuario.
      * @return un objeto {@link UserDTO} que representa al usuario creado.
-     * @throws Exception           si el usuario ya existe en la base de datos (por email) o si hay un error de validación.
+     * @throws IllegalStateException si el usuario ya existe en la base de datos (por email).
+     * @throws ValidationException  si el usuario tiene un error de validación.
      * @throws ValidationException si las validaciones de los campos del usuario no son exitosas.
-     *                             *
+     *
      * @see UserDTO
      * @see ValidationException
      */
@@ -137,7 +141,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @Cacheable(value = "users", key = "#id")
+    @Cacheable(value = "users", key = "'id_'+#id")
     public UserDTO getUserById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidId -> {
@@ -172,7 +176,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @Cacheable(value = "users", key = "#email")
+    @Cacheable(value = "users", key = "'email_'+#email")
     public UserDTO getUserByEmail(String email) throws Exception {
         return Optional.of(email)
                 .map(ValidEmail -> {
@@ -207,7 +211,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @Cacheable(value = "users", key = "#name")
+    @Cacheable(value = "users", key = "'name_'+#name")
     public List<UserDTO> getUsersByName(String name) throws Exception {
         return Optional.of(name)
                 .map(ValidName -> {
@@ -243,7 +247,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @Cacheable(value = "users", key = "#lastname")
+    @Cacheable(value = "users", key = "'lastname_'+#lastname")
     public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
         return Optional.of(lastname)
                 .map(ValidLastname -> {
@@ -279,7 +283,7 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @Cacheable(value = "users", key = "#role")
+    @Cacheable(value = "users", key = "'role:'+#role")
     public List<UserDTO> getUsersByRole(String role) throws Exception {
         return Optional.of(role)
                 .map(ValidRole -> {
@@ -333,9 +337,9 @@ public class SUser implements SUserI {
      * @see ValidationException
      */
     @Override
-    @CachePut(value = "users", key = "#id")
+    @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
-        UserDTO existingUser = getUserById(id);
+        UserDTO existingUser = serviceUser.getUserById(id);
         return Optional.of(updatedUser)
                 .map(dto -> {
                     existingUser.setName(dto.getName() != null ? dto.getName() : existingUser.getName());
@@ -377,9 +381,9 @@ public class SUser implements SUserI {
      * @see UserDTO
      */
     @Override
-    @CacheEvict(cacheNames = "users", allEntries = true)
+    @CacheEvict(value = "users", key = "'id_'+#id")
     public String DeleteUser(String id) throws Exception {
-        return Optional.of(getUserById(id))
+        return Optional.of(serviceUser.getUserById(id))
                 .map(user -> {
                     repositoryUser.deleteById(new ObjectId(user.getId()));
                     return "El Usuario con ID '" + id + "' fue eliminado.";

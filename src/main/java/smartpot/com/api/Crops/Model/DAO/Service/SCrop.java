@@ -6,6 +6,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Crops.Mapper.MCrop;
 import smartpot.com.api.Crops.Model.DAO.Repository.RCrop;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 @Service
 public class SCrop implements SCropI {
 
+    private final SCrop serviceCrop;
     private final RCrop repositoryCrop;
     private final SUserI serviceUser;
     private final MCrop mapperCrop;
@@ -53,7 +57,8 @@ public class SCrop implements SCropI {
      * @see VCropI
      */
     @Autowired
-    public SCrop(RCrop repositoryCrop, SUserI serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
+    public SCrop(SCrop serviceCrop, RCrop repositoryCrop, SUserI serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
+        this.serviceCrop = serviceCrop;
         this.repositoryCrop = repositoryCrop;
         this.serviceUser = serviceUser;
         this.mapperCrop = mapperCrop;
@@ -81,6 +86,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @CachePut(value = "crops", key = "#cropDTO.id")
     public CropDTO createCrop(CropDTO cropDTO) throws Exception {
         return Optional.of(cropDTO)
                 .map(ValidCropDTO -> {
@@ -121,6 +127,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Cacheable(value = "crops", key = "'all_crops'")
     public List<CropDTO> getAllCrops() throws Exception {
         return Optional.of(repositoryCrop.findAll())
                 .filter(crops -> !crops.isEmpty())
@@ -149,6 +156,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Cacheable(value = "crops", key = "'id_'+#id")
     public CropDTO getCropById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidCropId -> {
@@ -184,6 +192,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Cacheable(value = "crops", key = "'user_'+#id")
     public List<CropDTO> getCropsByUser(String id) throws Exception {
         return Optional.of(serviceUser.getUserById(id))
                 .map(validUser -> new ObjectId(validUser.getId()))
@@ -208,6 +217,7 @@ public class SCrop implements SCropI {
      * @see #getCropsByUser(String)
      */
     @Override
+    @Cacheable(value = "crops", key = "'count_user_'+#id")
     public long countCropsByUser(String id) throws Exception {
         return getCropsByUser(id).size();
     }
@@ -229,8 +239,10 @@ public class SCrop implements SCropI {
      * @see VCropI
      * @see RCrop
      * @see MCrop
+     * @see SCrop
      */
     @Override
+    @Cacheable(value = "crops", key = "'type_'+#type")
     public List<CropDTO> getCropsByType(String type) throws Exception {
         return Optional.of(type)
                 .map(ValidType -> {
@@ -261,6 +273,7 @@ public class SCrop implements SCropI {
      * @see Type
      */
     @Override
+    @Cacheable(value = "crops", key = "'all_types'")
     public List<String> getAllTypes() throws Exception {
         return Optional.of(Type.getTypeNames())
                 .filter(types -> !types.isEmpty())
@@ -287,6 +300,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Cacheable(value = "crops", key = "'status_'+#status")
     public List<CropDTO> getCropsByStatus(String status) throws Exception {
         return Optional.of(status)
                 .map(ValidStatus -> {
@@ -317,6 +331,7 @@ public class SCrop implements SCropI {
      * @see Status
      */
     @Override
+    @Cacheable(value = "crops", key = "'all_status'")
     public List<String> getAllStatus() throws Exception {
         return Optional.of(Status.getStatusNames())
                 .filter(status -> !status.isEmpty())
@@ -347,8 +362,9 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @CachePut(value = "crops", key = "'id_'+#id")
     public CropDTO updatedCrop(String id, CropDTO updateCrop) throws Exception {
-        CropDTO existingCrop = getCropById(id);
+        CropDTO existingCrop = serviceCrop.getCropById(id);
         return Optional.of(updateCrop)
                 .map(dto -> {
                     existingCrop.setType(dto.getType() != null ? dto.getType() : existingCrop.getType());
@@ -392,8 +408,9 @@ public class SCrop implements SCropI {
      * @see RCrop
      */
     @Override
+    @CacheEvict(value = "crops", key = "'id_'+#id")
     public String deleteCrop(String id) throws Exception {
-        return Optional.of(getCropById(id))
+        return Optional.of(serviceCrop.getCropById(id))
                 .map(user -> {
                     repositoryCrop.deleteById(new ObjectId(user.getId()));
                     return "El Cultivo con ID '" + id + "' fue eliminado.";

@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 
 /**
  * DTO para representar los datos de un cultivo.
@@ -15,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class CropDTO {
+public class CropDTO implements Serializable {
 
     @Schema(description = "ID único del cultivo, generado automáticamente por la base de datos.",
             example = "60b63b8f3e111f8d44d45e72", hidden = true)

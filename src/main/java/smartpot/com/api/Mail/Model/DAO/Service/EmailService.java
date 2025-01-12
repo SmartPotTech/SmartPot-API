@@ -4,6 +4,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -89,6 +90,7 @@ public class EmailService implements EmailServiceI {
      * @see EmailMapper
      */
     @Override
+    @Cacheable(value = "mails", key = "'all_mails'")
     public List<EmailDTO> getAllMails() throws Exception {
         return Optional.of(emailRepository.findAll())
                 .filter(emails -> !emails.isEmpty())
