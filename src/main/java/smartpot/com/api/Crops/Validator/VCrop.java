@@ -2,13 +2,14 @@ package smartpot.com.api.Crops.Validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Crops.Model.Entity.Status;
-import smartpot.com.api.Crops.Model.Entity.Type;
+import smartpot.com.api.Crops.Model.Entity.CropStatus;
+import smartpot.com.api.Crops.Model.Entity.CropType;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class VCrop implements VCropI {
@@ -80,7 +81,8 @@ public class VCrop implements VCropI {
             valid = false;
         }
 
-        Set<String> validTypes = new HashSet<>(Type.getTypeNames());
+        Set<String> validTypes = Arrays.stream(CropType.values())
+                .map(Enum::name).collect(Collectors.toSet());
 
         if (!validTypes.contains(type)) {
             errors.add("El Tipo de cultivo debe ser uno de los siguientes: " + String.join(", ", validTypes));
@@ -94,7 +96,8 @@ public class VCrop implements VCropI {
             errors.add("El Estado del cultivo no puede estar vacío");
             valid = false;
         }
-        Set<String> validStatus = new HashSet<>(Status.getStatusNames());
+        Set<String> validStatus = Arrays.stream(CropStatus.values())
+                .map(Enum::name).collect(Collectors.toSet());
 
         if (!validStatus.contains(status)) {
             errors.add("El Estado del cultivo debe ser uno de los siguientes: " + String.join(", ", validStatus));

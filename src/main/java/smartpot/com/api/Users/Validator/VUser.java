@@ -2,13 +2,14 @@ package smartpot.com.api.Users.Validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Users.Model.Entity.Role;
+import smartpot.com.api.Users.Model.Entity.UserRole;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static smartpot.com.api.Users.Validator.UserRegex.*;
 
@@ -174,7 +175,8 @@ public class VUser implements VUserI {
             return;
         }
 
-        Set<String> validRoles = new HashSet<>(Role.getRoleNames());
+        Set<String> validRoles = Arrays.stream(UserRole.values())
+                .map(Enum::name).collect(Collectors.toSet());
 
         if (!validRoles.contains(role)) {
             errors.add("El Rol debe ser uno de los siguientes: " + String.join(", ", validRoles));

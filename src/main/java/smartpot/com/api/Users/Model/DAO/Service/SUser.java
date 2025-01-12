@@ -15,10 +15,11 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DAO.Repository.RUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.Role;
+import smartpot.com.api.Users.Model.Entity.UserRole;
 import smartpot.com.api.Users.Validator.VUserI;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 @Service
 public class SUser implements SUserI {
 
-    private final SUser serviceUser;
     private final RUser repositoryUser;
     private final MUser mapperUser;
     private final VUserI validatorUser;
@@ -48,8 +48,7 @@ public class SUser implements SUserI {
      * @param validatorUser  validador que valida los datos de usuario.
      */
     @Autowired
-    public SUser(SUser serviceUser,RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
-        this.serviceUser = serviceUser;
+    public SUser(RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
         this.repositoryUser = repositoryUser;
         this.mapperUser = mapperUser;
         this.validatorUser = validatorUser;
@@ -310,12 +309,16 @@ public class SUser implements SUserI {
      *
      * @return una lista de objetos {@link String} que representan a todos los roles de usuario.
      * @throws Exception si no se encuentra ningún rol de usuario en la base de datos.
-     * @see Role
+     * @see UserRole
      */
     @Override
     @Cacheable(value = "users", key = "'all_rols'")
     public List<String> getAllRoles() throws Exception {
-        return Optional.of(Role.getRoleNames())
+        return Optional.of(
+                        Arrays.stream(UserRole.values())
+                                .map(Enum::name)
+                                .collect(Collectors.toList())
+                )
                 .filter(roles -> !roles.isEmpty())
                 .orElseThrow(() -> new Exception("No existe ningún rol"));
     }
@@ -339,7 +342,7 @@ public class SUser implements SUserI {
     @Override
     @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
-        UserDTO existingUser = serviceUser.getUserById(id);
+        UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
                 .map(dto -> {
                     existingUser.setName(dto.getName() != null ? dto.getName() : existingUser.getName());
@@ -383,7 +386,7 @@ public class SUser implements SUserI {
     @Override
     @CacheEvict(value = "users", key = "'id_'+#id")
     public String DeleteUser(String id) throws Exception {
-        return Optional.of(serviceUser.getUserById(id))
+        return Optional.of(getUserById(id))
                 .map(user -> {
                     repositoryUser.deleteById(new ObjectId(user.getId()));
                     return "El Usuario con ID '" + id + "' fue eliminado.";

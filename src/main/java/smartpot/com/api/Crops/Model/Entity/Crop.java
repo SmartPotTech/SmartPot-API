@@ -34,11 +34,11 @@ public class Crop implements Serializable {
     private ObjectId id;
 
     @Field("status")
-    private Status status;
+    private CropStatus cropStatus;
 
     @NotEmpty(message = "El tipo no puede estar vacío")
     @Field("type")
-    private Type type;
+    private CropType cropType;
 
     /**
      * ! No se puede hacer referencia a los objetos, dado que obliga a usar la entidad completa, no solo el ObjectId.

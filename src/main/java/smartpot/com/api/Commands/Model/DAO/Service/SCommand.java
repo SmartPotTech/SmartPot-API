@@ -6,14 +6,18 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Commands.Mapper.MCommand;
 import smartpot.com.api.Commands.Model.DAO.Repository.RCommand;
+import smartpot.com.api.Commands.Model.DTO.CommandDTO;
 import smartpot.com.api.Commands.Model.Entity.Command;
 import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -22,11 +26,13 @@ public class SCommand implements SCommandI {
 
     private final RCommand repositoryCommand;
     private final SCropI serviceCrop;
+    private final MCommand mapperCommand;
 
     @Autowired
-    public SCommand(RCommand repositoryCommand, SCropI serviceCrop) {
+    public SCommand(RCommand repositoryCommand, SCropI serviceCrop, MCommand mapperCommand) {
         this.repositoryCommand = repositoryCommand;
         this.serviceCrop = serviceCrop;
+        this.mapperCommand = mapperCommand;
     }
 
     @Override
@@ -40,10 +46,18 @@ public class SCommand implements SCommandI {
     }
 
     @Override
-    public Command createCommand(Command newCommand) {
-        newCommand.setDateCreated(new Date());
-        newCommand.setStatus("PENDING");
-        return repositoryCommand.save(newCommand);
+    public CommandDTO createCommand(CommandDTO commandDTO) throws IllegalStateException {
+        return Optional.of(commandDTO)
+                .map(dto -> {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    dto.setDateCreated(formatter.format(new Date()));
+                    dto.setStatus("PENDING");
+                    return dto;
+                })
+                .map(mapperCommand::toEntity)
+                .map(repositoryCommand::save)
+                .map(mapperCommand::toDTO)
+                .orElseThrow(() -> new IllegalStateException("El Comando ya existe"));
     }
 
     @Override

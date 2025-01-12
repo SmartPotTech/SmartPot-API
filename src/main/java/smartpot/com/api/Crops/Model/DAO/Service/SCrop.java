@@ -13,11 +13,12 @@ import org.springframework.stereotype.Service;
 import smartpot.com.api.Crops.Mapper.MCrop;
 import smartpot.com.api.Crops.Model.DAO.Repository.RCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
-import smartpot.com.api.Crops.Model.Entity.Status;
-import smartpot.com.api.Crops.Model.Entity.Type;
+import smartpot.com.api.Crops.Model.Entity.CropStatus;
+import smartpot.com.api.Crops.Model.Entity.CropType;
 import smartpot.com.api.Crops.Validator.VCropI;
 import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +35,6 @@ import java.util.stream.Collectors;
 @Service
 public class SCrop implements SCropI {
 
-    private final SCrop serviceCrop;
     private final RCrop repositoryCrop;
     private final SUserI serviceUser;
     private final MCrop mapperCrop;
@@ -57,8 +57,7 @@ public class SCrop implements SCropI {
      * @see VCropI
      */
     @Autowired
-    public SCrop(SCrop serviceCrop, RCrop repositoryCrop, SUserI serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
-        this.serviceCrop = serviceCrop;
+    public SCrop(RCrop repositoryCrop, SUserI serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
         this.repositoryCrop = repositoryCrop;
         this.serviceUser = serviceUser;
         this.mapperCrop = mapperCrop;
@@ -270,12 +269,16 @@ public class SCrop implements SCropI {
      * @return Una lista de cadenas {@link String} que representan los nombres de los tipos de cultivo encontrados.
      * @throws Exception Si ocurre un error al obtener los tipos de cultivo o si no se encuentran tipos registrados.
      * @see String
-     * @see Type
+     * @see CropType
      */
     @Override
     @Cacheable(value = "crops", key = "'all_types'")
     public List<String> getAllTypes() throws Exception {
-        return Optional.of(Type.getTypeNames())
+        return Optional.of(
+                        Arrays.stream(CropType.values())
+                                .map(Enum::name)
+                                .collect(Collectors.toList())
+                )
                 .filter(types -> !types.isEmpty())
                 .orElseThrow(() -> new Exception("No existe ningún tipo de cultivo"));
     }
@@ -328,12 +331,16 @@ public class SCrop implements SCropI {
      * @return Una lista de cadenas {@link String} que representan los estados de cultivo encontrados.
      * @throws Exception Si ocurre un error al buscar los estados de cultivo o si no se encuentran estados registrados.
      * @see String
-     * @see Status
+     * @see CropStatus
      */
     @Override
     @Cacheable(value = "crops", key = "'all_status'")
     public List<String> getAllStatus() throws Exception {
-        return Optional.of(Status.getStatusNames())
+        return Optional.of(
+                        Arrays.stream(CropStatus.values())
+                                .map(Enum::name)
+                                .collect(Collectors.toList())
+                )
                 .filter(status -> !status.isEmpty())
                 .orElseThrow(() -> new Exception("No existe ningún estados para los cultivos"));
     }
@@ -364,7 +371,7 @@ public class SCrop implements SCropI {
     @Override
     @CachePut(value = "crops", key = "'id_'+#id")
     public CropDTO updatedCrop(String id, CropDTO updateCrop) throws Exception {
-        CropDTO existingCrop = serviceCrop.getCropById(id);
+        CropDTO existingCrop = getCropById(id);
         return Optional.of(updateCrop)
                 .map(dto -> {
                     existingCrop.setType(dto.getType() != null ? dto.getType() : existingCrop.getType());
@@ -410,7 +417,7 @@ public class SCrop implements SCropI {
     @Override
     @CacheEvict(value = "crops", key = "'id_'+#id")
     public String deleteCrop(String id) throws Exception {
-        return Optional.of(serviceCrop.getCropById(id))
+        return Optional.of(getCropById(id))
                 .map(user -> {
                     repositoryCrop.deleteById(new ObjectId(user.getId()));
                     return "El Cultivo con ID '" + id + "' fue eliminado.";

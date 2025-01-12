@@ -74,5 +74,5 @@ public class User implements Serializable {
 
     @NotEmpty(message = "El rol no puede estar vacío")
     @Field("role")
-    private Role role;
+    private UserRole userRole;
 }

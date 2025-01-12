@@ -43,7 +43,7 @@ public class CropController {
      * Si el cultivo es creado exitosamente, se devolverá el objeto con la información del cultivo recién creado.</p>
      * <p>En caso de que ocurra un error durante la creación del cultivo, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param newCropDto El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
+     * @param cropDTO El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
      * @return Un objeto {@link ResponseEntity} que contiene:
      *         <ul>
      *           <li>El cultivo recién creado (código HTTP 201).</li>
@@ -69,9 +69,9 @@ public class CropController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> createCrop(@Parameter(description = "Datos del nuevo cultivo que se va a crear. Debe incluir tipo y usuario asociado.",
-            required = true) @RequestBody CropDTO newCropDto) {
+            required = true) @RequestBody CropDTO cropDTO) {
         try {
-            return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.CREATED);
+            return new ResponseEntity<>(serviceCrop.createCrop(cropDTO), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al crear el cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 
@@ -99,7 +99,7 @@ public class CropController {
             description = "Recupera todos los cultivos registrados en el sistema. "
                     + "En caso de no haber cultivos, se devolverá una excepción.",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Cultivos encontrados",
+                    @ApiResponse(description = "Cultivos encontrados",
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     array = @ArraySchema(schema = @Schema(implementation = UserDTO.class)))),
