@@ -8,11 +8,13 @@ import java.util.List;
 public interface SCommandI {
     List<Command> getAllCommands();
 
-    Command getCommandById(String id);
+    CommandDTO getCommandById(String id) throws Exception;
 
     CommandDTO createCommand(CommandDTO newCommand);
 
     Command updateCommand(String id, Command upCommand) throws Exception;
 
-    void deleteCommand(String id);
+    String deleteCommand(String id) throws Exception;
+
+    CommandDTO excuteCommand(String id, String reponse) throws Exception;
 }

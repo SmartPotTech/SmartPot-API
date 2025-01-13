@@ -14,9 +14,8 @@ import smartpot.com.api.Commands.Model.DTO.CommandDTO;
 import smartpot.com.api.Commands.Model.Entity.Command;
 import smartpot.com.api.Commands.Service.SCommandI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
+import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
-
-import java.util.Date;
 
 @RestController
 @RequestMapping("/Comandos")
@@ -92,8 +91,20 @@ public class CommandController {
         }
     }
 
-    @PutMapping("/{id}/ejecutar")
-    public ResponseEntity<Command> executeCommand(@PathVariable String id) throws Exception {
+    @PutMapping("/{id}/run/{response}")
+    @Operation(summary = "Actualizar un comando a ejecutado",
+            description = "Actualiza los datos de un comando existente utilizando su ID. "
+                    + "Si el comando no existe o hay un error, se devolverá un error con código HTTP 404.",
+            responses = {
+                    @ApiResponse(description = "Comando actualizado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommandDTO.class))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se pudo actualizar el Comando. El Comando puede no existir o los datos pueden ser incorrectos.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> executeCommand(@PathVariable String id, @PathVariable String response) {
+        /*
         Command command = serviceCommand.getCommandById(id);
         if (command != null) {
             command.setStatus("EXECUTED");
@@ -104,15 +115,33 @@ public class CommandController {
         } else {
             return ResponseEntity.notFound().build();
         }
+
+         */
+
+        try {
+            return new ResponseEntity<>(serviceCommand.excuteCommand(id, response), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Object> deleteCommand(@PathVariable String id) {
-        if (serviceCommand.getCommandById(id) != null) {
-            serviceCommand.deleteCommand(id);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
+    @DeleteMapping("/Delete/{id}")
+    @Operation(summary = "Eliminar un Comando",
+            description = "Elimina un Comando existente utilizando su ID. "
+                    + "Si el Comando no existe o hay un error, se devolverá un error con código HTTP 404.",
+            responses = {
+                    @ApiResponse(description = "Comando eliminado",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeleteResponse.class))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se pudo eliminar el Comando.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> deleteCommand(@Parameter(description = "ID único del comando que se desea eliminar.", required = true) @PathVariable String id) {
+        try {
+            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceCommand.deleteCommand(id) + "]"), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 

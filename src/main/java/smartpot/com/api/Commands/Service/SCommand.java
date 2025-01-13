@@ -4,6 +4,9 @@ import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Commands.Mapper.MCommand;
@@ -41,8 +44,15 @@ public class SCommand implements SCommandI {
     }
 
     @Override
-    public Command getCommandById(String id) {
-        return repositoryCommand.findById(new ObjectId(id)).orElse(null);
+    @Cacheable(value = "commands", key = "'id_'+#id")
+    public CommandDTO getCommandById(String id) throws Exception {
+        return Optional.of(id)
+                .map(ObjectId::new)
+                .map(repositoryCommand::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(mapperCommand::toDTO)
+                .orElseThrow(() -> new Exception("El Comando no existe"));
     }
 
     @Override
@@ -125,8 +135,31 @@ public class SCommand implements SCommandI {
     }
 
     @Override
-    public void deleteCommand(String id) {
-        repositoryCommand.deleteById(new ObjectId(id));
+    @CacheEvict(value = "commands", key = "'id_'+#id")
+    public String deleteCommand(String id) throws Exception {
+        return Optional.of(getCommandById(id))
+                .map(command -> {
+                    repositoryCommand.deleteById(new ObjectId(command.getId()));
+                    return "El Comando con ID '" + id + "' fue eliminado.";
+                })
+                .orElseThrow(() -> new Exception("El Comando no existe."));
+    }
+
+    @Override
+    @CachePut(value = "commands", key = "'id:'+#id")
+    public CommandDTO excuteCommand(String id, String response) throws Exception {
+        return Optional.of(getCommandById(id))
+                .map(commandDTO -> {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    commandDTO.setDateCreated(formatter.format(new Date()));
+                    commandDTO.setStatus("EXECUTED");
+                    commandDTO.setResponse(response);
+                    return commandDTO;
+                })
+                .map(mapperCommand::toEntity)
+                .map(repositoryCommand::save)
+                .map(mapperCommand::toDTO)
+                .orElseThrow(() -> new Exception("El Comando no se pudo actualizar"));
     }
 
 /*
