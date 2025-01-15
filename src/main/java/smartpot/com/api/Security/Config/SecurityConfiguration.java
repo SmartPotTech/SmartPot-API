@@ -51,7 +51,6 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSec) throws Exception {
 
-        // Public Routes
         List<String> publicRoutesList;
         if (publicRoutes.contains(",")) {
             publicRoutesList = Arrays.asList(publicRoutes.split(","));
