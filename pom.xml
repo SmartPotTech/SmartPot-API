@@ -204,33 +204,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <configuration>
-                            <encoding>UTF-8</encoding>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${project.build.directory}/docker/resources</outputDirectory>
-
-                                    <resources>
-                                        <resource>
-                                            <directory>src/main/resources</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                        <resource>
-                                            <directory>${basedir}</directory>
-                                            <excludes>
-                                                <exclude>.env</exclude>
-                                            </excludes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
+                        <version>3.1.0</version>
                     </plugin>
                 </plugins>
             </build>
