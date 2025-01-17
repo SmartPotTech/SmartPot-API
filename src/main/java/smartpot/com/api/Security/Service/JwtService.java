@@ -6,15 +6,15 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.InvalidTokenException;
-import smartpot.com.api.Responses.ErrorResponse;
-import smartpot.com.api.Users.Model.DAO.Service.SUserI;
+import smartpot.com.api.Mail.Model.Entity.EmailDetails;
+import smartpot.com.api.Mail.Service.EmailServiceI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Service.SUserI;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,13 +24,12 @@ import java.util.Optional;
 @Service
 public class JwtService implements JwtServiceI {
 
+    private final SUserI serviceUser;
+    private final EmailServiceI emailService;
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
-
     @Value("${application.security.jwt.expiration}")
     private long expiration;
-
-    private final SUserI serviceUser;
 
     /**
      * Constructor que inyecta las dependencias del servicio.
@@ -38,15 +37,27 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser) {
+    public JwtService(SUserI serviceUser, EmailServiceI emailService) {
         this.serviceUser = serviceUser;
+        this.emailService = emailService;
     }
 
     @Override
     public String Login(UserDTO reqUser) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
-                .filter( userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
+                .filter(userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(validToken -> {
+                    emailService.sendSimpleMail(
+                            new EmailDetails(
+                                    null,
+                                    "smartpottech@gmail.com",
+                                    "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '" + validToken + "'",
+                                    "Inicio de Sesion en Smartpot",
+                                    ""
+                            ));
+                    return validToken;
+                })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
 
     }
@@ -63,7 +74,7 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public UserDTO validateAuthHeader(String authHeader) throws Exception, InvalidTokenException {
+    public UserDTO validateAuthHeader(String authHeader) throws Exception {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new Exception("El encabezado de autorización es inválido. Se esperaba 'Bearer <token>'.");
         }

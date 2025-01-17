@@ -8,8 +8,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -76,21 +74,5 @@ public class User implements Serializable {
 
     @NotEmpty(message = "El rol no puede estar vacío")
     @Field("role")
-    private Role role;
-
-    /**
-     * Constructor que mapea los datos desde un {@link UserDTO}.
-     * Este constructor toma los datos de un DTO y los convierte a la entidad {@link User}.
-     * La contraseña se encripta utilizando BCrypt antes de ser almacenada.
-     *
-     * @param userDTO El objeto DTO con los datos del usuario.
-     */
-    public User(UserDTO userDTO) {
-        this.name = userDTO.getName();
-        this.lastname = userDTO.getLastname();
-        this.email = userDTO.getEmail();
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        this.password = passwordEncoder.encode(userDTO.getPassword());
-        this.role = Role.valueOf(userDTO.getRole());
-    }
+    private UserRole userRole;
 }

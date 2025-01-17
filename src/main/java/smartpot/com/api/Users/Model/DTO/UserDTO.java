@@ -4,9 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @RequiredArgsConstructor
-public class UserDTO {
+public class UserDTO implements Serializable {
     @Schema(description = "ID único del usuario, generado automáticamente por la base de datos.",
             example = "676ae2a9b909de5f9607fcb6", hidden = true)
     private String id = null;

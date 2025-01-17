@@ -7,22 +7,26 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
-import smartpot.com.api.Users.Model.DAO.Service.SUserI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.Users.Service.SUserI;
 
 /**
  * Controlador REST para las operaciones relacionadas con los usuarios.
  * <p>Este controlador proporciona una serie de métodos para gestionar usuarios en el sistema.</p>
+ *
  * @see SUserI
  */
 @RestController
 @RequestMapping("/Users")
+@CacheConfig(cacheNames = "users")
 @Tag(name = "Usuarios", description = "Operaciones relacionadas con usuarios")
 public class UserController {
 
@@ -75,8 +79,11 @@ public class UserController {
                             responseCode = "201",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = UserDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo crear el usuario.",
+                    @ApiResponse(responseCode = "403",
+                            description = "No se pudo crear el usuario, error de validación",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409",
+                            description = "Conflicto al crear el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> createUser(
@@ -84,8 +91,10 @@ public class UserController {
                     required = true) @RequestBody UserDTO userDTO) {
         try {
             return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        } catch (ValidationException e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.FORBIDDEN.value()), HttpStatus.FORBIDDEN);
+        } catch (IllegalStateException e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.CONFLICT.value()), HttpStatus.CONFLICT);
         }
     }
 
@@ -108,7 +117,7 @@ public class UserController {
     @GetMapping("/All")
     @Operation(summary = "Obtener todos los usuarios",
             description = "Recupera todos los usuarios registrados en el sistema. "
-                    + "En caso de no haber usuarios, se devolverá una lista vacía.",
+                    + "En caso de no haber usuarios, se devolverá una excepción.",
             responses = {
                     @ApiResponse(description = "Usuarios encontrados",
                             responseCode = "200",
@@ -125,6 +134,7 @@ public class UserController {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
+
 
     /**
      * Busca un usuario utilizando su ID único.
@@ -195,7 +205,7 @@ public class UserController {
                             description = "Usuario no encontrado con el correo electrónico proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByEmail(@PathVariable @Parameter(description = "Correo electrónico del usuario", required = true) String email) {
+    public ResponseEntity<?> getUsersByEmail(@Parameter(description = "Correo electrónico del usuario", required = true) @PathVariable String email) {
         try {
             return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
         } catch (Exception e) {
@@ -235,7 +245,7 @@ public class UserController {
                             description = "No se encontraron usuarios con el nombre proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByName(@PathVariable @Parameter(description = "Nombre del usuario a buscar.", required = true) String name) {
+    public ResponseEntity<?> getUsersByName(@Parameter(description = "Nombre del usuario a buscar.", required = true) @PathVariable String name) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
         } catch (Exception e) {
@@ -275,7 +285,7 @@ public class UserController {
                             description = "No se encontraron usuarios con el apellido proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByLastname(@PathVariable @Parameter(description = "Apellido del usuario a buscar", required = true) String lastname) {
+    public ResponseEntity<?> getUsersByLastname(@Parameter(description = "Apellido del usuario a buscar", required = true) @PathVariable String lastname) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
         } catch (Exception e) {
@@ -314,11 +324,49 @@ public class UserController {
                             description = "No se encontraron usuarios con el rol proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUsersByRole(@PathVariable @Parameter(description = "Rol del usuario a buscar", required = true) String role) {
+    public ResponseEntity<?> getUsersByRole(@Parameter(description = "Rol del usuario a buscar", required = true) @PathVariable String role) {
         try {
             return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Recupera todos los roles de usuario registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los roles de usuario disponibles en el sistema. Si no se encuentran roles,
+     * se devolverá una lista vacía con el código HTTP 200.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los roles de usuario (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los roles o no se encuentran roles registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran roles registrados, se retorna una lista de cadenas con los nombres de los roles en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran roles o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/role/All")
+    @Operation(summary = "Obtener todos los roles de usuario",
+            description = "Recupera todos los roles de usuario registrados en el sistema. "
+                    + "En caso de no haber roles de usuario, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Roles encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron roles registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllRoles() {
+        try {
+            return new ResponseEntity<>(serviceUser.getAllRoles(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los roles [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -355,8 +403,8 @@ public class UserController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> updateUser(
-            @PathVariable @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) String id,
-            @RequestBody @Parameter(description = "Datos actualizados del usuario.") UserDTO updatedUser) {
+            @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) @PathVariable String id,
+            @Parameter(description = "Datos actualizados del usuario.") @RequestBody UserDTO updatedUser) {
         try {
             return new ResponseEntity<>(serviceUser.UpdateUser(id, updatedUser), HttpStatus.OK);
         } catch (Exception e) {
@@ -394,7 +442,7 @@ public class UserController {
                             description = "No se pudo eliminar el usuario.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> deleteUser(@PathVariable @Parameter(description = "ID único del usuario que se desea eliminar.", required = true) String id) {
+    public ResponseEntity<?> deleteUser(@Parameter(description = "ID único del usuario que se desea eliminar.", required = true) @PathVariable String id) {
         try {
             return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceUser.DeleteUser(id) + "]"), HttpStatus.OK);
         } catch (Exception e) {

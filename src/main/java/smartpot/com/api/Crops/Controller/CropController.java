@@ -1,6 +1,7 @@
 package smartpot.com.api.Crops.Controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import smartpot.com.api.Crops.Model.DAO.Service.SCropI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
+import smartpot.com.api.Crops.Service.SCropI;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 
@@ -42,7 +43,7 @@ public class CropController {
      * Si el cultivo es creado exitosamente, se devolverá el objeto con la información del cultivo recién creado.</p>
      * <p>En caso de que ocurra un error durante la creación del cultivo, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param newCropDto El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
+     * @param cropDTO El objeto {@link CropDTO} que contiene los datos del nuevo cultivo a crear. Este objeto debe incluir toda la información necesaria para crear el cultivo.
      * @return Un objeto {@link ResponseEntity} que contiene:
      *         <ul>
      *           <li>El cultivo recién creado (código HTTP 201).</li>
@@ -67,9 +68,10 @@ public class CropController {
                             description = "No se pudo crear el cultivo debido a un error.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> createCrop(@RequestBody CropDTO newCropDto) {
+    public ResponseEntity<?> createCrop(@Parameter(description = "Datos del nuevo cultivo que se va a crear. Debe incluir tipo y usuario asociado.",
+            required = true) @RequestBody CropDTO cropDTO) {
         try {
-            return new ResponseEntity<>(serviceCrop.createCrop(newCropDto), HttpStatus.CREATED);
+            return new ResponseEntity<>(serviceCrop.createCrop(cropDTO), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al crear el cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 
@@ -95,9 +97,9 @@ public class CropController {
     @GetMapping("/All")
     @Operation(summary = "Obtener todos los cultivos",
             description = "Recupera todos los cultivos registrados en el sistema. "
-                    + "En caso de no haber cultivos, se devolverá una lista vacía.",
+                    + "En caso de no haber cultivos, se devolverá una excepción.",
             responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Cultivos encontrados",
+                    @ApiResponse(description = "Cultivos encontrados",
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
                                     array = @ArraySchema(schema = @Schema(implementation = UserDTO.class)))),
@@ -107,7 +109,7 @@ public class CropController {
             })
     public ResponseEntity<?> getAllCrops() {
         try {
-            return new ResponseEntity<>(serviceCrop.getCrops(), HttpStatus.OK);
+            return new ResponseEntity<>(serviceCrop.getAllCrops(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -145,7 +147,7 @@ public class CropController {
                             description = "Cultivo no encontrado con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropById(@PathVariable String id) {
+    public ResponseEntity<?> getCropById(@Parameter(description = "ID único del cultivo", required = true) @PathVariable String id) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropById(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -183,11 +185,49 @@ public class CropController {
                             description = "No se encontraron cultivos con el estado proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropsByStatus(@PathVariable String status) {
+    public ResponseEntity<?> getCropsByStatus(@Parameter(description = "Estado de los cultivos a buscar", required = true) @PathVariable String status) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByStatus(status), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar cultivos con estado '" + status + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Recupera todos los estados de cultivo registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los estados de cultivo disponibles en el sistema. Si no se encuentran estados de cultivo,
+     * se lanzará una excepción y se devolverá un código HTTP 404 con un mensaje de error.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los estados de cultivo (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los estados de cultivo o no se encuentran registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran estados de cultivo registrados, se retorna una lista de cadenas con los nombres de los estados de cultivo en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran estados de cultivo registrados o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/status/All")
+    @Operation(summary = "Obtener todos los estados de cultivo",
+            description = "Recupera todos los estados de cultivos registrados en el sistema. "
+                    + "En caso de no haber estados de cultivos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Estados de cultivo encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron estados de cultivo registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllStatus() {
+        try {
+            return new ResponseEntity<>(serviceCrop.getAllStatus(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los estados de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -221,11 +261,49 @@ public class CropController {
                             description = "No se encontraron cultivos con el tipo proporcionado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropsByType(@PathVariable String type) {
+    public ResponseEntity<?> getCropsByType(@Parameter(description = "Tipo de los cultivos a buscar", required = true) @PathVariable String type) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByType(type), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar cultivos con tipo '" + type + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Recupera todos los tipos de cultivo registrados en el sistema.
+     * <p>Este método obtiene una lista de todos los tipos de cultivo disponibles en el sistema. Si no se encuentran tipos de cultivo,
+     * se lanzará una excepción y se devolverá un código HTTP 404 con un mensaje de error.</p>
+     *
+     * @return Un objeto {@link ResponseEntity} que contiene:
+     *         <ul>
+     *           <li>Una lista de cadenas {@link String} con los tipos de cultivo (código HTTP 200).</li>
+     *           <li>Un mensaje de error si ocurre un problema al obtener los tipos de cultivo o no se encuentran registrados (código HTTP 404).</li>
+     *         </ul>
+     *
+     * <p><b>Respuestas posibles:</b></p>
+     * <ul>
+     *   <li><b>200 OK</b>: Si se encuentran tipos de cultivo registrados, se retorna una lista de cadenas con los nombres de los tipos de cultivo en formato JSON.<br></li>
+     *   <li><b>404 Not Found</b>: Si no se encuentran tipos de cultivo registrados o ocurre un error al obtenerlos, se retorna un objeto {@link ErrorResponse} con un mensaje de error.<br></li>
+     * </ul>
+     */
+    @GetMapping("/type/All")
+    @Operation(summary = "Obtener todos los tipos de cultivo",
+            description = "Recupera todos los tipos de cultivos registrados en el sistema. "
+                    + "En caso de no haber tipos de cultivos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Tipos de cultivo encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = String.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron tipos de cultivo registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getAllTypes() {
+        try {
+            return new ResponseEntity<>(serviceCrop.getAllTypes(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al buscar los tipos de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -260,7 +338,7 @@ public class CropController {
                             description = "No se encontraron cultivos para el usuario con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getCropByUser(@PathVariable String id) {
+    public ResponseEntity<?> getCropByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceCrop.getCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -301,7 +379,7 @@ public class CropController {
                             description = "No se encontraron cultivos para el usuario con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> countCropsByUser(@PathVariable String id) {
+    public ResponseEntity<?> countCropsByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
             return new ResponseEntity<>(serviceCrop.countCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
@@ -315,8 +393,8 @@ public class CropController {
      * Si el cultivo con el ID proporcionado existe, se actualizarán sus detalles con la información proporcionada en el objeto {@link CropDTO}.</p>
      * <p>Si el cultivo no existe o si ocurre algún error durante el proceso de actualización, se devolverá un mensaje de error con el código HTTP 404.</p>
      *
-     * @param id El identificador único del cultivo que se desea actualizar. Este parámetro es obligatorio para identificar el cultivo en la base de datos.
-     *           El ID debe ser válido y hacer referencia a un cultivo existente.
+     * @param id          El identificador único del cultivo que se desea actualizar. Este parámetro es obligatorio para identificar el cultivo en la base de datos.
+     *                    El ID debe ser válido y hacer referencia a un cultivo existente.
      * @param cropDetails El objeto {@link CropDTO} que contiene los nuevos datos del cultivo que se desean actualizar. Este objeto debe incluir toda la información que reemplazará los detalles actuales del cultivo.
      * @return Un objeto {@link ResponseEntity} que contiene:
      *         <ul>
@@ -342,7 +420,7 @@ public class CropController {
                             description = "Cultivo no encontrado o error en la actualización.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> updateCrop(@PathVariable String id, @RequestBody CropDTO cropDetails) {
+    public ResponseEntity<?> updateCrop(@Parameter(description = "ID único del cultivo a actualizar", required = true) @PathVariable String id, @Parameter(description = "Información del cultivo a actualizar", required = true) @RequestBody CropDTO cropDetails) {
         try {
             return new ResponseEntity<>(serviceCrop.updatedCrop(id, cropDetails), HttpStatus.OK);
         } catch (Exception e) {
@@ -382,9 +460,9 @@ public class CropController {
                             description = "Cultivo no encontrado o error en la eliminación.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> deleteCrop(@PathVariable String id) {
+    public ResponseEntity<?> deleteCrop(@Parameter(description = "ID único del cultivo a eliminar", required = true) @PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.deleteCrop(serviceCrop.getCropById(id)), HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(serviceCrop.deleteCrop(id), HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al eliminar el cultivo con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

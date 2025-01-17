@@ -16,9 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import smartpot.com.api.Security.Filter.JwtAuthFilter;
-import smartpot.com.api.Security.Headers.CorsConfig;
-import smartpot.com.api.Users.Model.DAO.Service.SUser;
+import smartpot.com.api.Security.Config.headers.CorsConfig;
+import smartpot.com.api.Security.Config.Filters.JwtAuthFilter;
+import smartpot.com.api.Users.Service.SUser;
 
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +51,6 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSec) throws Exception {
 
-        // Public Routes
         List<String> publicRoutesList;
         if (publicRoutes.contains(",")) {
             publicRoutesList = Arrays.asList(publicRoutes.split(","));

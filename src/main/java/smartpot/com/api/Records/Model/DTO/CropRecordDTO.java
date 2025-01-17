@@ -1,7 +1,7 @@
 package smartpot.com.api.Records.Model.DTO;
 
 import lombok.Data;
-import smartpot.com.api.Crops.Model.Entity.Crop;
+import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Records.Model.Entity.History;
 import smartpot.com.api.Records.Model.Entity.Measures;
 
@@ -14,7 +14,7 @@ public class CropRecordDTO {
     private String date;
     private MeasuresDTO measures;
 
-    public CropRecordDTO(Crop crop, History history) {
+    public CropRecordDTO(CropDTO crop, History history) {
         this.crop = String.valueOf(crop.getId());
         this.status = String.valueOf(crop.getStatus());
         this.type = String.valueOf(crop.getType());
