@@ -2,9 +2,7 @@
 
 ## Deployment
 
-[![General CI Pipeline](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci-pipeline.yml)
-
-[![Checkout Code](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml)
+[![CI/CD Pipeline for Deployment](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml)
 
 ### 1. Compilación de la Aplicación
 
