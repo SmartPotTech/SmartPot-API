@@ -201,7 +201,6 @@
             <id>docker</id>
             <build>
                 <plugins>
-                    <!-- Maven Resources Plugin -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
@@ -216,15 +215,14 @@
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${project.build.directory}/docker/resources</outputDirectory>
+
                                     <resources>
                                         <resource>
-                                            <!-- Including all resources in the project -->
                                             <directory>src/main/resources</directory>
                                             <filtering>false</filtering>
                                         </resource>
-                                        <!-- Exclude the .env file from being included in the resources -->
                                         <resource>
-                                            <directory>${basedir}</directory> <!-- The base directory (root of the project) -->
+                                            <directory>${basedir}</directory>
                                             <excludes>
                                                 <exclude>.env</exclude>
                                             </excludes>
