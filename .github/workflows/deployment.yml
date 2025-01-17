@@ -1,0 +1,56 @@
+name: CI/CD Pipeline for Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      # Paso 1: Checkout del código fuente del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Paso 2: Configuración de JDK 17 para la construcción de Maven
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'       # Usamos Java 17
+          distribution: 'temurin'  # Usamos la distribución Temurin de OpenJDK
+
+      # Paso 3: Construcción del proyecto usando Maven (sin pruebas y perfil docker)
+      - name: Build with Maven
+        run: mvn clean package -DskipTests -P docker -f pom.xml
+
+      # Paso 4: Configuración de Docker Buildx (para la construcción multiplataforma de imágenes Docker)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Paso 5: Construcción de la imagen Docker
+      - name: Build the Docker image
+        run: docker build --platform linux/amd64 -t ${{secrets.DOCKER_USERNAME}}/${{secrets.DOCKER_APP_NAME}}:${{secrets.DOCKER_APP_TAG}} .
+
+      # Paso 6: Iniciar sesión en Docker Hub para permitir el push de la imagen
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Paso 7: Push de la imagen Docker construida a Docker Hub
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_APP_NAME }}:${{ secrets.DOCKER_APP_TAG }}
+
+      # Paso 8: Despliegue de la aplicación en Render (pasa el token de despliegue)
+      - name: Trigger deploy to Render
+        run: |
+          response=$(curl -s -w "%{http_code}" -o /dev/null -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key=${{ secrets.RENDER_DEPLOY_KEY }})
+          if [[ "$response" -ne 200 ]]; then
+            echo "Deploy failed with status code $response"
+            exit 1
+          else
+            echo "Deploy successful!"
+          fi

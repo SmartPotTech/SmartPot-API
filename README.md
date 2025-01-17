@@ -6,8 +6,6 @@
 
 [![Checkout Code](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/checkout.yml)
 
-
-
 ### 1. Compilación de la Aplicación
 
 - **Abre la terminal** y navega hasta la raíz de tu proyecto.
