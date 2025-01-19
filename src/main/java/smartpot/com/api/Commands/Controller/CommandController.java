@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Commands.Model.DTO.CommandDTO;
-import smartpot.com.api.Commands.Model.Entity.Command;
 import smartpot.com.api.Commands.Service.SCommandI;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Responses.DeleteResponse;
@@ -104,22 +103,8 @@ public class CommandController {
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
     public ResponseEntity<?> executeCommand(@PathVariable String id, @PathVariable String response) {
-        /*
-        Command command = serviceCommand.getCommandById(id);
-        if (command != null) {
-            command.setStatus("EXECUTED");
-            command.setDateExecuted(new Date());
-            command.setResponse("SUCCESSFUL");
-            Command updatedCommand = serviceCommand.updateCommand(id, command);
-            return ResponseEntity.ok(updatedCommand);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-
-         */
-
         try {
-            return new ResponseEntity<>(serviceCommand.excuteCommand(id, response), HttpStatus.OK);
+            return new ResponseEntity<>(serviceCommand.executeCommand(id, response), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -146,8 +131,23 @@ public class CommandController {
     }
 
     @PutMapping("/Update/{id}")
-    public Command updateCommand(@PathVariable String id, @RequestBody Command updatedCommad) throws Exception {
-        return serviceCommand.updateCommand(id, updatedCommad);
+    @Operation(summary = "Eliminar un comando",
+            description = "Elimina un comando existente utilizando su ID. "
+                    + "Si el comando no existe o hay un error en el proceso, se devolverá un error con el código HTTP 404.",
+            responses = {
+                    @ApiResponse(description = "Comando eliminado",
+                            responseCode = "204",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "404",
+                            description = "Comando no encontrado o error en la eliminación.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> updateCommand(@PathVariable String id, @RequestBody CommandDTO updatedCommand) {
+        try {
+            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceCommand.updateCommand(id, updatedCommand) + "]"), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
     }
 
 }
