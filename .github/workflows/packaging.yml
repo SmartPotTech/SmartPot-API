@@ -14,11 +14,11 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
-          username: SmartPotTech
+          username: SmartPot
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and publish the API Docker image
         run: |
-          docker build . --tag ghcr.io/SmartPotTech/api-smartpot:latest
-          docker run ghcr.io/SmartPotTech/api-smartpot:latest
-          docker push ghcr.io/SmartPotTech/api-smartpot:latest
+          docker build . --tag ghcr.io/smartpot/api-smartpot:latest
+          docker run ghcr.io/smartpot/api-smartpot:latest
+          docker push ghcr.io/smartpot/api-smartpot:latest
