@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Commands.Mapper.MCommand;
 import smartpot.com.api.Commands.Model.DTO.CommandDTO;
 import smartpot.com.api.Commands.Repository.RCommand;
@@ -141,6 +142,7 @@ public class SCommand implements SCommandI {
      * @throws IllegalStateException if a command with the same details already exists
      */
     @Override
+    @Transactional
     public CommandDTO createCommand(CommandDTO commandDTO) throws IllegalStateException {
         return Optional.of(commandDTO)
                 .map(dto -> {
@@ -199,6 +201,7 @@ public class SCommand implements SCommandI {
      * @throws Exception if the command cannot be found or updated
      */
     @Override
+    @Transactional
     @CachePut(value = "commands", key = "'id_'+#id")
     public CommandDTO updateCommand(String id, CommandDTO updateCommand) throws Exception {
         CommandDTO existingCommand = getCommandById(id);
@@ -227,6 +230,7 @@ public class SCommand implements SCommandI {
      * @throws Exception if the command cannot be found
      */
     @Override
+    @Transactional
     @CacheEvict(value = "commands", key = "'id_'+#id")
     public String deleteCommand(String id) throws Exception {
         return Optional.of(getCommandById(id))
