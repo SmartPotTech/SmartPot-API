@@ -1,0 +1,54 @@
+application:
+    author: SmartPot Developers
+    description: Entorno de Prueba para API de SmartPot
+    security:
+        jwt:
+            expiration: 4102444800
+            secret-key: mySuperSecretKey
+        public:
+            routes: /**
+    title: SmartPot-API-Test
+    version: 1.0.0
+http:
+    header:
+        cors:
+            allowedOrigins: '*'
+logging:
+    level:
+        com:
+            mongodb: DEBUG
+        io:
+            swagger: DEBUG
+        org:
+            springdoc: DEBUG
+            springframework: DEBUG
+            springframework.data.mongodb: DEBUG
+            springframework.web.filter: DEBUG
+        root: DEBUG
+        smartpot:
+            com:
+                api:
+                    Security:
+                        jwt: DEBUG
+server:
+    port: 8091
+    tomcat:
+        connection-timeout: 100000000
+spring:
+    application:
+        name: SmartPot-API-Test
+    data:
+        mongodb:
+            uri: mongo://localhost:27017/smartpot
+springdoc:
+    api-docs:
+        enabled: true
+    swagger-ui:
+        default-model-expand-depth: 1
+        default-model-rendering: example
+        display-operation-id: false
+        display-request-duration: true
+        doc-expansion: list
+        enabled: true
+        path: /
+        url: /v3/api-docs
