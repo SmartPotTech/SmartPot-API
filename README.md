@@ -220,23 +220,64 @@ Aquí tienes un ejemplo práctico con valores de ejemplo que puedes ajustar seg�
 
 ```bash
 docker run -d --name smartpot-api-dev -p 8091:8091 \
--e APP_NAME=SmartPot-API \
--e PORT=8091 \
--e TITLE="SmartPot API" \
--e DESCRIPTION="Documentación de la API REST de SmartPot" \
--e VERSION=1.0.0 \
--e AUTHOR="SmartPot Developers" \
--e DATA_SOURCE_USERNAME=SmartPot-Admin \
--e DATA_SOURCE_PASSWORD=SecurePassword123 \
--e DATA_SOURCE_DOMAIN=smartpot.example.mongodb.net \
--e DATA_SOURCE_DB=smartpot \
--e DATA_SOURCE_RETRY_WRITES=true \
--e DATA_SOURCE_W=majority \
--e DATA_SOURCE_APP_NAME=smartpot-app \
--e SECURITY_JWT_SECRET_KEY=SuperSecretKey \
--e SECURITY_JWT_EXPIRATION=300000 \
--e SECURITY_PUBLIC_ROUTES="/auth/login" \
--e HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
--e DEBUGGER_MODE=INFO \
-sebastian190030/api-smartpot:latest
+  -e APP_NAME=SmartPot-API \
+  -e PORT=8091 \
+  -e TITLE="SmartPot API" \
+  -e DESCRIPTION="Documentación de la API REST de SmartPot" \
+  -e VERSION=1.0.0 \
+  -e AUTHOR="SmartPot Developers" \
+  \
+  # MongoDB
+  -e DATA_CONNECTION_METHOD=mongodb \
+  -e DATA_SOURCE_USERNAME=admin \
+  -e DATA_SOURCE_PASSWORD=admin \
+  -e DATA_SOURCE_DOMAIN=db-smartpot:27017 \
+  -e DATA_SOURCE_DB=smartpot \
+  -e DATA_PARAMS="authSource=admin&directConnection=true&serverSelectionTimeoutMS=100000&socketTimeoutMS=10000&appName=mongo" \
+  \
+  # Redis
+  -e CACHE_TYPE=redis \
+  -e CACHE_HOST=cache-smartpot \
+  -e CACHE_PORT=6379 \
+  -e CACHE_DB=0 \
+  -e CACHE_USERNAME=default \
+  -e CACHE_PASSWORD=root \
+  -e CACHE_TIMEOUT=2000 \
+  -e CACHE_LETTUCE_POOL_MAX_ACTIVE=8 \
+  -e CACHE_LETTUCE_POOL_MAX_WAIT=-1 \
+  -e CACHE_LETTUCE_POOL_MAX_IDLE=8 \
+  -e CACHE_LETTUCE_POOL_MIN_IDLE=8 \
+  \
+  # Config cache
+  -e CACHE_TIME_TO_LIVE=300000 \
+  -e CACHE_NULL_VALUES=false \
+  \
+  # Email (Mailpit local)
+  -e MAIL_HOST=mail-smartpot \
+  -e MAIL_PORT=1025 \
+  -e MAIL_USERNAME=smartpotadmin@example.com \
+  -e MAIL_PASSWORD=password123 \
+  -e MAIL_PROPERTIES_SMTP_AUTH=true \
+  -e MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE=false \
+  \
+  # Seguridad
+  -e SECURITY_JWT_SECRET_KEY=c8e9b6803afbcfa6edd9569c94c75ff4b144622b0a0570a636dffd62c24a3476 \
+  -e SECURITY_JWT_EXPIRATION=86400000 \
+  -e SECURITY_PUBLIC_ROUTES="/auth/login,/auth/verify" \
+  \
+  # Rate limiting
+  -e RATE_LIMITING_MAX_REQUESTS=5 \
+  -e RATE_LIMITING_TIME_WINDOW=60000 \
+  -e RATE_LIMITING_PUBLIC_ROUTES="/swagger-ui/,/v3/api-docs,/swagger-resources/,/webjars/" \
+  \
+  # Headers
+  -e HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+  \
+  # Tomcat
+  -e SERVER_TOMCAT_TIMEOUT=600000 \
+  \
+  # Debugger
+  -e DEBUGGER_MODE=INFO \
+  sebastian190030/api-smartpot:latest
+
 ```
