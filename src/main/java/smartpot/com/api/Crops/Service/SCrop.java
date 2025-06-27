@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Crops.Mapper.MCrop;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Model.Entity.CropStatus;
@@ -85,6 +86,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Transactional
     @CachePut(value = "crops", key = "#cropDTO.id")
     public CropDTO createCrop(CropDTO cropDTO) throws Exception {
         return Optional.of(cropDTO)
@@ -369,6 +371,7 @@ public class SCrop implements SCropI {
      * @see MCrop
      */
     @Override
+    @Transactional
     @CachePut(value = "crops", key = "'id_'+#id")
     public CropDTO updatedCrop(String id, CropDTO updateCrop) throws Exception {
         CropDTO existingCrop = getCropById(id);
@@ -415,6 +418,7 @@ public class SCrop implements SCropI {
      * @see RCrop
      */
     @Override
+    @Transactional
     @CacheEvict(value = "crops", key = "'id_'+#id")
     public String deleteCrop(String id) throws Exception {
         return Optional.of(getCropById(id))

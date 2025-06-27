@@ -20,7 +20,7 @@ public interface SUserI extends UserDetailsService {
      *
      * @param userDTO el objeto que contiene los datos del nuevo usuario a crear.
      * @return el objeto {@link UserDTO} del usuario creado.
-     * @throws Exception si el usuario ya existe o si ocurre un error durante la creación.
+     * @throws ValidationException,IllegalStateException si el usuario ya existe o si ocurre un error durante la creación.
      */
     UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException;
 

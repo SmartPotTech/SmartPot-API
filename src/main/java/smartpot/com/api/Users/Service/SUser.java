@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Users.Mapper.MUser;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Model.Entity.UserRole;
@@ -56,24 +57,33 @@ public class SUser implements SUserI {
 
     /**
      * Crea un nuevo usuario en la base de datos a partir de un objeto {@link UserDTO}.
-     * *
+     * <br><br>
      * Este método valida que el usuario no exista previamente en la base de datos mediante su email.
      * Luego, realiza una serie de validaciones sobre los datos del usuario, como el nombre, apellido,
      * correo electrónico, contraseña y rol. Si las validaciones son exitosas, el usuario se crea y
      * se guarda en la base de datos. Si el usuario ya existe o si las validaciones fallan, se lanza una
      * excepción correspondiente.
-     * *
-     *
+     * <br><br>
+     * **Transacciones (Spring Boot):** Este método está marcado con `@Transactional` de Spring, lo que significa
+     * que la operación de base de datos se ejecuta dentro de una transacción. Si ocurre alguna excepción durante el
+     * proceso (por ejemplo, si el usuario ya existe o alguna validación falla), la transacción será revertida
+     * automáticamente, asegurando que ningún cambio se persista en la base de datos.
+     * <br><br>
+     * **Rollback:** Spring manejará el rollback de forma automática si se lanza una excepción no verificada (como una
+     * `IllegalStateException` o `RuntimeException`). De este modo, si algo falla, se asegura la consistencia de la base de datos.
+     * <br><br>
      * @param userDTO el objeto {@link UserDTO} que contiene los datos del nuevo usuario.
      * @return un objeto {@link UserDTO} que representa al usuario creado.
      * @throws IllegalStateException si el usuario ya existe en la base de datos (por email).
-     * @throws ValidationException  si el usuario tiene un error de validación.
+     * @throws ValidationException  si las validaciones de los campos del usuario no son exitosas.
      * @throws ValidationException si las validaciones de los campos del usuario no son exitosas.
      *
      * @see UserDTO
      * @see ValidationException
+     * @see Transactional
      */
     @Override
+    @Transactional
     @CachePut(value = "users", key = "#userDTO.id")
     public UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException {
         return Optional.of(userDTO)
@@ -325,11 +335,19 @@ public class SUser implements SUserI {
 
     /**
      * Actualiza la información de un usuario en la base de datos.
-     * *
+     * <br><br>
      * Este método permite actualizar los detalles de un usuario existente en la base de datos. Primero,
      * se busca el usuario por su ID. Si el usuario existe, se actualizan los campos del usuario con los
      * valores proporcionados en el objeto {@link UserDTO}. Luego, se validan los nuevos valores antes de
      * guardar el usuario actualizado. Si alguno de los valores es inválido, se lanza una excepción de validación.
+     * <br><br>
+     * **Transacciones (Spring Boot):** Al igual que el método `CreateUser`, este método está marcado con la anotación
+     * `@Transactional`, lo que significa que la operación de actualización se ejecutará dentro de una transacción de Spring.
+     * Si ocurre algún error, la transacción se revertirá, asegurando que los cambios no se apliquen si algo falla en el proceso.
+     * <br><br>
+     * **Rollback:** Las excepciones que extienden `RuntimeException` causarán un rollback automático, mientras que
+     * las excepciones comprobadas, como `ValidationException`, no harán que la transacción se revierta a menos que se
+     * indique explícitamente lo contrario.
      *
      * @param id          el identificador del usuario a actualizar.
      * @param updatedUser el objeto {@link UserDTO} que contiene los nuevos valores para el usuario.
@@ -338,8 +356,10 @@ public class SUser implements SUserI {
      * @throws ValidationException si alguno de los campos del usuario proporcionado no es válido según las reglas de validación.
      * @see UserDTO
      * @see ValidationException
+     * @see Transactional
      */
     @Override
+    @Transactional
     @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
         UserDTO existingUser = getUserById(id);
@@ -373,17 +393,26 @@ public class SUser implements SUserI {
 
     /**
      * Elimina un usuario de la base de datos.
-     * *
+     *  <br><br>
      * Este método permite eliminar un usuario de la base de datos utilizando su ID. Primero, se verifica
      * si el usuario existe. Si el usuario existe, se elimina de la base de datos. Si no se encuentra
      * el usuario con el ID proporcionado, se lanza una excepción indicando que el usuario no existe.
+     *  <br><br>
+     * **Transacciones (Spring Boot):** Este método también está marcado con `@Transactional`, lo que garantiza
+     * que si ocurre algún error durante la eliminación (por ejemplo, si el usuario no existe o si hay un fallo
+     * en la base de datos), la transacción será revertida y no se eliminará el usuario.
+     *  <br><br>
+     * **Rollback:** Al igual que los otros métodos, si ocurre una excepción de tipo `RuntimeException`, Spring
+     * realizará un rollback automáticamente para mantener la integridad de los datos.
      *
      * @param id el identificador del usuario que se desea eliminar.
      * @return un mensaje indicando que el usuario ha sido eliminado correctamente.
      * @throws Exception si el usuario no existe o si ocurre un error durante el proceso de eliminación.
      * @see UserDTO
+     * @see Transactional
      */
     @Override
+    @Transactional
     @CacheEvict(value = "users", key = "'id_'+#id")
     public String DeleteUser(String id) throws Exception {
         return Optional.of(getUserById(id))
