@@ -4,14 +4,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Exception.InvalidTokenException;
-import smartpot.com.api.Mail.Model.Entity.EmailDetails;
-import smartpot.com.api.Mail.Service.EmailServiceI;
+import smartpot.com.api.Mail.Model.DTO.EmailDTO;
+import smartpot.com.api.Mail.Service.EmailService;
+import smartpot.com.api.Mail.Validator.EmailValidatorI;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Service.SUserI;
 
@@ -25,7 +27,9 @@ import java.util.Optional;
 public class JwtService implements JwtServiceI {
 
     private final SUserI serviceUser;
-    private final EmailServiceI emailService;
+    private final EmailService emailService;
+    private final EmailValidatorI emailValidator;
+
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
     @Value("${application.security.jwt.expiration}")
@@ -37,9 +41,10 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser, EmailServiceI emailService) {
+    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
+        this.emailValidator = emailValidator;
     }
 
     @Override
@@ -47,21 +52,9 @@ public class JwtService implements JwtServiceI {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
                 .filter(userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
-                .map(validToken -> {
-                    emailService.sendSimpleMail(
-                            new EmailDetails(
-                                    null,
-                                    "smartpottech@gmail.com",
-                                    "Se ha iniciado sesion en su cuenta, verifique su token de seguridad '" + validToken + "'",
-                                    "Inicio de Sesion en Smartpot",
-                                    ""
-                            ));
-                    return validToken;
-                })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
 
     }
-
 
     private String generateToken(String id, String email) {
         // TODO: Refine token (email != subject)
@@ -94,6 +87,39 @@ public class JwtService implements JwtServiceI {
         finalUser.setPassword("");
         return finalUser;
 
+    }
+
+    @Override
+    public String resetPassword(UserDTO reqUser) throws Exception {
+        return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
+                .map(validUser -> {
+                    try {
+                        return serviceUser.UpdateUser(validUser.getId(), validUser);
+                    } catch (Exception e) {
+                        throw new ValidationException(e);
+                    }
+                })
+                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .orElseThrow(() -> new Exception("Credenciales Invalidas"));
+    }
+
+    @Override
+    public Boolean forgotPassword(String email) throws Exception {
+        return Optional.of(serviceUser.getUserByEmail(email))
+                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null,"true"))
+                .map(emailService::sendSimpleMail)
+                .map(ValidDTO -> {
+                    emailValidator.validateId(ValidDTO.getId());
+                    emailValidator.validateMsgBody(ValidDTO.getMsgBody());
+                    emailValidator.validateAttachment(ValidDTO.getAttachment());
+                    emailValidator.validateRecipient(ValidDTO.getRecipient());
+                    emailValidator.validateSubject(ValidDTO.getSubject());
+                    boolean isValid = emailValidator.isValid();
+                    emailValidator.reset();
+                    return isValid;
+                })
+                .orElseThrow(() -> new IllegalStateException("Esta cuenta de correo no esta asociada a un usuario"));
     }
 
     private Boolean validateToken(String token, UserDetails userDetails) {

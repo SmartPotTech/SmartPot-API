@@ -1,15 +1,16 @@
 package smartpot.com.api.Mail.Service;
 
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
-import smartpot.com.api.Mail.Model.Entity.EmailDetails;
 
 import java.util.List;
 
 public interface EmailServiceI {
 
-    void sendSimpleMail(EmailDetails details);
+    EmailDTO sendSimpleMail(EmailDTO emailDTO);
 
-    void sendMailWithAttachment(EmailDetails details);
+    EmailDTO sendMailWithAttachment(EmailDTO emailDTO);
 
     List<EmailDTO> getAllMails() throws Exception;
+
+    EmailDTO scheduleEmail(EmailDTO emailDTO);
 }

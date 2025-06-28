@@ -1,6 +1,7 @@
 package smartpot.com.api.Mail.Service;
 
 import jakarta.mail.internet.MimeMessage;
+import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +10,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import smartpot.com.api.Mail.Mapper.EmailMapper;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
@@ -17,6 +18,7 @@ import smartpot.com.api.Mail.Model.Entity.EmailDetails;
 import smartpot.com.api.Mail.Repository.EmailRepository;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,41 +41,68 @@ public class EmailService implements EmailServiceI {
     }
 
     @Override
-    @Async
-    public void sendSimpleMail(EmailDetails details) {
-        try {
-            SimpleMailMessage mailMessage = new SimpleMailMessage();
-            mailMessage.setFrom(sender);
-            mailMessage.setTo(details.getRecipient());
-            mailMessage.setText(details.getMsgBody());
-            mailMessage.setSubject(details.getSubject());
-            javaMailSender.send(mailMessage);
-            emailRepository.save(details);
-            log.warn("Correo Enviado Exitosamente");
-        } catch (Exception e) {
-            log.error("Error al Enviar Correo " + e.getMessage());
-        }
+    public EmailDTO sendSimpleMail(EmailDTO emailDTO) throws ValidationException {
+        return Optional.of(emailDTO)
+                .map(emailMapper::toEntity)
+                .map(emailDetails -> {
+                    try {
+                        SimpleMailMessage mailMessage = new SimpleMailMessage();
+                        mailMessage.setFrom(sender);
+                        mailMessage.setTo(emailDetails.getRecipient());
+                        mailMessage.setText(emailDetails.getMsgBody());
+                        mailMessage.setSubject(emailDetails.getSubject());
+                        javaMailSender.send(mailMessage);
+                        emailRepository.save(emailDetails);
+                    } catch (Exception e) {
+                        throw new ValidationException("Error sending email " + e.getMessage());
+                    }
+                    return emailDetails;
+                })
+                .map(emailRepository::save)
+                .map(emailMapper::toDTO)
+                .orElseThrow(() -> new IllegalStateException("Error sending email"));
     }
 
     @Override
-    @Async
-    public void sendMailWithAttachment(EmailDetails details) {
-        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-        MimeMessageHelper mimeMessageHelper;
-        try {
-            mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
-            mimeMessageHelper.setFrom(sender);
-            mimeMessageHelper.setTo(details.getRecipient());
-            mimeMessageHelper.setText(details.getMsgBody());
-            mimeMessageHelper.setSubject(details.getSubject());
-            FileSystemResource file = new FileSystemResource(new File(details.getAttachment()));
-            mimeMessageHelper.addAttachment(Objects.requireNonNull(file.getFilename()), file);
-            javaMailSender.send(mimeMessage);
-            emailRepository.save(details);
-            log.warn("Correo Enviado Exitosamente");
-        } catch (Exception e) {
-            log.error("Error al Enviar Correo " + e.getMessage());
-        }
+    public EmailDTO scheduleEmail(EmailDTO emailDTO) {
+        return Optional.of(emailDTO)
+                .map(emailMapper::toEntity)
+                .map(emailDetails -> {
+                    if (emailDetails.getSendDate() == null) {
+                        throw new ValidationException("Send date must be provided.");
+                    }
+                    emailRepository.save(emailDetails);
+                    return emailDetails;
+                })
+                .map(emailMapper::toDTO)
+                .orElseThrow(() -> new IllegalStateException("Failed to schedule email"));
+    }
+
+    @Override
+    public EmailDTO sendMailWithAttachment(EmailDTO emailDTO) {
+        return Optional.of(emailDTO)
+                .map(emailMapper::toEntity)
+                .map(emailDetails -> {
+                    MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+                    MimeMessageHelper mimeMessageHelper;
+                    try {
+                        mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+                        mimeMessageHelper.setFrom(sender);
+                        mimeMessageHelper.setTo(emailDetails.getRecipient());
+                        mimeMessageHelper.setText(emailDetails.getMsgBody());
+                        mimeMessageHelper.setSubject(emailDetails.getSubject());
+                        FileSystemResource file = new FileSystemResource(new File(emailDetails.getAttachment()));
+                        mimeMessageHelper.addAttachment(Objects.requireNonNull(file.getFilename()), file);
+                        javaMailSender.send(mimeMessage);
+                        emailRepository.save(emailDetails);
+                    } catch (Exception e) {
+                        throw new ValidationException("Error sending email " + e.getMessage());
+                    }
+                    return emailDetails;
+                })
+                .map(emailRepository::save)
+                .map(emailMapper::toDTO)
+                .orElseThrow(() -> new IllegalStateException("Error sending email with attachment"));
     }
 
     /**
@@ -97,6 +126,34 @@ public class EmailService implements EmailServiceI {
                 .map(emails -> emails.stream()
                         .map(emailMapper::toDTO)
                         .collect(Collectors.toList()))
-                .orElseThrow(() -> new Exception("No existe ningún correo"));
+                .orElseThrow(() -> new Exception("There is no email"));
+    }
+
+    @Scheduled(fixedRate = 60000) // Runs every minute
+    public void processScheduledEmails() {
+        Date now = new Date();
+
+        List<EmailDetails> emailsToSend = emailRepository.findAll().stream()
+                .filter(email -> email.getSendDate() != null)
+                .filter(email -> !email.getSent()) // Only unsent emails
+                .filter(email -> {
+                    long diff = email.getSendDate().getTime() - now.getTime();
+                    return diff <= 10 * 60 * 1000 && diff > 0; // Within 10 minutes
+                })
+                .toList();
+
+        emailsToSend.forEach(email -> {
+            try {
+                EmailDTO dto = emailMapper.toDTO(email);
+                sendSimpleMail(dto);
+
+                email.setSent(true);
+                emailRepository.save(email);
+
+                log.info("Scheduled email sent to {}", dto.getRecipient());
+            } catch (Exception e) {
+                log.error("Error sending scheduled email: {}", e.getMessage());
+            }
+        });
     }
 }

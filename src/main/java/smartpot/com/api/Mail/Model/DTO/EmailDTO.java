@@ -15,4 +15,6 @@ public class EmailDTO implements Serializable {
     private String msgBody;
     private String subject;
     private String attachment;
+    private String sendDate;
+    private String sent;
 }

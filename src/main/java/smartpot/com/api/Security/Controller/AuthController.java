@@ -54,6 +54,56 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/password/forgot")
+    @Operation(
+            summary = "Solicitud de recuperación de contraseña",
+            description = "Recibe un correo electrónico y, si el usuario existe, genera un token de recuperación de contraseña y lo envía al correo proporcionado.",
+            responses = {
+                    @ApiResponse(
+                            description = "Correo enviado con instrucciones para restablecer la contraseña",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Boolean.class))
+                    ),
+                    @ApiResponse(
+                            description = "Usuario no encontrado o error en el proceso",
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    )
+            }
+    )
+    public ResponseEntity<?> forgotPassword(@RequestBody UserDTO reqUser) {
+        try {
+            return new ResponseEntity<>(jwtService.forgotPassword(reqUser.getEmail()), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al recuperar contraseña [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/password/reset")
+    @Operation(
+            summary = "Restablecer contraseña",
+            description = "Recibe una nueva contraseña y un token de recuperación en los headers (Authorization). Si el token es válido, actualiza la contraseña del usuario.",
+            responses = {
+                    @ApiResponse(
+                            description = "Contraseña actualizada correctamente",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))
+                    ),
+                    @ApiResponse(
+                            description = "Token inválido o error en el proceso",
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    )
+            }
+    )
+    public ResponseEntity<?> resetPassword(@RequestBody UserDTO reqUser, @RequestHeader("Authorization") String resetToken) {
+        try {
+            return new ResponseEntity<>(new TokenResponse(jwtService.resetPassword(reqUser)), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al restablecer contraseña [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @GetMapping("/verify")
     @Operation(
             summary = "Verificar token JWT",

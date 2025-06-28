@@ -9,12 +9,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
 import smartpot.com.api.Mail.Service.EmailServiceI;
 import smartpot.com.api.Responses.ErrorResponse;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/Emails")
@@ -71,5 +72,33 @@ public class EmailController {
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PostMapping("/send")
+    @Operation(summary = "Enviar y registrar correo",
+            description = "Envía un correo electrónico y lo almacena en la base de datos.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Correo enviado y registrado correctamente.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmailDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Solicitud inválida.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "Error interno al enviar el correo.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> sendAndSaveMail(@RequestBody EmailDTO emailDetails) {
+        try {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            emailDetails.setSendDate(formatter.format(new Date()));
+            emailDetails.setSent("true");
+            return new ResponseEntity<>(emailServiceI.sendSimpleMail(emailDetails), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error sending email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/schedule")
+    public ResponseEntity<EmailDTO> scheduleEmail(@RequestBody EmailDTO emailDTO) {
+        EmailDTO scheduled = emailServiceI.scheduleEmail(emailDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(scheduled);
     }
 }

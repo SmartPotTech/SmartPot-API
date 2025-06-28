@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.io.Serializable;
+import java.util.Date;
 
 @Data
 @AllArgsConstructor
@@ -30,4 +31,10 @@ public class EmailDetails implements Serializable {
 
     @Field("attachment")
     private String attachment;
+
+    @Field("send_date")
+    private Date sendDate;
+
+    @Field("sent")
+    private Boolean sent;
 }
