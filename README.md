@@ -62,6 +62,7 @@
   - Esto ejecuta un CURL -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key={key}
 
 ## 📦 Estructura del Proyecto – SmartPot API
+Este proyecto es una API RESTful desarrollada en Java con Spring Boot, diseñada para gestionar la información de cultivos y dispositivos SmartPot. Utiliza MongoDB como base de datos y Redis para almacenamiento en caché. La API está documentada con Swagger/OpenAPI y cuenta con autenticación JWT.
 
 ### 📁 Estructura de Directorios
 
