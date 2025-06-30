@@ -61,101 +61,218 @@
   ```
   - Esto ejecuta un CURL -X POST https://api.render.com/deploy/srv-csgeg0lumphs73b48veg?key={key}
 
+## 📦 Estructura del Proyecto – SmartPot API
 
-## Estructura del Proyecto
-
-Este documento describe la estructura del proyecto **SmartPot API**, desarrollado con **Spring Boot**, **Java 17** y gestionado con **Maven**. A continuación se detallan los directorios y la organización general del código fuente, con el objetivo de proporcionar una visión clara de cómo está estructurada la aplicación.
-
-## Estructura de Directorios
+### 📁 Estructura de Directorios
 
 ```
 src/
  └── main/
+      ├── java/
+      │    └── smartpot/
+      │         └── com/
+      │              └── api/
+      │                   ├── Cache/
+      │                   ├── Commands/
+      │                   ├── Crops/
+      │                   ├── Documentation/
+      │                   ├── Exception/
+      │                   ├── Mail/
+      │                   ├── Notifications/
+      │                   ├── Records/
+      │                   ├── Responses/
+      │                   ├── Security/
+      │                   ├── Sessions/
+      │                   ├── Users/
+      │                   └── SmartPotApiApplication.java
+      └── resources/
+           ├── application.yml
+           └── banner.txt
+```
+
+---
+
+## 📂 Descripción de Directorios
+
+### `Cache/`
+
+Configuraciones relacionadas con mecanismos de caché como Redis.
+
+* `RedisConfig.java`: Configura el uso de Redis como sistema de almacenamiento temporal.
+
+---
+
+### `Commands/`
+
+Manejo de comandos automatizados en la aplicación.
+
+* **Controller**: `CommandController.java`
+* **DTO**: `CommandDTO.java`
+* **Entity**: `Command.java`
+* **Repository**: `RCommand.java`
+* **Service**: `SCommand.java`, `SCommandI.java`
+* **Mapper**: `MCommand.java`
+* **Validator**: *(vacío o por implementar)*
+
+---
+
+### `Crops/`
+
+Administración de cultivos y su estado.
+
+* **Controller**: `CropController.java`
+* **DTO**: `CropDTO.java`
+* **Entity**: `Crop.java`, `CropStatus.java`, `CropType.java`
+* **Repository**: `RCrop.java`
+* **Service**: `SCrop.java`, `SCropI.java`
+* **Mapper**: `MCrop.java`
+* **Validator**: `VCrop.java`, `VCropI.java`
+
+---
+
+### `Documentation/`
+
+Configuración de Swagger/OpenAPI.
+
+* `SwaggerConfig.java`: Habilita y configura la documentación automática de la API.
+
+---
+
+### `Exception/`
+
+Manejo global de errores.
+
+* `ApiException.java`: Excepción personalizada.
+* `ApiHandler.java`: Manejador global de excepciones.
+* `ApiResponse.java`: Modelo de respuesta para errores.
+* `InvalidTokenException.java`: Excepción específica para tokens inválidos.
+
+---
+
+### `Mail/`
+
+Envío de correos electrónicos y configuración relacionada.
+
+* **Config**: `AsyncConfig.java`
+* **Controller**: `EmailController.java`
+* **DTO**: `EmailDTO.java`
+* **Entity**: `EmailDetails.java`
+* **Repository**: `EmailRepository.java`
+* **Service**: `EmailService.java`, `EmailServiceI.java`
+* **Mapper**: `EmailMapper.java`
+* **Validator**: `EmailValidator.java`, `EmailValidatorI.java`
+
+---
+
+### `Notifications/`
+
+Notificaciones automáticas hacia el usuario.
+
+* **Controller**: `NotificationController.java`
+* **DTO**: `NotificationDTO.java`
+* **Entity**: `Notification.java`
+* **Repository**: `RNotification.java`
+* **Service**: `SNotification.java`, `SNotificationI.java`
+* **Mapper**: `MNotification.java`
+
+---
+
+### `Records/`
+
+Historial y registros de medidas.
+
+* **Controller**: `HistoryController.java`
+* **DTO**: `CropRecordDTO.java`, `MeasuresDTO.java`, `RecordDTO.java`
+* **Entity**: `DateRange.java`, `History.java`, `Measures.java`
+* **Repository**: `RHistory.java`
+* **Service**: `SHistory.java`, `SHistoryI.java`
+* **Mapper**: `MRecords.java`
+
+---
+
+### `Responses/`
+
+Modelos de respuestas comunes de la API.
+
+* `DeleteResponse.java`: Respuesta para operaciones DELETE exitosas.
+* `ErrorResponse.java`: Estructura para respuestas de error.
+* `TokenResponse.java`: Estructura para respuestas con tokens JWT.
+
+---
+
+### `Security/`
+
+Gestión de autenticación, autorización y configuración de seguridad.
+
+* **Config**: `SecurityConfiguration.java`
+* **Filters**: `JwtAuthFilter.java`, `RateLimitingFilter.java`
+* **CORS**: `CorsConfig.java`
+* **Controller**: `AuthController.java`
+* **Service**: `JwtService.java`, `JwtServiceI.java`
+
+---
+
+### `Sessions/`
+
+Gestión de sesiones de usuario.
+
+* **Controller**: `SessionController.java`
+* **DTO**: `SessionDTO.java`
+* **Entity**: `Session.java`
+* **Repository**: `RSession.java`
+* **Service**: `SSession.java`, `SSessionI.java`
+* **Mapper**: `MSession.java`
+
+---
+
+### `Users/`
+
+Gestión de usuarios del sistema.
+
+* **Controller**: `UserController.java`
+* **DTO**: `UserDTO.java`
+* **Entity**: `User.java`, `UserRole.java`
+* **Repository**: `RUser.java`
+* **Service**: `SUser.java`, `SUserI.java`
+* **Mapper**: `MUser.java`
+* **Validator**: `UserRegex.java`, `VUser.java`, `VUserI.java`
+
+---
+
+### `SmartPotApiApplication.java`
+
+Clase principal que inicia la aplicación Spring Boot. Marca el punto de entrada (`main`) del backend SmartPot API.
+
+---
+
+## 🧪 Estructura de Pruebas
+
+```
+src/
+ └── test/
       └── java/
            └── smartpot/
                 └── com/
                      └── api/
-                          ├── Controllers/
-                          ├── Exception/
-                          ├── Models/
-                          ├── Security/
-                          └── SmartPotApiApplication.java
+                          ├── SmartPotApiApplicationTest.java
+                          └── Users/
+                               └── Controller/
+                                    └── UserControllerTest.java
 ```
 
-### Descripción de Directorios y Archivos
-
-#### `Controllers/`
-Contiene los controladores principales que manejan las solicitudes HTTP. Cada controlador está asociado a un recurso específico de la aplicación.
-
-- **`AuthController.java`**: Controlador encargado de la autenticación y la gestión de sesiones de usuario.
-- **`CommandController.java`**: Gestiona las solicitudes relacionadas con los comandos del sistema.
-- **`CropController.java`**: Controlador que maneja las operaciones relacionadas con los cultivos.
-- **`HistoryController.java`**: Controla las operaciones sobre el historial de acciones o registros.
-- **`IndexController.java`**: Controlador base para el punto de entrada o la raíz de la aplicación.
-- **`NotificationController.java`**: Gestiona las notificaciones enviadas al usuario.
-- **`SessionController.java`**: Maneja la creación y validación de las sesiones de usuario.
-- **`UserController.java`**: Controlador relacionado con las operaciones CRUD sobre los usuarios.
-
-#### `Exception/`
-Contiene clases relacionadas con el manejo de excepciones y la estructuración de las respuestas de error.
-
-- **`ApiException.java`**: Excepción base personalizada para manejar errores comunes de la API.
-- **`ApiHandler.java`**: Lógica para capturar y procesar excepciones globales.
-- **`ApiResponse.java`**: Contiene la estructura estándar para las respuestas de error (mensaje y estado).
-
-#### `Models/`
-Este paquete contiene las clases que representan el modelo de la aplicación. Se organiza en subdirectorios para mantener separadas las distintas capas del modelo.
-
-##### `DAO/`
-Contiene la lógica de acceso a datos. Aquí se encuentran los repositorios que interactúan directamente con la base de datos.
-
-- **`Repository/`**: Contiene las interfaces de repositorios de Spring Data JPA.
-  - **`RCommand.java`**: Repositorio para la entidad `Command`.
-  - **`RCrop.java`**: Repositorio para la entidad `Crop`.
-  - **`RHistory.java`**: Repositorio para la entidad `History`.
-  - **`RNotification.java`**: Repositorio para la entidad `Notification`.
-  - **`RSession.java`**: Repositorio para la entidad `Session`.
-  - **`RUser.java`**: Repositorio para la entidad `User`.
-
-##### `DTO/`
-Contiene las clases de objetos de transferencia de datos (DTO). Estas clases son utilizadas para enviar y recibir datos entre el cliente y el servidor.
-
-- **`CommandDTO.java`**: DTO para el recurso `Command`.
-- **`CropDTO.java`**: DTO para el recurso `Crop`.
-- **`HistoryDTO.java`**: DTO para el recurso `History`.
-- **`NotificationDTO.java`**: DTO para el recurso `Notification`.
-- **`SessionDTO.java`**: DTO para el recurso `Session`.
-- **`UserDTO.java`**: DTO para el recurso `User`.
-- **`ObjectIdSerializer.java`**: Serializado personalizado para el tipo de ID de objetos.
-
-##### `Entity/`
-Contiene las clases que representan las entidades JPA, mapeadas a las tablas de la base de datos.
-
-- **`Command.java`**: Entidad que representa el comando.
-- **`Crop.java`**: Entidad que representa el cultivo.
-- **`History.java`**: Entidad que representa el historial de acciones.
-- **`Notification.java`**: Entidad que representa las notificaciones.
-- **`Role.java`**: Entidad que representa los roles de los usuarios.
-- **`Session.java`**: Entidad que representa la sesión de usuario.
-- **`Status.java`**: Enum que define los posibles estados de un recurso.
-- **`Type.java`**: Enum que define los tipos de recursos o acciones.
-- **`User.java`**: Entidad que representa el usuario.
-
-#### `Security/`
-Contiene las configuraciones y clases relacionadas con la seguridad, como la autenticación y autorización de usuarios.
-
-- **`SecurityConfiguration.java`**: Configuración global de seguridad de la aplicación, que incluye reglas de acceso y protección.
-- **`jwt/`**: Paquete que contiene la lógica relacionada con la autenticación basada en JWT (JSON Web Token).
-  - **`JwtAuthFilter.java`**: Filtro de autenticación JWT.
-  - **`JwtService.java`**: Servicio encargado de generar y validar los tokens JWT.
-
-#### `SmartPotApiApplication.java`
-Archivo principal que contiene el punto de entrada de la aplicación Spring Boot. Aquí se inicia la aplicación y se configura el contexto de Spring.
-
-
-Aquí está el complemento para el archivo `README.md` que incluye explicaciones adicionales, ejemplos y una estructura bien organizada:
+Pruebas unitarias utilizando JUnit para validar funcionalidad básica, incluyendo controladores y la clase principal.
 
 ---
+
+## 🧱 Archivos adicionales relevantes
+
+* `Dockerfile`, `.dockerignore`: Contenedorización con Docker.
+* `.env`, `.env.example`: Configuración de entorno.
+* `.gitignore`, `.gitattributes`: Configuración de exclusión de archivos.
+* `pom.xml`: Gestión de dependencias con Maven.
+* `.github/`: Flujos de trabajo CI/CD con GitHub Actions.
+* `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`: Documentación del proyecto y políticas de contribución.
+
 
 ## Ejecución en Entorno Docker
 
