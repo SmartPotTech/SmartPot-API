@@ -107,7 +107,7 @@ public class JwtService implements JwtServiceI {
     public Boolean forgotPassword(String email) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(email))
                 .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
-                .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null,"true"))
+                .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null, "true"))
                 .map(emailService::sendSimpleMail)
                 .map(ValidDTO -> {
                     emailValidator.validateId(ValidDTO.getId());

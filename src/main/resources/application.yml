@@ -1,138 +1,138 @@
 # Información de la aplicación
 application:
-    # Autor de la aplicación
-    author: ${AUTHOR}
-    # Descripción de la aplicación
-    description: ${DESCRIPTION}
-    security:
-        jwt:
-            # Tiempo de expiración del JWT
-            expiration: ${SECURITY_JWT_EXPIRATION}
-            # Clave secreta para la firma del JWT
-            secret-key: ${SECURITY_JWT_SECRET_KEY}
-        public:
-            # Rutas públicas que no requieren autenticación
-            routes: ${SECURITY_PUBLIC_ROUTES}
-    # Título de la aplicación
-    title: ${TITLE}
-    # Versión de la aplicación
-    version: ${VERSION}
+  # Autor de la aplicación
+  author: ${AUTHOR}
+  # Descripción de la aplicación
+  description: ${DESCRIPTION}
+  security:
+    jwt:
+      # Tiempo de expiración del JWT
+      expiration: ${SECURITY_JWT_EXPIRATION}
+      # Clave secreta para la firma del JWT
+      secret-key: ${SECURITY_JWT_SECRET_KEY}
+    public:
+      # Rutas públicas que no requieren autenticación
+      routes: ${SECURITY_PUBLIC_ROUTES}
+  # Título de la aplicación
+  title: ${TITLE}
+  # Versión de la aplicación
+  version: ${VERSION}
 
 # Configuración HTTP
 http:
-    header:
-        cors:
-            # Orígenes permitidos para CORS (Cross-Origin Resource Sharing)
-            allowedOrigins: ${HEADER_CORS_ALLOWED_ORIGINS}
+  header:
+    cors:
+      # Orígenes permitidos para CORS (Cross-Origin Resource Sharing)
+      allowedOrigins: ${HEADER_CORS_ALLOWED_ORIGINS}
 
 # Configuración de logging
 logging:
-    level:
-        com:
-            # Nivel de log para la biblioteca 'mongodb'
-            mongodb: ${DEBUGGER_MODE}
-        io:
-            # Nivel de log para la biblioteca 'swagger'
-            swagger: ${DEBUGGER_MODE}
-        org:
-            # Niveles de log para diversas bibliotecas dentro de Spring
-            springdoc: ${DEBUGGER_MODE}
-            springframework: ${DEBUGGER_MODE}
-            springframework.data.mongodb: ${DEBUGGER_MODE}
-        root:
-            # Nivel de log para el nivel raíz
-            root: ${DEBUGGER_MODE}
-        smartpot:
-            com:
-                api:
-                    Security:
-                        jwt: ${DEBUGGER_MODE}  # Nivel de log para JWT en la API de seguridad
+  level:
+    com:
+      # Nivel de log para la biblioteca 'mongodb'
+      mongodb: ${DEBUGGER_MODE}
+    io:
+      # Nivel de log para la biblioteca 'swagger'
+      swagger: ${DEBUGGER_MODE}
+    org:
+      # Niveles de log para diversas bibliotecas dentro de Spring
+      springdoc: ${DEBUGGER_MODE}
+      springframework: ${DEBUGGER_MODE}
+      springframework.data.mongodb: ${DEBUGGER_MODE}
+    root:
+      # Nivel de log para el nivel raíz
+      root: ${DEBUGGER_MODE}
+    smartpot:
+      com:
+        api:
+          Security:
+            jwt: ${DEBUGGER_MODE}  # Nivel de log para JWT en la API de seguridad
 
 # Configuración de limitación de tasa (Rate Limiting)
 rate:
-    limiting:
-        # Número máximo de solicitudes permitidas
-        max-requests: ${RATE_LIMITING_MAX_REQUESTS}
-        # Rutas públicas que estarán sujetas a la limitación de tasa
-        public-routes: ${RATE_LIMITING_PUBLIC_ROUTES}
-        # Ventana de tiempo en la que se aplican las limitaciones
-        time-window: ${RATE_LIMITING_TIME_WINDOW}
+  limiting:
+    # Número máximo de solicitudes permitidas
+    max-requests: ${RATE_LIMITING_MAX_REQUESTS}
+    # Rutas públicas que estarán sujetas a la limitación de tasa
+    public-routes: ${RATE_LIMITING_PUBLIC_ROUTES}
+    # Ventana de tiempo en la que se aplican las limitaciones
+    time-window: ${RATE_LIMITING_TIME_WINDOW}
 
 # Configuración del servidor
 server:
-    # Puerto en el que la aplicación escucha
-    port: ${PORT}
-    tomcat:
-        # Tiempo de espera para las conexiones de Tomcat
-        connection-timeout: ${SERVER_TOMCAT_TIMEOUT}
+  # Puerto en el que la aplicación escucha
+  port: ${PORT}
+  tomcat:
+    # Tiempo de espera para las conexiones de Tomcat
+    connection-timeout: ${SERVER_TOMCAT_TIMEOUT}
 
 # Configuración de Spring
 spring:
-    application:
-        # Nombre de la aplicación
-        name: ${APP_NAME}
-    cache:
-        redis:
-            # Configuración de caché en Redis
-            cache-null-values: ${CACHE_NULL_VALUES}
-            # Tiempo de vida de los valores en caché
-            time-to-live: ${CACHE_TIME_TO_LIVE}
-        # Tipo de caché (por ejemplo, redis, ehcache, etc.)
-        type: ${CACHE_TYPE}
-    data:
-        mongodb:
-            # URI de conexión a MongoDB
-            uri: ${DATA_CONNECTION_METHOD}://${DATA_SOURCE_USERNAME}:${DATA_SOURCE_PASSWORD}@${DATA_SOURCE_DOMAIN}/${DATA_SOURCE_DB}?${DATA_PARAMS}
-        redis:
-            # Configuración de la base de datos Redis
-            database: ${CACHE_DB}
-            host: ${CACHE_HOST}
-            lettuce:
-                pool:
-                    # Configuración de la conexión en pool para Redis
-                    max-active: ${CACHE_LETTUCE_POOL_MAX_ACTIVE}
-                    max-idle: ${CACHE_LETTUCE_POOL_MAX_IDLE}
-                    max-wait: ${CACHE_LETTUCE_POOL_MAX_WAIT}
-                    min-idle: ${CACHE_LETTUCE_POOL_MIN_IDLE}
-            # Configuración de la autenticación en Redis
-            password: ${CACHE_PASSWORD}
-            port: ${CACHE_PORT}
-            timeout: ${CACHE_TIMEOUT}
-            username: ${CACHE_USERNAME}
-    mail:
-        # Configuración para el servidor de correo
-        host: ${MAIL_HOST}
-        password: ${MAIL_PASSWORD}
-        port: ${MAIL_PORT}
-        properties:
-            mail:
-                smtp:
-                    # Configuración de autenticación SMTP
-                    auth: ${MAIL_PROPERTIES_SMTP_AUTH}
-                    # Habilitar STARTTLS para la conexión segura
-                    starttls:
-                        enable: ${MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE}
-        username: ${MAIL_USERNAME}
+  application:
+    # Nombre de la aplicación
+    name: ${APP_NAME}
+  cache:
+    redis:
+      # Configuración de caché en Redis
+      cache-null-values: ${CACHE_NULL_VALUES}
+      # Tiempo de vida de los valores en caché
+      time-to-live: ${CACHE_TIME_TO_LIVE}
+    # Tipo de caché (por ejemplo, redis, ehcache, etc.)
+    type: ${CACHE_TYPE}
+  data:
+    mongodb:
+      # URI de conexión a MongoDB
+      uri: ${DATA_CONNECTION_METHOD}://${DATA_SOURCE_USERNAME}:${DATA_SOURCE_PASSWORD}@${DATA_SOURCE_DOMAIN}/${DATA_SOURCE_DB}?${DATA_PARAMS}
+    redis:
+      # Configuración de la base de datos Redis
+      database: ${CACHE_DB}
+      host: ${CACHE_HOST}
+      lettuce:
+        pool:
+          # Configuración de la conexión en pool para Redis
+          max-active: ${CACHE_LETTUCE_POOL_MAX_ACTIVE}
+          max-idle: ${CACHE_LETTUCE_POOL_MAX_IDLE}
+          max-wait: ${CACHE_LETTUCE_POOL_MAX_WAIT}
+          min-idle: ${CACHE_LETTUCE_POOL_MIN_IDLE}
+      # Configuración de la autenticación en Redis
+      password: ${CACHE_PASSWORD}
+      port: ${CACHE_PORT}
+      timeout: ${CACHE_TIMEOUT}
+      username: ${CACHE_USERNAME}
+  mail:
+    # Configuración para el servidor de correo
+    host: ${MAIL_HOST}
+    password: ${MAIL_PASSWORD}
+    port: ${MAIL_PORT}
+    properties:
+      mail:
+        smtp:
+          # Configuración de autenticación SMTP
+          auth: ${MAIL_PROPERTIES_SMTP_AUTH}
+          # Habilitar STARTTLS para la conexión segura
+          starttls:
+            enable: ${MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE}
+    username: ${MAIL_USERNAME}
 
 # Configuración de Swagger/OpenAPI (SpringDoc)
 springdoc:
-    api-docs:
-        # Habilitar o deshabilitar la generación de la documentación de la API
-        enabled: true
-    swagger-ui:
-        # Profundidad de expansión de modelos en Swagger UI
-        default-model-expand-depth: 1
-        # Tipo de renderizado de modelos (puede ser 'example', 'model', etc.)
-        default-model-rendering: example
-        # Mostrar o no el ID de la operación en la UI
-        display-operation-id: false
-        # Mostrar la duración de las solicitudes en la UI de Swagger
-        display-request-duration: true
-        # Expansión por defecto en Swagger UI (puede ser 'list', 'full', etc.)
-        doc-expansion: list
-        # Habilitar o deshabilitar la UI de Swagger
-        enabled: true
-        # Path para acceder a Swagger UI
-        path: /
-        # URL donde se encuentra la documentación de la API en formato OpenAPI
-        url: /v3/api-docs
+  api-docs:
+    # Habilitar o deshabilitar la generación de la documentación de la API
+    enabled: true
+  swagger-ui:
+    # Profundidad de expansión de modelos en Swagger UI
+    default-model-expand-depth: 1
+    # Tipo de renderizado de modelos (puede ser 'example', 'model', etc.)
+    default-model-rendering: example
+    # Mostrar o no el ID de la operación en la UI
+    display-operation-id: false
+    # Mostrar la duración de las solicitudes en la UI de Swagger
+    display-request-duration: true
+    # Expansión por defecto en Swagger UI (puede ser 'list', 'full', etc.)
+    doc-expansion: list
+    # Habilitar o deshabilitar la UI de Swagger
+    enabled: true
+    # Path para acceder a Swagger UI
+    path: /
+    # URL donde se encuentra la documentación de la API en formato OpenAPI
+    url: /v3/api-docs

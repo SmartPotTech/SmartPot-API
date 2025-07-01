@@ -72,12 +72,12 @@ public class SUser implements SUserI {
      * **Rollback:** Spring manejará el rollback de forma automática si se lanza una excepción no verificada (como una
      * `IllegalStateException` o `RuntimeException`). De este modo, si algo falla, se asegura la consistencia de la base de datos.
      * <br><br>
+     *
      * @param userDTO el objeto {@link UserDTO} que contiene los datos del nuevo usuario.
      * @return un objeto {@link UserDTO} que representa al usuario creado.
      * @throws IllegalStateException si el usuario ya existe en la base de datos (por email).
-     * @throws ValidationException  si las validaciones de los campos del usuario no son exitosas.
-     * @throws ValidationException si las validaciones de los campos del usuario no son exitosas.
-     *
+     * @throws ValidationException   si las validaciones de los campos del usuario no son exitosas.
+     * @throws ValidationException   si las validaciones de los campos del usuario no son exitosas.
      * @see UserDTO
      * @see ValidationException
      * @see Transactional
@@ -393,15 +393,15 @@ public class SUser implements SUserI {
 
     /**
      * Elimina un usuario de la base de datos.
-     *  <br><br>
+     * <br><br>
      * Este método permite eliminar un usuario de la base de datos utilizando su ID. Primero, se verifica
      * si el usuario existe. Si el usuario existe, se elimina de la base de datos. Si no se encuentra
      * el usuario con el ID proporcionado, se lanza una excepción indicando que el usuario no existe.
-     *  <br><br>
+     * <br><br>
      * **Transacciones (Spring Boot):** Este método también está marcado con `@Transactional`, lo que garantiza
      * que si ocurre algún error durante la eliminación (por ejemplo, si el usuario no existe o si hay un fallo
      * en la base de datos), la transacción será revertida y no se eliminará el usuario.
-     *  <br><br>
+     * <br><br>
      * **Rollback:** Al igual que los otros métodos, si ocurre una excepción de tipo `RuntimeException`, Spring
      * realizará un rollback automáticamente para mantener la integridad de los datos.
      *
