@@ -59,7 +59,7 @@ public class SecurityConfiguration {
         }
 
         return httpSec
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(Customizer.withDefaults()) // Enable CSRF protection
                 .cors(c -> c.configurationSource(corsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
                     authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
