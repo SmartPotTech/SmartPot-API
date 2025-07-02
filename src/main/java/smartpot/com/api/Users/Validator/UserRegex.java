@@ -16,7 +16,7 @@ public class UserRegex {
      * incluyendo caracteres acentuados y especiales. La longitud debe ser de 4 a 15 caracteres.
      * </p>
      */
-    public static final String NAME_PATTERN = "^[a-zA-ZÁ-ÿá-ÿ]{4,15}$";
+    public static final String NAME_PATTERN = "^[a-zA-ZÁ-Úá-ú]{4,15}$";
 
     /**
      * Expresión regular para validar el apellido de un usuario.
@@ -25,7 +25,7 @@ public class UserRegex {
      * incluyendo caracteres acentuados y especiales. La longitud debe ser de 4 a 30 caracteres.
      * </p>
      */
-    public static final String LASTNAME_PATTERN = "^[a-zA-ZÁ-ÿá-ÿ]{4,30}$";
+    public static final String LASTNAME_PATTERN = "^[a-zA-ZÁ-Úá-ú]{4,30}$";
 
     /**
      * Expresión regular para validar la dirección de correo electrónico de un usuario.
