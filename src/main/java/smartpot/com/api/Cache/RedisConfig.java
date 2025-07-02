@@ -1,5 +1,6 @@
 package smartpot.com.api.Cache;
 
+import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
@@ -57,7 +58,7 @@ public class RedisConfig {
         redisStandaloneConfiguration.setUsername(username);
         redisStandaloneConfiguration.setPassword(RedisPassword.of(password));
 
-        GenericObjectPoolConfig<RedisConnection> poolConfig = new GenericObjectPoolConfig<>();
+        GenericObjectPoolConfig<StatefulConnection<?, ?>> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxTotal(maxActive);
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMinIdle(minIdle);
