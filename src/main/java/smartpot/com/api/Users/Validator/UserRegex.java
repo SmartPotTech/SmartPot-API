@@ -34,7 +34,7 @@ public class UserRegex {
      * No se permiten espacios y debe haber un solo carácter '@' separando el nombre del dominio.
      * </p>
      */
-    public static final String EMAIL_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+    public static final String EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}$";
 
     /**
      * Expresión regular para validar la contraseña de un usuario.
