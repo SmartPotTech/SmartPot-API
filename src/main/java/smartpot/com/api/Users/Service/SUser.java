@@ -362,28 +362,29 @@ public class SUser implements SUserI {
     @Transactional
     @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
+        log.info(updatedUser.toString());
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
-                .map(dto -> {
-                    existingUser.setName(dto.getName() != null ? dto.getName() : existingUser.getName());
-                    existingUser.setLastname(dto.getLastname() != null ? dto.getLastname() : existingUser.getLastname());
-                    existingUser.setEmail(dto.getEmail() != null ? dto.getEmail() : existingUser.getEmail());
-                    existingUser.setPassword(dto.getPassword() != null ? dto.getPassword() : existingUser.getPassword());
-                    existingUser.setRole(dto.getRole() != null ? dto.getRole() : existingUser.getRole());
+                .map(updated -> {
+                    existingUser.setName(updated.getName() != null ? updated.getName() : existingUser.getName());
+                    existingUser.setLastname(updated.getLastname() != null ? updated.getLastname() : existingUser.getLastname());
+                    existingUser.setEmail(updated.getEmail() != null ? updated.getEmail() : existingUser.getEmail());
+                    existingUser.setPassword(updated.getPassword() != null ? updated.getPassword() : existingUser.getPassword());
+                    existingUser.setRole(updated.getRole() != null ? updated.getRole() : existingUser.getRole());
                     return existingUser;
                 })
-                .map(dto -> {
-                    validatorUser.validateName(dto.getName());
-                    validatorUser.validateLastname(dto.getLastname());
-                    validatorUser.validateEmail(dto.getEmail());
-                    validatorUser.validatePassword(dto.getPassword());
-                    validatorUser.validateRole(dto.getRole());
+                .map(existing -> {
+                    validatorUser.validateName(existing.getName());
+                    validatorUser.validateLastname(existing.getLastname());
+                    validatorUser.validateEmail(existing.getEmail());
+                    validatorUser.validatePassword(existing.getPassword());
+                    validatorUser.validateRole(existing.getRole());
                     if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
 
                     validatorUser.Reset();
-                    return dto;
+                    return existing;
                 })
                 .map(mapperUser::toEntity)
                 .map(repositoryUser::save)

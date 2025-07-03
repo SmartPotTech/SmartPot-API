@@ -94,7 +94,7 @@ public class JwtService implements JwtServiceI {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
                 .map(validUser -> {
                     try {
-                        return serviceUser.UpdateUser(validUser.getId(), validUser);
+                        return serviceUser.UpdateUser(validUser.getId(), reqUser);
                     } catch (Exception e) {
                         throw new ValidationException(e);
                     }
