@@ -4,6 +4,8 @@ import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,12 +33,12 @@ import java.util.stream.Collectors;
  * Esta clase implementa los métodos de servicio para la gestión de usuarios.
  * Incluye la validación de campos y la interacción con el repositorio de usuarios.
  */
-@Slf4j
 @Data
 @Builder
 @Service
 public class SUser implements SUserI {
 
+    //private static final Log log = LogFactory.getLog(SUser.class);
     private final RUser repositoryUser;
     private final MUser mapperUser;
     private final VUserI validatorUser;
@@ -362,7 +364,6 @@ public class SUser implements SUserI {
     @Transactional
     @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
-        log.info(updatedUser.toString());
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
                 .map(updated -> {
@@ -379,6 +380,28 @@ public class SUser implements SUserI {
                     validatorUser.validateEmail(existing.getEmail());
                     validatorUser.validatePassword(existing.getPassword());
                     validatorUser.validateRole(existing.getRole());
+                    if (!validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
+                    }
+
+                    validatorUser.Reset();
+                    return existing;
+                })
+                .map(mapperUser::toEntity)
+                .map(repositoryUser::save)
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
+    }
+
+    public UserDTO UpdateUserPassword(UserDTO user, String password) throws Exception {
+        //log.info("UpdateUserPassword: " + user.getId() + " - " + password);
+        return Optional.of(user)
+                .map(existing -> {
+                    user.setPassword(password != null ? password : user.getPassword());
+                    return user;
+                })
+                .map(existing -> {
+                    validatorUser.validatePassword(existing.getPassword());
                     if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }

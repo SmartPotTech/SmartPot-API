@@ -7,7 +7,7 @@ public interface JwtServiceI {
 
     UserDTO validateAuthHeader(String token) throws Exception;
 
-    String resetPassword(UserDTO reqUser) throws Exception;
+    String resetPassword(UserDTO reqUser, String email) throws Exception;
 
     Boolean forgotPassword(String email) throws Exception;
 }

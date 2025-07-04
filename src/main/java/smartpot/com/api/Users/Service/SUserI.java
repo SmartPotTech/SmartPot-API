@@ -104,4 +104,13 @@ public interface SUserI extends UserDetailsService {
      */
     String DeleteUser(String id) throws Exception;
 
+    /**
+     * Actualiza únicamente la contraseña del usuario, sin verificar los demás datos.
+     *
+     * @param user     El objeto {@link UserDTO} del usuario que va a actualizar.
+     * @param password Contraseña en texto claro.
+     * @return el objeto {@link UserDTO} con los datos del usuario actualizado.
+     * @throws Exception si no se encuentra el usuario o si ocurre un error durante la actualización.
+     */
+    UserDTO UpdateUserPassword(UserDTO user, String password) throws Exception;
 }

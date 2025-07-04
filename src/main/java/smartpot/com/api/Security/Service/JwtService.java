@@ -5,8 +5,11 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.validation.ValidationException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ import java.util.Optional;
 @Service
 public class JwtService implements JwtServiceI {
 
+    //private static final Log log = LogFactory.getLog(JwtService.class);
     private final SUserI serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
@@ -90,11 +94,15 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public String resetPassword(UserDTO reqUser) throws Exception {
-        return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
+    public String resetPassword(UserDTO user, String email) throws Exception {
+        return Optional.of(serviceUser.getUserByEmail(email))
                 .map(validUser -> {
+                    //log.info("PasswordReset: " + validUser.getId() + " - " + validUser.getPassword() + " <- " + user.getOldPassword());
                     try {
-                        return serviceUser.UpdateUser(validUser.getId(), reqUser);
+                        if ( !new BCryptPasswordEncoder().matches(user.getOldPassword(), validUser.getPassword())) {
+                            throw new ValidationException("Passwords do not match.");
+                        }
+                        return serviceUser.UpdateUserPassword(validUser, user.getPassword());
                     } catch (Exception e) {
                         throw new ValidationException(e);
                     }
