@@ -393,6 +393,29 @@ public class SUser implements SUserI {
                 .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
     }
 
+    /**
+     * Actualiza la contraseña de un usuario en la base de datos.
+     * <br><br>
+     * Este método permite actualizar la contraseña de un usuario existente en la base de datos.
+     * Recibe el objeto del usuario, verifica que la contraseña cumpla con las verificaciones definidas y si es correcta
+     * la actualiza. En caso de que la contraseña nueva no se valida, no la actualiza y lanza una ValidationException.
+     * <br><br>
+     * **Rollback:** Las excepciones que extienden `RuntimeException` causarán un rollback automático, mientras que
+     * las excepciones comprobadas, como `ValidationException`, no harán que la transacción se revierta a menos que se
+     * indique explícitamente lo contrario.
+     *
+     * @param user el objeto {@link UserDTO} que contiene los nuevos valores para el usuario
+     * @param password el identificador del usuario a actualizar.
+     * @return un objeto {@link UserDTO} con la información actualizada del usuario.
+     * @throws Exception           si el usuario no se pudo actualizar debido a algún error general.
+     * @throws ValidationException si alguno de los campos del usuario proporcionado no es válido según las reglas de validación.
+     * @see UserDTO
+     * @see ValidationException
+     * @see Transactional
+     **/
+    @Override
+    @Transactional
+    @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUserPassword(UserDTO user, String password) throws Exception {
         //log.info("UpdateUserPassword: " + user.getId() + " - " + password);
         return Optional.of(user)

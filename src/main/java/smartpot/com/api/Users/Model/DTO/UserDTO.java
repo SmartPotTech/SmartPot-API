@@ -35,11 +35,6 @@ public class UserDTO implements Serializable {
             example = "Password123@")
     private String password;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @Schema(description = "Contraseña antigua del usuario. Este campo es obligatorio para actualizar la contraseña y debe ser segura.",
-            example = "Password123@")
-    private String oldPassword;
-
     @Schema(description = "Rol asignado al usuario. Este campo define los permisos del usuario en el sistema. Ejemplo de valores: 'USER', 'ADMIN'.",
             example = "USER")
     private String role;

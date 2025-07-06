@@ -94,14 +94,14 @@ public class JwtService implements JwtServiceI {
     }
 
     @Override
-    public String resetPassword(UserDTO user, String email) throws Exception {
+    public String resetPassword(UserDTO user, String email, String resetToken) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(email))
                 .map(validUser -> {
-                    //log.info("PasswordReset: " + validUser.getId() + " - " + validUser.getPassword() + " <- " + user.getOldPassword());
                     try {
-                        if ( !new BCryptPasswordEncoder().matches(user.getOldPassword(), validUser.getPassword())) {
-                            throw new ValidationException("Passwords do not match.");
-                        }
+                        // ! Warning: This implementation of JwtServiceI don't validate the Reset-Token header
+                        // Validate resetToken
+                        // if valid update
+                        // else throw new ValidationException("Invalid Token")
                         return serviceUser.UpdateUserPassword(validUser, user.getPassword());
                     } catch (Exception e) {
                         throw new ValidationException(e);

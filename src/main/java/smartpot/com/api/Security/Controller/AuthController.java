@@ -98,9 +98,7 @@ public class AuthController {
     )
     public ResponseEntity<?> resetPassword(@RequestBody UserDTO reqUser, @RequestHeader("Authorization") String token, @RequestHeader("Reset-Token") String resetToken) {
         try {
-            // Validate: reset password match jwt information
-            // if ( !jwtService.validateAuthHeader(token).getEmail() == resetToken.user ) { se pudrió IDK }
-            return new ResponseEntity<>(new TokenResponse(jwtService.resetPassword(reqUser, jwtService.validateAuthHeader(token).getEmail())), HttpStatus.OK);
+            return new ResponseEntity<>(new TokenResponse(jwtService.resetPassword(reqUser, jwtService.validateAuthHeader(token).getEmail(), resetToken)), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al restablecer contraseña [" + e.getMessage() + "]", HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
         }
