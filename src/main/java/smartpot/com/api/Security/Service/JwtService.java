@@ -56,6 +56,13 @@ public class JwtService implements JwtServiceI {
 
     }
 
+    @Override
+    public String Register(UserDTO reqUser) throws Exception {
+        return Optional.ofNullable(serviceUser.CreateUser(reqUser))
+                .map(user -> generateToken(reqUser.getId(), user.getEmail()))
+                .orElseThrow(() -> new Exception("User already registered."));
+    }
+
     private String generateToken(String id, String email) {
         // TODO: Refine token (email != subject)
         Map<String, Object> claims = new HashMap<>();
