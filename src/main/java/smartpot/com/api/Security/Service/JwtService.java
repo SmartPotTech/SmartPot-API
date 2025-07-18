@@ -12,18 +12,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Exception.EncryptionException;
 import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
 import smartpot.com.api.Mail.Service.EmailService;
 import smartpot.com.api.Mail.Validator.EmailValidatorI;
+import smartpot.com.api.Security.Mapper.MResetToken;
+import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Service.SUserI;
-
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.SecureRandom;
 import java.util.*;
 
 @Service
@@ -33,14 +31,13 @@ public class JwtService implements JwtServiceI {
     private final SUserI serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
-    private final SecureRandom random = new SecureRandom();
+    private final EncryptionServiceI encryptionService;
+    private final MResetToken resetTokenMapper;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
     @Value("${application.security.jwt.expiration}")
     private long expiration;
-    @Value("${application.security.aes.key}")
-    private String aesKey;
 
     /**
      * Constructor que inyecta las dependencias del servicio.
@@ -48,10 +45,12 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator) {
+    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService, MResetToken resetTokenMapper) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
         this.emailValidator = emailValidator;
+        this.encryptionService = encryptionService;
+        this.resetTokenMapper = resetTokenMapper;
     }
 
     @Override
@@ -80,12 +79,13 @@ public class JwtService implements JwtServiceI {
 
     @Override
     public UserDTO validateAuthHeader(String authHeader) throws Exception {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new Exception("El encabezado de autorización es inválido. Se esperaba 'Bearer <token>'.");
+        if (authHeader == null || !authHeader.startsWith("SmartPot-OAuth ")) {
+            throw new Exception("El encabezado de autorización es inválido. Se esperaba 'SmartPot-OAuth <token>'.");
         }
 
         String token = authHeader.split(" ")[1];
-        token = aes256decrypt(token);
+        token = encryptionService.decrypt(token);
+
         String email = extractEmail(token);
         UserDetails user = serviceUser.loadUserByUsername(email);
         if (email == null) {
@@ -106,8 +106,12 @@ public class JwtService implements JwtServiceI {
         return Optional.of(serviceUser.getUserByEmail(email))
                 .map(validUser -> {
                     try {
-                        String token = aes256decrypt(resetToken);
-                        if (!extractEmail(token).equals(validUser.getEmail())) {
+                        String decrypted = encryptionService.decrypt(resetToken);
+                        ResetTokenDTO resetTokenDTO = resetTokenMapper.convertToDTO(decrypted);
+
+                        log.info("ResetToken decrypted: " + resetTokenDTO);
+
+                        if (!extractEmail(resetTokenDTO.getToken()).equals(validUser.getEmail())) {
                             throw new ValidationException("Provided reset token isn't valid");
                         }
                         return serviceUser.UpdateUserPassword(validUser, user.getPassword());
@@ -133,6 +137,17 @@ public class JwtService implements JwtServiceI {
                         return generateToken(validUser.getId(), validUser.getEmail());
                     } catch (Exception e) {
                         throw new ValidationException(e);
+                    }
+                })
+                .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration) ))
+                .map(resetTokenMapper::convertToJson)
+                .map(json -> {
+                    try {
+                        String encrypted = encryptionService.encrypt(json);
+                        log.info("Reset Token Generated" + encrypted);
+                        return encrypted;
+                    } catch (Exception e) {
+                        throw new EncryptionException("Conversion to json or encryption failed: " + e);
                     }
                 })
                 .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null, "true"))
@@ -168,7 +183,7 @@ public class JwtService implements JwtServiceI {
                 .signWith(getSignKey())
                 //.signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
-        return aes256Encrypt(token);
+        return encryptionService.encrypt(token);
     }
 
     private SecretKey getSignKey() {
@@ -194,50 +209,5 @@ public class JwtService implements JwtServiceI {
 
     private String extractEmail(String token) {
         return extractAllClaims(token).get("email", String.class);
-    }
-
-    private SecretKey getSecretKey() {
-        byte[] decoded = Base64.getDecoder().decode(aesKey);
-        if (decoded.length != 32) {
-            throw new IllegalArgumentException("La clave debe tener 256 bits (32 bytes)");
-        }
-        return new SecretKeySpec(decoded, "AES");
-    }
-
-    private String aes256Encrypt(String data) throws Exception {
-        // get salt
-        byte[] salt = new byte[8];
-        random.nextBytes(salt);
-        String saltedData = Base64.getEncoder().encodeToString(salt) + ":" + data;
-
-        byte[] iv = new byte[12];
-        random.nextBytes(iv);
-        SecretKey key = getSecretKey(); // get encryption key
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, iv));
-
-        byte[] encrypted = cipher.doFinal(saltedData.getBytes());
-
-        byte[] output = new byte[iv.length + encrypted.length];
-        System.arraycopy(iv, 0, output, 0, iv.length);
-        System.arraycopy(encrypted, 0, output, iv.length, encrypted.length);
-        return Base64.getUrlEncoder().encodeToString(output);
-    }
-
-    public String aes256decrypt(String encryptedData) throws Exception {
-        byte[] decoded = Base64.getUrlDecoder().decode(encryptedData);
-
-        byte[] iv = new byte[12];
-        byte[] cipherText = new byte[decoded.length - 12];
-        System.arraycopy(decoded, 0, iv, 0, 12);
-        System.arraycopy(decoded, 12, cipherText, 0, cipherText.length);
-
-        SecretKey key = getSecretKey();
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
-
-        String result = new String(cipher.doFinal(cipherText));
-        // remove salt
-        return result.split(":", 2)[1];
     }
 }
