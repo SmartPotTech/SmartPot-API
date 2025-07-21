@@ -17,7 +17,6 @@ import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
 import smartpot.com.api.Mail.Service.EmailService;
 import smartpot.com.api.Mail.Validator.EmailValidatorI;
-import smartpot.com.api.Security.Mapper.MResetToken;
 import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Service.SUserI;
@@ -32,7 +31,6 @@ public class JwtService implements JwtServiceI {
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
     private final EncryptionServiceI encryptionService;
-    private final MResetToken resetTokenMapper;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -45,12 +43,11 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService, MResetToken resetTokenMapper) {
+    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
         this.emailValidator = emailValidator;
         this.encryptionService = encryptionService;
-        this.resetTokenMapper = resetTokenMapper;
     }
 
     @Override
@@ -107,7 +104,7 @@ public class JwtService implements JwtServiceI {
                 .map(validUser -> {
                     try {
                         String decrypted = encryptionService.decrypt(resetToken);
-                        ResetTokenDTO resetTokenDTO = resetTokenMapper.convertToDTO(decrypted);
+                        ResetTokenDTO resetTokenDTO = ResetTokenDTO.convertToDTO(decrypted);
 
                         log.info("ResetToken decrypted: " + resetTokenDTO);
 
@@ -140,10 +137,9 @@ public class JwtService implements JwtServiceI {
                     }
                 })
                 .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration) ))
-                .map(resetTokenMapper::convertToJson)
-                .map(json -> {
+                .map(token -> {
                     try {
-                        String encrypted = encryptionService.encrypt(json);
+                        String encrypted = encryptionService.encrypt(ResetTokenDTO.convertToJson(token));
                         log.info("Reset Token Generated" + encrypted);
                         return encrypted;
                     } catch (Exception e) {
