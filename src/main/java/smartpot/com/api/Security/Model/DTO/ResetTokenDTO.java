@@ -3,10 +3,12 @@ package smartpot.com.api.Security.Model.DTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Data
+@NoArgsConstructor
 public class ResetTokenDTO {
     private String token;
     private String operation;
