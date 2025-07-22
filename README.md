@@ -3,6 +3,10 @@
 ## Deployment
 
 [![CI/CD Pipeline for Deployment](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml)
+[![CodeQL Advanced](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml)
+[![Dependabot Updates](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/dependabot/dependabot-updates)
+[![Microsoft Defender For Devops](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/defender-for-devops.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/defender-for-devops.yml)
+[![Publish Package](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml)
 
 ### 1. Compilación de la Aplicación
 
