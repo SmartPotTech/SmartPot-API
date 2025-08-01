@@ -5,8 +5,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.validation.ValidationException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,7 +24,6 @@ import java.util.*;
 @Service
 public class JwtService implements JwtServiceI {
 
-    private static final Log log = LogFactory.getLog(JwtService.class);
     private final SUserI serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
@@ -104,7 +101,6 @@ public class JwtService implements JwtServiceI {
                 .map(validUser -> {
                     try {
                         String decrypted = encryptionService.decrypt(resetToken);
-                        log.info("ResetToken decrypted: " + decrypted);
                         ResetTokenDTO resetTokenDTO = ResetTokenDTO.convertToDTO(decrypted);
 
                         if (!validateResetToken(resetTokenDTO)) {
@@ -139,9 +135,7 @@ public class JwtService implements JwtServiceI {
                 .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration) ))
                 .map(token -> {
                     try {
-                        String encrypted = encryptionService.encrypt(ResetTokenDTO.convertToJson(token));
-                        log.info("Reset Token Generated: " + encrypted);
-                        return encrypted;
+                        return encryptionService.encrypt(ResetTokenDTO.convertToJson(token));
                     } catch (Exception e) {
                         throw new EncryptionException("Conversion to json or encryption failed: " + e);
                     }
@@ -175,10 +169,7 @@ public class JwtService implements JwtServiceI {
         if (!validateToken(token, serviceUser.loadUserByUsername(extractEmail(token)))) {
             return false;
         }
-        if (resetTokenDTO.getExpiration().before(new Date())) {
-            return false;
-        }
-        return true;
+        return !resetTokenDTO.getExpiration().before(new Date());
     }
 
     private String createToken(Map<String, Object> claims, String username) throws Exception {
