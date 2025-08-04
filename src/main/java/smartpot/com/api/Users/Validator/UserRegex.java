@@ -28,15 +28,6 @@ public class UserRegex {
     public static final String LASTNAME_PATTERN = "^[a-zA-ZÁ-Úá-ú]{4,30}$";
 
     /**
-     * Expresión regular para validar la dirección de correo electrónico de un usuario.
-     * <p>
-     * El correo electrónico debe seguir el formato estándar: algo@dominio.com.
-     * No se permiten espacios y debe haber un solo carácter '@' separando el nombre del dominio.
-     * </p>
-     */
-    public static final String EMAIL_PATTERN = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
-
-    /**
      * Expresión regular para validar la contraseña de un usuario.
      * <p>
      * La contraseña debe cumplir con los siguientes requisitos:

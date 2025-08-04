@@ -54,6 +54,33 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/register")
+    @Operation(
+            summary = "Registro de usuario",
+            description = "Permite registrar un nuevo usuario proporcionando su correo electrónico y contraseña. Retorna un token JWT si el registro es exitoso o un error si el usuario ya existe.",
+            responses = {
+                    @ApiResponse(
+                            description = "Registro exitoso",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))
+                    ),
+                    @ApiResponse(
+                            description = "Usuario ya existe",
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                    )
+            }
+    )
+    public ResponseEntity<?> register(@RequestBody UserDTO reqUser) {
+        try {
+            return new ResponseEntity<>(new TokenResponse(jwtService.Register(reqUser)), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(
+                    new ErrorResponse("Error registering user: " + e.getMessage(), HttpStatus.BAD_REQUEST.value()),
+                    HttpStatus.BAD_REQUEST
+            );
+        }
+    }
     @PostMapping("/password/forgot")
     @Operation(
             summary = "Solicitud de recuperación de contraseña",

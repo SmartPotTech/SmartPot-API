@@ -86,7 +86,7 @@ public class SUser implements SUserI {
      */
     @Override
     @Transactional
-    @CachePut(value = "users", key = "#userDTO.id")
+    @CachePut(value = "users", key = "'email_' + #userDTO.email")
     public UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException {
         return Optional.of(userDTO)
                 .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
@@ -364,6 +364,7 @@ public class SUser implements SUserI {
     @Transactional
     @CachePut(value = "users", key = "'id:'+#id")
     public UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception {
+        //noinspection SpringCacheableMethodCallsInspection
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
                 .map(updated -> {
@@ -462,6 +463,7 @@ public class SUser implements SUserI {
     @Transactional
     @CacheEvict(value = "users", key = "'id_'+#id")
     public String DeleteUser(String id) throws Exception {
+        //noinspection SpringCacheableMethodCallsInspection
         return Optional.of(getUserById(id))
                 .map(user -> {
                     repositoryUser.deleteById(new ObjectId(user.getId()));

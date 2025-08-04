@@ -1,5 +1,7 @@
 package smartpot.com.api.Users.Validator;
 
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
 import smartpot.com.api.Users.Model.Entity.UserRole;
@@ -137,7 +139,9 @@ public class VUser implements VUserI {
      */
     @Override
     public void validateEmail(String email) {
-        if (email == null || !Pattern.matches(EMAIL_PATTERN, email)) {
+        try {
+            new InternetAddress(email).validate();
+        } catch (AddressException e) {
             valid = false;
             errors.add("El correo electrónico no es válido");
         }
