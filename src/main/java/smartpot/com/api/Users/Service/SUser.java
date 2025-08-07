@@ -4,6 +4,8 @@ import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,12 +33,12 @@ import java.util.stream.Collectors;
  * Esta clase implementa los métodos de servicio para la gestión de usuarios.
  * Incluye la validación de campos y la interacción con el repositorio de usuarios.
  */
-@Slf4j
 @Data
 @Builder
 @Service
 public class SUser implements SUserI {
 
+    //private static final Log log = LogFactory.getLog(SUser.class);
     private final RUser repositoryUser;
     private final MUser mapperUser;
     private final VUserI validatorUser;
@@ -365,26 +367,71 @@ public class SUser implements SUserI {
         //noinspection SpringCacheableMethodCallsInspection
         UserDTO existingUser = getUserById(id);
         return Optional.of(updatedUser)
-                .map(dto -> {
-                    existingUser.setName(dto.getName() != null ? dto.getName() : existingUser.getName());
-                    existingUser.setLastname(dto.getLastname() != null ? dto.getLastname() : existingUser.getLastname());
-                    existingUser.setEmail(dto.getEmail() != null ? dto.getEmail() : existingUser.getEmail());
-                    existingUser.setPassword(dto.getPassword() != null ? dto.getPassword() : existingUser.getPassword());
-                    existingUser.setRole(dto.getRole() != null ? dto.getRole() : existingUser.getRole());
+                .map(updated -> {
+                    existingUser.setName(updated.getName() != null ? updated.getName() : existingUser.getName());
+                    existingUser.setLastname(updated.getLastname() != null ? updated.getLastname() : existingUser.getLastname());
+                    existingUser.setEmail(updated.getEmail() != null ? updated.getEmail() : existingUser.getEmail());
+                    existingUser.setPassword(updated.getPassword() != null ? updated.getPassword() : existingUser.getPassword());
+                    existingUser.setRole(updated.getRole() != null ? updated.getRole() : existingUser.getRole());
                     return existingUser;
                 })
-                .map(dto -> {
-                    validatorUser.validateName(dto.getName());
-                    validatorUser.validateLastname(dto.getLastname());
-                    validatorUser.validateEmail(dto.getEmail());
-                    validatorUser.validatePassword(dto.getPassword());
-                    validatorUser.validateRole(dto.getRole());
+                .map(existing -> {
+                    validatorUser.validateName(existing.getName());
+                    validatorUser.validateLastname(existing.getLastname());
+                    validatorUser.validateEmail(existing.getEmail());
+                    validatorUser.validatePassword(existing.getPassword());
+                    validatorUser.validateRole(existing.getRole());
                     if (!validatorUser.isValid()) {
                         throw new ValidationException(validatorUser.getErrors().toString());
                     }
 
                     validatorUser.Reset();
-                    return dto;
+                    return existing;
+                })
+                .map(mapperUser::toEntity)
+                .map(repositoryUser::save)
+                .map(mapperUser::toDTO)
+                .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
+    }
+
+    /**
+     * Actualiza la contraseña de un usuario en la base de datos.
+     * <br><br>
+     * Este método permite actualizar la contraseña de un usuario existente en la base de datos.
+     * Recibe el objeto del usuario, verifica que la contraseña cumpla con las verificaciones definidas y si es correcta
+     * la actualiza. En caso de que la contraseña nueva no se valida, no la actualiza y lanza una ValidationException.
+     * <br><br>
+     * **Rollback:** Las excepciones que extienden `RuntimeException` causarán un rollback automático, mientras que
+     * las excepciones comprobadas, como `ValidationException`, no harán que la transacción se revierta a menos que se
+     * indique explícitamente lo contrario.
+     *
+     * @param user el objeto {@link UserDTO} que contiene los nuevos valores para el usuario
+     * @param password el identificador del usuario a actualizar.
+     * @return un objeto {@link UserDTO} con la información actualizada del usuario.
+     * @throws Exception           si el usuario no se pudo actualizar debido a algún error general.
+     * @throws ValidationException si alguno de los campos del usuario proporcionado no es válido según las reglas de validación.
+     * @see UserDTO
+     * @see ValidationException
+     * @see Transactional
+     **/
+    @Override
+    @Transactional
+    @CachePut(value = "users", key = "'id:'+#id")
+    public UserDTO UpdateUserPassword(UserDTO user, String password) throws Exception {
+        //log.info("UpdateUserPassword: " + user.getId() + " - " + password);
+        return Optional.of(user)
+                .map(existing -> {
+                    user.setPassword(password != null ? password : user.getPassword());
+                    return user;
+                })
+                .map(existing -> {
+                    validatorUser.validatePassword(existing.getPassword());
+                    if (!validatorUser.isValid()) {
+                        throw new ValidationException(validatorUser.getErrors().toString());
+                    }
+
+                    validatorUser.Reset();
+                    return existing;
                 })
                 .map(mapperUser::toEntity)
                 .map(repositoryUser::save)

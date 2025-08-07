@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import smartpot.com.api.Security.Service.JwtService;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Service.SUser;
 
 import java.io.IOException;
 
@@ -20,13 +19,10 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     // TODO: implement role for jwt
-
     private final JwtService jwtService;
-    private final SUser serviceUser;
 
-    public JwtAuthFilter(JwtService jwtService, SUser serviceUser) {
+    public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.serviceUser = serviceUser;
     }
 
     @Override
@@ -35,7 +31,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
         String authHeader = request.getHeader("Authorization");
         try {
             UserDTO user = jwtService.validateAuthHeader(authHeader);
@@ -43,8 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     user, user.getPassword(), null /* user.getAuthorities() */);
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         filterChain.doFilter(request, response);
     }
 }

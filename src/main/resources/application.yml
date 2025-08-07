@@ -13,6 +13,9 @@ application:
     public:
       # Rutas públicas que no requieren autenticación
       routes: ${SECURITY_PUBLIC_ROUTES}
+    aes:
+      # Clave secreta para la encriptación aes 256
+      key: ${SECURITY_AES_KEY}
   # Título de la aplicación
   title: ${TITLE}
   # Versión de la aplicación
