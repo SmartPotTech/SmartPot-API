@@ -60,6 +60,17 @@ public class JwtService implements JwtServiceI {
                 })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
     }
+
+    /**
+     * @param reqUser
+     * @return
+     * @throws Exception
+     */
+    @Override
+    public String Register(UserDTO reqUser) throws Exception {
+        return "";
+    }
+
     private String generateToken(String id, String email) throws Exception {
         // TODO: Refine token (email != subject)
         Map<String, Object> claims = new HashMap<>();
