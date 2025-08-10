@@ -10,18 +10,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Exception.EncryptionException;
 import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
 import smartpot.com.api.Mail.Service.EmailService;
 import smartpot.com.api.Mail.Validator.EmailValidatorI;
+import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Service.SUserI;
-
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class JwtService implements JwtServiceI {
@@ -29,6 +27,7 @@ public class JwtService implements JwtServiceI {
     private final SUserI serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
+    private final EncryptionServiceI encryptionService;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -41,29 +40,38 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator) {
+    public JwtService(SUserI serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
         this.emailValidator = emailValidator;
+        this.encryptionService = encryptionService;
     }
 
     @Override
     public String Login(UserDTO reqUser) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
                 .filter(userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
-                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(validUser -> {
+                    try {
+                        return generateToken(validUser.getId(), validUser.getEmail());
+                    } catch (Exception e) {
+                        throw new ValidationException(e);
+                    }
+                })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
-
     }
 
+    /**
+     * @param reqUser
+     * @return
+     * @throws Exception
+     */
     @Override
     public String Register(UserDTO reqUser) throws Exception {
-        return Optional.ofNullable(serviceUser.CreateUser(reqUser))
-                .map(user -> generateToken(reqUser.getId(), user.getEmail()))
-                .orElseThrow(() -> new Exception("User already registered."));
+        return "";
     }
 
-    private String generateToken(String id, String email) {
+    private String generateToken(String id, String email) throws Exception {
         // TODO: Refine token (email != subject)
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", id);
@@ -75,11 +83,13 @@ public class JwtService implements JwtServiceI {
 
     @Override
     public UserDTO validateAuthHeader(String authHeader) throws Exception {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new Exception("El encabezado de autorización es inválido. Se esperaba 'Bearer <token>'.");
+        if (authHeader == null || !authHeader.startsWith("SmartPot-OAuth ")) {
+            throw new Exception("El encabezado de autorización es inválido. Se esperaba 'SmartPot-OAuth <token>'.");
         }
 
         String token = authHeader.split(" ")[1];
+        token = encryptionService.decrypt(token);
+
         String email = extractEmail(token);
         UserDetails user = serviceUser.loadUserByUsername(email);
         if (email == null) {
@@ -93,27 +103,53 @@ public class JwtService implements JwtServiceI {
         UserDTO finalUser = serviceUser.getUserByEmail(email);
         finalUser.setPassword("");
         return finalUser;
-
     }
 
     @Override
-    public String resetPassword(UserDTO reqUser) throws Exception {
-        return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
+    public String resetPassword(UserDTO user, String email, String resetToken) throws Exception {
+        return Optional.of(serviceUser.getUserByEmail(email))
                 .map(validUser -> {
                     try {
-                        return serviceUser.UpdateUser(validUser.getId(), validUser);
+                        String decrypted = encryptionService.decrypt(resetToken);
+                        ResetTokenDTO resetTokenDTO = ResetTokenDTO.convertToDTO(decrypted);
+
+                        if (!validateResetToken(resetTokenDTO)) {
+                            throw new ValidationException("Provided reset token is not valid");
+                        }
+
+                        return serviceUser.UpdateUserPassword(validUser, user.getPassword());
                     } catch (Exception e) {
                         throw new ValidationException(e);
                     }
                 })
-                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(validUser -> {
+                    try {
+                        return generateToken(validUser.getId(), validUser.getEmail());
+                    } catch (Exception e) {
+                        throw new ValidationException(e);
+                    }
+                })
                 .orElseThrow(() -> new Exception("Credenciales Invalidas"));
     }
 
     @Override
     public Boolean forgotPassword(String email) throws Exception {
         return Optional.of(serviceUser.getUserByEmail(email))
-                .map(validUser -> generateToken(validUser.getId(), validUser.getEmail()))
+                .map(validUser -> {
+                    try {
+                        return generateToken(validUser.getId(), validUser.getEmail());
+                    } catch (Exception e) {
+                        throw new ValidationException(e);
+                    }
+                })
+                .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration) ))
+                .map(token -> {
+                    try {
+                        return encryptionService.encrypt(ResetTokenDTO.convertToJson(token));
+                    } catch (Exception e) {
+                        throw new EncryptionException("Conversion to json or encryption failed: " + e);
+                    }
+                })
                 .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null, "true"))
                 .map(emailService::sendSimpleMail)
                 .map(ValidDTO -> {
@@ -136,12 +172,18 @@ public class JwtService implements JwtServiceI {
         }
         String username = extractUsername(token);
         return userDetails.getUsername().equals(username) && !expirationDate.before(new Date());
-
-
     }
 
-    private String createToken(Map<String, Object> claims, String username) {
-        return Jwts.builder()
+    private Boolean validateResetToken(ResetTokenDTO resetTokenDTO) {
+        String token = encryptionService.decrypt(resetTokenDTO.getToken());
+        if (!validateToken(token, serviceUser.loadUserByUsername(extractEmail(token)))) {
+            return false;
+        }
+        return !resetTokenDTO.getExpiration().before(new Date());
+    }
+
+    private String createToken(Map<String, Object> claims, String username) throws Exception {
+        String token = Jwts.builder()
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
@@ -149,6 +191,7 @@ public class JwtService implements JwtServiceI {
                 .signWith(getSignKey())
                 //.signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
+        return encryptionService.encrypt(token);
     }
 
     private SecretKey getSignKey() {
@@ -175,5 +218,4 @@ public class JwtService implements JwtServiceI {
     private String extractEmail(String token) {
         return extractAllClaims(token).get("email", String.class);
     }
-
 }
