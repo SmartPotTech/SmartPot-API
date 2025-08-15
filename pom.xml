@@ -98,7 +98,7 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
-            <version>0.12.6</version> <!-- JWT core library -->
+            <version>0.12.7</version> <!-- JWT core library -->
         </dependency>
 
         <dependency>
