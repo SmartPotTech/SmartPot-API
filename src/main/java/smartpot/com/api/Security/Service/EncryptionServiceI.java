@@ -11,5 +11,6 @@ import java.security.NoSuchAlgorithmException;
 
 public interface EncryptionServiceI {
     String encrypt(String plainText) throws EncryptionException, NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException;
+
     String decrypt(String cipherText) throws EncryptionException;
 }

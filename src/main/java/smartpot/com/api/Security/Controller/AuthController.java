@@ -81,6 +81,7 @@ public class AuthController {
             );
         }
     }
+
     @PostMapping("/password/forgot")
     @Operation(
             summary = "Solicitud de recuperación de contraseña",

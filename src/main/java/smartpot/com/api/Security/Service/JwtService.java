@@ -18,8 +18,12 @@ import smartpot.com.api.Mail.Validator.EmailValidatorI;
 import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
 import smartpot.com.api.Users.Model.DTO.UserDTO;
 import smartpot.com.api.Users.Service.SUserI;
+
 import javax.crypto.SecretKey;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class JwtService implements JwtServiceI {
@@ -142,7 +146,7 @@ public class JwtService implements JwtServiceI {
                         throw new ValidationException(e);
                     }
                 })
-                .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration) ))
+                .map(token -> new ResetTokenDTO(token, "reset", new Date(System.currentTimeMillis() + expiration)))
                 .map(token -> {
                     try {
                         return encryptionService.encrypt(ResetTokenDTO.convertToJson(token));

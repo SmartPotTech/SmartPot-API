@@ -20,7 +20,8 @@ public class AESEncryptionService implements EncryptionServiceI {
     @Value("${application.security.aes.key}")
     private String aesKey;
 
-    public AESEncryptionService() {}
+    public AESEncryptionService() {
+    }
 
     private SecretKey getSecretKey() {
         byte[] decoded = Base64.getDecoder().decode(aesKey);
@@ -50,7 +51,8 @@ public class AESEncryptionService implements EncryptionServiceI {
             System.arraycopy(iv, 0, output, 0, iv.length);
             System.arraycopy(encrypted, 0, output, iv.length, encrypted.length);
             return Base64.getUrlEncoder().encodeToString(output);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | // if you need more specific errors, catch each one separately
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 // if you need more specific errors, catch each one separately
                  InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
             throw new EncryptionException("Error while encrypting data");
         }
@@ -74,7 +76,8 @@ public class AESEncryptionService implements EncryptionServiceI {
 
             // remove salt
             return result.split(":", 2)[1];
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | // if you need more specific errors, catch each one separately
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 // if you need more specific errors, catch each one separately
                  InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
             throw new EncryptionException("Error while decrypting data");
         }
