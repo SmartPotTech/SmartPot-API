@@ -110,7 +110,7 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.6</version> <!-- JWT support for Jackson (JSON parsing) -->
+            <version>0.12.7</version> <!-- JWT support for Jackson (JSON parsing) -->
         </dependency>
 
         <!-- ===================== Testing Dependencies ===================== -->
