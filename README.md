@@ -1,5 +1,7 @@
 # SmartPot-API
 
+[![wakatime](https://wakatime.com/badge/user/45f93d1b-ca86-4c83-a72b-206ab33d0abb/project/950184a8-5fa5-45eb-bbfe-126402c81529.svg)](https://wakatime.com/badge/user/45f93d1b-ca86-4c83-a72b-206ab33d0abb/project/950184a8-5fa5-45eb-bbfe-126402c81529)
+
 ## Deployment
 
 [![CI/CD Pipeline for Deployment](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/deployment.yml)
