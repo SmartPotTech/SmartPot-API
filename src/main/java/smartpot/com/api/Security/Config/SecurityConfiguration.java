@@ -58,14 +58,17 @@ public class SecurityConfiguration {
         }
 
         return httpSec
-                .csrf(Customizer.withDefaults()) // Enable CSRF protection
-                .cors(cors -> cors.configurationSource(corsConfig))
-                .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
-                    authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
-                    authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
+                .csrf(csrf -> csrf.disable()) // ← Deshabilitar CSRF para APIs REST
+                .cors(cors -> cors.configurationSource(corsConfig)) // ✅ Ya está bien
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
+                    auth.anyRequest().authenticated();
                 })
-                .httpBasic(Customizer.withDefaults())
-                .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(httpBasic -> httpBasic.disable()) // ← Deshabilitar HTTP Basic
+                .formLogin(formLogin -> formLogin.disable())  // ← Deshabilitar form login
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
