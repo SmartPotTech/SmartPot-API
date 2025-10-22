@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import smartpot.com.api.Security.Config.Filters.JwtAuthFilter;
 import smartpot.com.api.Security.Config.headers.CorsConfig;
 import smartpot.com.api.Users.Service.SUser;
-
+import org.springframework.security.config.Customizer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -58,17 +58,15 @@ public class SecurityConfiguration {
         }
 
         return httpSec
-                .csrf(csrf -> csrf.disable()) // ← Deshabilitar CSRF para APIs REST
-                .cors(cors -> cors.configurationSource(corsConfig)) // ✅ Ya está bien
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
-                    auth.anyRequest().authenticated();
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfig))
+                .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
+                    authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
+                    authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
                 })
-                .httpBasic(httpBasic -> httpBasic.disable()) // ← Deshabilitar HTTP Basic
-                .formLogin(formLogin -> formLogin.disable())  // ← Deshabilitar form login
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .httpBasic(Customizer.withDefaults())
+                .formLogin(AbstractHttpConfigurer::disable)
+                .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
