@@ -5,19 +5,8 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title th:text="${title}">API Docs</title>
 </head>
-<body>
-
-<header>
-    <h1 th:text="${title}">SmartPot API</h1>
-    <p th:text="${description}">
-        Documentación de la API REST con Scalar UI
-    </p>
-    <small>v<span th:text="${version}">1.0.0</span></small>
-</header>
-
-<script id="api-reference" th:attr="data-url=${specUrl}"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-
-</body>
+    <body>
+    <script id="api-reference" th:attr="data-url=${specUrl}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    </body>
 </html>
