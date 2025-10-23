@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${title}">API Documentation</title>
+    <title th:text="${title}">SmartPot API Docs</title>
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
     <style>
         body {
@@ -10,12 +10,24 @@
             padding: 0;
             background-color: #121212;
         }
-        redoc {
+        #redoc-container {
             height: 100vh;
         }
     </style>
 </head>
 <body>
-<redoc th:attr="spec-url=${specUrl}"></redoc>
+<div id="redoc-container"></div>
+
+<script th:inline="javascript">
+    const specUrl = /*[[${specUrl}]]*/ '/v3/api-docs';
+    Redoc.init(specUrl, {
+        scrollYOffset: 20,
+        hideDownloadButton: false,
+        theme: {
+            colors: { primary: { main: '#00b894' } },
+            typography: { fontSize: '16px', fontFamily: 'Arial, sans-serif' }
+        }
+    }, document.getElementById('redoc-container'));
+</script>
 </body>
 </html>
