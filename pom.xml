@@ -43,7 +43,6 @@
     <properties>
         <!-- Java version used for the project -->
         <java.version>17</java.version>
-        <micrometer.version>1.15.6</micrometer.version>
     </properties>
 
     <!-- Project dependencies -->
