@@ -121,21 +121,21 @@ spring:
 springdoc:
   api-docs:
     # Habilitar o deshabilitar la generación de la documentación de la API
-    enabled: true
+    enabled: ${SWAGGER_API_DOCS_ENABLED}
   swagger-ui:
     # Profundidad de expansión de modelos en Swagger UI
-    default-model-expand-depth: 1
+    default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL_EXPAND_DEPTH}
     # Tipo de renderizado de modelos (puede ser 'example', 'model', etc.)
-    default-model-rendering: example
+    default-model-rendering: ${SWAGGER_UI_DEFAULT_MODEL_RENDERING}
     # Mostrar o no el ID de la operación en la UI
-    display-operation-id: false
+    display-operation-id: ${SWAGGER_UI_DISPLAY_OPERATION_ID}
     # Mostrar la duración de las solicitudes en la UI de Swagger
-    display-request-duration: true
+    display-request-duration: ${SWAGGER_UI_DISPLAY_REQUEST_DURATION}
     # Expansión por defecto en Swagger UI (puede ser 'list', 'full', etc.)
-    doc-expansion: list
+    doc-expansion: ${SWAGGER_UI_DOC_EXPANSION}
     # Habilitar o deshabilitar la UI de Swagger
-    enabled: true
+    enabled: ${SWAGGER_UI_ENABLED}
     # Path para acceder a Swagger UI
-    path: /
+    path: ${SWAGGER_UI_PATH}
     # URL donde se encuentra la documentación de la API en formato OpenAPI
-    url: /v3/api-docs
+    url: ${SWAGGER_UI_URL}
