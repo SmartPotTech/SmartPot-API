@@ -22,7 +22,7 @@ public class RedocController {
     @Value("${springdoc.api-docs.path:/v3/api-docs}")
     private String specUrl;
 
-    @GetMapping("${springdoc.redoc.path:/redoc}")
+    @GetMapping("${springdoc.redoc.path}")
     public String redoc(Model model) {
         model.addAttribute("specUrl", specUrl);
         model.addAttribute("title", title);
