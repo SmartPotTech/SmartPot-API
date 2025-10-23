@@ -1,141 +1,151 @@
 # Información de la aplicación
 application:
   # Autor de la aplicación
-  author: ${AUTHOR}
+  author: ${AUTHOR:SmartPot Developers}
   # Descripción de la aplicación
-  description: ${DESCRIPTION}
+  description: ${DESCRIPTION:Documentación de la API REST de SmartPot}
   security:
     jwt:
       # Tiempo de expiración del JWT
-      expiration: ${SECURITY_JWT_EXPIRATION}
+      expiration: ${SECURITY_JWT_EXPIRATION:86400000}
       # Clave secreta para la firma del JWT
-      secret-key: ${SECURITY_JWT_SECRET_KEY}
+      secret-key: ${SECURITY_JWT_SECRET_KEY:c8e9b6803afbcfa6edd9569c94c75ff4b144622b0a0570a636dffd62c24a3476}
     public:
       # Rutas públicas que no requieren autenticación
-      routes: ${SECURITY_PUBLIC_ROUTES}
+      routes: ${SECURITY_PUBLIC_ROUTES:/auth/login,/auth/verify}
     aes:
       # Clave secreta para la encriptación aes 256
-      key: ${SECURITY_AES_KEY}
+      key: ${SECURITY_AES_KEY:Z0Yp4Zx5mN3j6rB8VwR2oE9fT2pX1qL6dC5yK7sM0uH3nA8bJ4vF9gT1rD2eW6zP}
   # Título de la aplicación
-  title: ${TITLE}
+  title: ${TITLE:SmartPot API}
   # Versión de la aplicación
-  version: ${VERSION}
+  version: ${VERSION:1.0.0}
 
 # Configuración HTTP
 http:
   header:
     cors:
       # Orígenes permitidos para CORS (Cross-Origin Resource Sharing)
-      allowedOrigins: ${HEADER_CORS_ALLOWED_ORIGINS}
+      allowedOrigins: ${HEADER_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 # Configuración de logging
 logging:
   level:
     com:
       # Nivel de log para la biblioteca 'mongodb'
-      mongodb: ${DEBUGGER_MODE}
+      mongodb: ${DEBUGGER_MODE:INFO}
     io:
       # Nivel de log para la biblioteca 'swagger'
-      swagger: ${DEBUGGER_MODE}
+      swagger: ${DEBUGGER_MODE:INFO}
     org:
       # Niveles de log para diversas bibliotecas dentro de Spring
-      springdoc: ${DEBUGGER_MODE}
-      springframework: ${DEBUGGER_MODE}
-      springframework.data.mongodb: ${DEBUGGER_MODE}
+      springdoc: ${DEBUGGER_MODE:INFO}
+      springframework: ${DEBUGGER_MODE:INFO}
+      springframework.data.mongodb: ${DEBUGGER_MODE:INFO}
     root:
       # Nivel de log para el nivel raíz
-      root: ${DEBUGGER_MODE}
+      root: ${DEBUGGER_MODE:INFO}
     smartpot:
       com:
         api:
           Security:
-            jwt: ${DEBUGGER_MODE}  # Nivel de log para JWT en la API de seguridad
+            jwt: ${DEBUGGER_MODE:INFO}  # Nivel de log para JWT en la API de seguridad
 
 # Configuración de limitación de tasa (Rate Limiting)
 rate:
   limiting:
     # Número máximo de solicitudes permitidas
-    max-requests: ${RATE_LIMITING_MAX_REQUESTS}
+    max-requests: ${RATE_LIMITING_MAX_REQUESTS:5}
     # Rutas públicas que estarán sujetas a la limitación de tasa
-    public-routes: ${RATE_LIMITING_PUBLIC_ROUTES}
+    public-routes: ${RATE_LIMITING_PUBLIC_ROUTES:/swagger-ui/,/v3/api-docs,/swagger-resources/,/webjars/}
     # Ventana de tiempo en la que se aplican las limitaciones
-    time-window: ${RATE_LIMITING_TIME_WINDOW}
+    time-window: ${RATE_LIMITING_TIME_WINDOW:60000}
 
 # Configuración del servidor
 server:
   # Puerto en el que la aplicación escucha
-  port: ${PORT}
+  port: ${PORT:8091}
   tomcat:
     # Tiempo de espera para las conexiones de Tomcat
-    connection-timeout: ${SERVER_TOMCAT_TIMEOUT}
+    connection-timeout: ${SERVER_TOMCAT_TIMEOUT:600000}
 
 # Configuración de Spring
 spring:
   application:
     # Nombre de la aplicación
-    name: ${APP_NAME}
+    name: ${APP_NAME:SmartPot-API}
   cache:
     redis:
       # Configuración de caché en Redis
-      cache-null-values: ${CACHE_NULL_VALUES}
+      cache-null-values: ${CACHE_NULL_VALUES:false}
       # Tiempo de vida de los valores en caché
-      time-to-live: ${CACHE_TIME_TO_LIVE}
+      time-to-live: ${CACHE_TIME_TO_LIVE:300000}
     # Tipo de caché (por ejemplo, redis, ehcache, etc.)
-    type: ${CACHE_TYPE}
+    type: ${CACHE_TYPE:redis}
   data:
     mongodb:
       # URI de conexión a MongoDB
-      uri: ${DATA_CONNECTION_METHOD}://${DATA_SOURCE_USERNAME}:${DATA_SOURCE_PASSWORD}@${DATA_SOURCE_DOMAIN}/${DATA_SOURCE_DB}?${DATA_PARAMS}
+      uri: ${DATA_CONNECTION_METHOD:mongodb}://${DATA_SOURCE_USERNAME:admin}:${DATA_SOURCE_PASSWORD:admin}@${DATA_SOURCE_DOMAIN:db-smartpot:27017}/${DATA_SOURCE_DB:smartpot}?${DATA_PARAMS:authSource=admin&directConnection=true&serverSelectionTimeoutMS=100000&socketTimeoutMS=10000&appName=mongo}
     redis:
       # Configuración de la base de datos Redis
-      database: ${CACHE_DB}
-      host: ${CACHE_HOST}
+      database: ${CACHE_DB:0}
+      host: ${CACHE_HOST:cache-smartpot}
       lettuce:
         pool:
           # Configuración de la conexión en pool para Redis
-          max-active: ${CACHE_LETTUCE_POOL_MAX_ACTIVE}
-          max-idle: ${CACHE_LETTUCE_POOL_MAX_IDLE}
-          max-wait: ${CACHE_LETTUCE_POOL_MAX_WAIT}
-          min-idle: ${CACHE_LETTUCE_POOL_MIN_IDLE}
+          max-active: ${CACHE_LETTUCE_POOL_MAX_ACTIVE:8}
+          max-idle: ${CACHE_LETTUCE_POOL_MAX_IDLE:8}
+          max-wait: ${CACHE_LETTUCE_POOL_MAX_WAIT:-1}
+          min-idle: ${CACHE_LETTUCE_POOL_MIN_IDLE:8}
       # Configuración de la autenticación en Redis
-      password: ${CACHE_PASSWORD}
-      port: ${CACHE_PORT}
-      timeout: ${CACHE_TIMEOUT}
-      username: ${CACHE_USERNAME}
+      password: ${CACHE_PASSWORD:root}
+      port: ${CACHE_PORT:6379}
+      timeout: ${CACHE_TIMEOUT:2000}
+      username: ${CACHE_USERNAME:default}
+
   mail:
     # Configuración para el servidor de correo
-    host: ${MAIL_HOST}
-    password: ${MAIL_PASSWORD}
-    port: ${MAIL_PORT}
+    host: ${MAIL_HOST:mail-smartpot}
+    password: ${MAIL_PASSWORD:password123}
+    port: ${MAIL_PORT:1025}
     properties:
       mail:
         smtp:
           # Configuración de autenticación SMTP
-          auth: ${MAIL_PROPERTIES_SMTP_AUTH}
+          auth: ${MAIL_PROPERTIES_SMTP_AUTH:true}
           # Habilitar STARTTLS para la conexión segura
           starttls:
-            enable: ${MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE}
-    username: ${MAIL_USERNAME}
+            enable: ${MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE:false}
+    username: ${MAIL_USERNAME:smartpotadmin@example.com}
 
 # Configuración de Swagger/OpenAPI (SpringDoc)
 springdoc:
   api-docs:
-    # Habilitar o deshabilitar la generación de la documentación de la API
-    enabled: ${SWAGGER_API_DOCS_ENABLED}
+    # Habilita o deshabilita la generación de la documentación de la API
+    enabled: ${SWAGGER_API_DOCS_ENABLED:true}
+    # Ruta para acceder a los JSON de OpenAPI (por defecto /v3/api-docs)
+    path: ${SWAGGER_API_DOCS_PATH:/v3/api-docs}
+
+  redoc:
+    # Habilita o deshabilita ReDoc (documentación alternativa)
+    enabled: ${SWAGGER_REDOC_ENABLED:true}
+    # Ruta para acceder a la documentación en formato ReDoc
+    path: ${SWAGGER_REDOC_PATH:/redoc}
+
   swagger-ui:
-    # Profundidad de expansión de modelos en Swagger UI
-    default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL_EXPAND_DEPTH}
-    # Tipo de renderizado de modelos (puede ser 'example', 'model', etc.)
-    default-model-rendering: ${SWAGGER_UI_DEFAULT_MODEL_RENDERING}
-    # Mostrar o no el ID de la operación en la UI
-    display-operation-id: ${SWAGGER_UI_DISPLAY_OPERATION_ID}
-    # Mostrar la duración de las solicitudes en la UI de Swagger
-    display-request-duration: ${SWAGGER_UI_DISPLAY_REQUEST_DURATION}
-    # Expansión por defecto en Swagger UI (puede ser 'list', 'full', etc.)
-    doc-expansion: ${SWAGGER_UI_DOC_EXPANSION}
-    # Habilitar o deshabilitar la UI de Swagger
-    enabled: ${SWAGGER_UI_ENABLED}
-    # Path para acceder a Swagger UI
-    path: ${SWAGGER_UI_PATH}
-    # URL donde se encuentra la documentación de la API en formato OpenAPI
-    url: ${SWAGGER_UI_URL}
+    # Profundidad de expansión de los modelos
+    default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL_EXPAND_DEPTH:1}
+    # Tipo de renderizado de modelos ('example', 'model', etc.)
+    default-model-rendering: ${SWAGGER_UI_DEFAULT_MODEL_RENDERING:example}
+    # Mostrar el ID de la operación en la UI
+    display-operation-id: ${SWAGGER_UI_DISPLAY_OPERATION_ID:false}
+    # Mostrar la duración de las solicitudes en la UI
+    display-request-duration: ${SWAGGER_UI_DISPLAY_REQUEST_DURATION:true}
+    # Expansión por defecto ('list', 'full', 'none')
+    doc-expansion: ${SWAGGER_UI_DOC_EXPANSION:list}
+    # Habilita o deshabilita la UI de Swagger
+    enabled: ${SWAGGER_UI_ENABLED:true}
+    # Ruta base para acceder a Swagger UI
+    path: ${SWAGGER_UI_PATH:/}
+    # URL del JSON de OpenAPI (por defecto /v3/api-docs)
+    url: ${SWAGGER_UI_URL:/v3/api-docs}
