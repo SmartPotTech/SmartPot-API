@@ -4,22 +4,12 @@
     <meta charset="UTF-8">
     <title th:text="${title}">SmartPot API Docs</title>
     <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-        }
-        #redoc-container {
-            height: 100vh;
-        }
-    </style>
 </head>
 <body>
 <div id="redoc-container"></div>
 
 <script th:inline="javascript">
-    const specUrl = /*[[${specUrl}]]*/ '/v3/api-docs';
+    const specUrl = [[${specUrl}]];
     Redoc.init(specUrl, {
         scrollYOffset: 20,
         hideDownloadButton: false,

@@ -132,6 +132,10 @@ springdoc:
     # Ruta para acceder a la documentación en formato ReDoc
     path: ${SWAGGER_REDOC_PATH:/redoc}
 
+  scalar:
+    enabled: ${SCALAR_ENABLED:true}
+    path: ${SCALAR_PATH:/scalar}
+
   swagger-ui:
     # Profundidad de expansión de los modelos
     default-model-expand-depth: ${SWAGGER_UI_DEFAULT_MODEL_EXPAND_DEPTH:1}

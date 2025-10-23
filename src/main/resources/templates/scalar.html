@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title th:text="${title} ?: 'API Documentation (Scalar)'">API Docs</title>
+
+    <!-- Scalar API Reference -->
+    <script id="scalar-script"
+            src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest/dist/browser/standalone.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background-color: #f7f9fb;
+        }
+
+        .scalar-header {
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, #005c97, #363795);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        }
+
+        .scalar-header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+
+        .scalar-header p {
+            margin: 0.2rem 0 0;
+            opacity: 0.9;
+        }
+
+        #api-reference {
+            height: calc(100vh - 90px);
+        }
+    </style>
+</head>
+<body>
+<div id="api-reference"></div>
+<script th:inline="javascript">
+    const specUrl = [[${specUrl}]];
+    document.addEventListener("DOMContentLoaded", function () {
+        ScalarApiReference({
+            element: "#api-reference",
+            spec: {url: specUrl || "/v3/api-docs"},
+            theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+            layout: "modern",
+            hideDownloadButton: false,
+            hideModels: false
+        });
+    });
+</script>
+</body>
+</html>
