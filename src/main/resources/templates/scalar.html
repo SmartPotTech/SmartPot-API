@@ -4,59 +4,20 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title th:text="${title}">API Docs</title>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, sans-serif;
-            background-color: #f7f9fb;
-        }
-
-        .scalar-header {
-            padding: 1rem 2rem;
-            background: linear-gradient(90deg, #005c97, #363795);
-            color: white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-        }
-
-        .scalar-header h1 {
-            margin: 0;
-            font-size: 1.6rem;
-        }
-
-        .scalar-header p {
-            margin: 0.2rem 0 0;
-            opacity: 0.9;
-        }
-
-        #api-reference {
-            height: calc(100vh - 90px);
-        }
-    </style>
 </head>
 <body>
-<div id="api-reference"></div>
-<script th:inline="javascript" type="module">
-    /*<![CDATA[*/
-    import {
-        ScalarApiReference
-    } from 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.38.1/dist/browser/standalone.module.js';
 
-    const specUrl = [[${specUrl}]] || '/v3/api-docs';
-    const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+<header>
+    <h1 th:text="${title}">SmartPot API</h1>
+    <p th:text="${description}">
+        Documentación de la API REST con Scalar UI
+    </p>
+    <small>v<span th:text="${version}">1.0.0</span></small>
+</header>
 
-    document.addEventListener("DOMContentLoaded", () => {
-        ScalarApiReference({
-            element: "#api-reference",
-            spec: {url: specUrl},
-            theme: theme,
-            layout: "modern",
-            hideDownloadButton: false,
-            hideModels: false
-        });
-    });
-    /*]]>*/
-</script>
+<script id="api-reference" th:attr="data-url=${specUrl}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
 </body>
 </html>
