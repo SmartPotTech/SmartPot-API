@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title th:text="${title} ?: 'API Documentation (Scalar)'">API Docs</title>
-
-    <!-- Scalar API Reference -->
-    <script id="scalar-script"
-            src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest/dist/browser/standalone.min.js"></script>
+    <title th:text="${title}">API Docs</title>
 
     <style>
         body {
@@ -41,18 +37,26 @@
 </head>
 <body>
 <div id="api-reference"></div>
-<script th:inline="javascript">
-    const specUrl = [[${specUrl}]];
-    document.addEventListener("DOMContentLoaded", function () {
+<script th:inline="javascript" type="module">
+    /*<![CDATA[*/
+    import {
+        ScalarApiReference
+    } from 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.38.1/dist/browser/standalone.module.js';
+
+    const specUrl = [[${specUrl}]] || '/v3/api-docs';
+    const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+    document.addEventListener("DOMContentLoaded", () => {
         ScalarApiReference({
             element: "#api-reference",
-            spec: {url: specUrl || "/v3/api-docs"},
-            theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+            spec: {url: specUrl},
+            theme: theme,
             layout: "modern",
             hideDownloadButton: false,
             hideModels: false
         });
     });
+    /*]]>*/
 </script>
 </body>
 </html>
