@@ -52,9 +52,14 @@ public class SecurityConfiguration {
 
         List<String> publicRoutesList;
         if (publicRoutes.contains(",")) {
-            publicRoutesList = Arrays.asList(publicRoutes.split(","));
+            publicRoutesList = Arrays.stream(publicRoutes.split(","))
+                    .map(String::trim)
+                    .map(r -> r.startsWith("/") ? r : "/" + r)
+                    .toList();
         } else {
-            publicRoutesList = List.of(publicRoutes);
+            String route = publicRoutes.trim();
+            if (!route.startsWith("/")) route = "/" + route;
+            publicRoutesList = List.of(route);
         }
 
         return httpSec
