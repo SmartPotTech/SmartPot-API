@@ -63,6 +63,7 @@ public class SecurityConfiguration {
         }
 
         return httpSec
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
                     authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
