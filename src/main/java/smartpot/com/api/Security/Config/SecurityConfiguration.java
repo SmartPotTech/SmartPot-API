@@ -68,7 +68,6 @@ public class SecurityConfiguration {
                         // CSRF no es necesario ni apropiado para APIs stateless con tokens en headers
                         .ignoringRequestMatchers("/**")
                 )
-                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
                     authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
