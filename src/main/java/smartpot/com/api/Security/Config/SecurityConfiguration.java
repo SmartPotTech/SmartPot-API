@@ -63,6 +63,11 @@ public class SecurityConfiguration {
         }
 
         return httpSec
+                .csrf(csrf -> csrf
+                        // Ignorar CSRF para todas las rutas de API REST que usan autenticación JWT
+                        // CSRF no es necesario ni apropiado para APIs stateless con tokens en headers
+                        .ignoringRequestMatchers("/**")
+                )
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
