@@ -13,11 +13,23 @@ import java.util.Optional;
 @Repository
 public interface RActuator extends MongoRepository<Actuator, ObjectId> {
 
+    /**
+     * Busca el registro de actuador con la id espesificada
+     *
+     * @param id El identificado del registro del actuador.
+     * @return Devuelve el actuador, en caso de ser encontrado.
+     */
     @Query("{'_id': ?0}")
     Optional<Actuator> findById(
             @NotNull(message = "Se necesita el id del actuador")
             ObjectId id);
 
+    /**
+     * Busca los registros de actuadorres con el identificador del cultivo espesificado
+     *
+     * @param crop El identificado del cultivo relacionado a registros del actuadores.
+     * @return Devuelve una lista de actuadores.
+     */
     List<Actuator> findByCrop(
             @NotNull(message = "El registro debe estar asociado a un cultivo")
             ObjectId crop);
