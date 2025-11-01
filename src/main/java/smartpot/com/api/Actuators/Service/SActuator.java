@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import smartpot.com.api.Actuators.Mapper.MActuators;
 import smartpot.com.api.Actuators.Model.DTO.ActuatorDTO;
 import smartpot.com.api.Actuators.Model.Entity.Actuator;
 import smartpot.com.api.Actuators.Repository.RActuator;
+import smartpot.com.api.Crops.Service.SCropI;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
 
@@ -23,10 +25,12 @@ import java.util.List;
 public class SActuator implements SActuatorI {
 
     private final RActuator actuatorRepository;
+    private final SCropI serviceCrop;
 
     @Autowired
-    public SActuator(RActuator actuatorRepository) {
+    public SActuator(RActuator actuatorRepository, SCropI serviceCrop) {
         this.actuatorRepository = actuatorRepository;
+        this.serviceCrop = serviceCrop;
     }
 
     @Override
@@ -68,24 +72,46 @@ public class SActuator implements SActuatorI {
     }
 
     @Override
-    public Actuator CreateActuator(ActuatorDTO actuator) {
-        //Actuator act = new Actuator();
-        //return actuatorRepository.save(actuator);
-        return null;
+    public Actuator createActuator(ActuatorDTO actuator) throws Exception {
+        serviceCrop.getCropById(actuator.getCrop());
+        Actuator act = MActuators.INSTANCE.toEntity(actuator);
+        return actuatorRepository.save(act);
     }
 
     @Override
-    public Actuator UpdateActuator(ActuatorDTO actuator) {
-        return null;
+    public Actuator updateActuator(Actuator existingActuator, ActuatorDTO actuator) {
+        if (actuator.getId() != null && actuator.getCrop() != null) {
+            existingActuator = MActuators.INSTANCE.toEntity(actuator);
+        }
+
+        try {
+            return actuatorRepository.save(existingActuator);
+        } catch (Exception e) {
+            log.error("e: ", e);
+            throw new ApiException(
+                    new ApiResponse("No se pudo actualizar el actuador con ID '" + existingActuator.getId() + "'.",
+                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
 
     @Override
-    public Actuator DeleteActuatorById(String id) {
-        return null;
+    public ResponseEntity<ApiResponse> deleteActuatorById(Actuator actuator) {
+        try {
+            actuatorRepository.deleteById(actuator.getId());
+            return ResponseEntity.status(HttpStatus.OK.value()).body(
+                    new ApiResponse("El Actuador con ID '" + actuator.getId() + "' fue eliminado.",
+                            HttpStatus.OK.value())
+            );
+        } catch (Exception e) {
+            log.error("e: ", e);
+            throw new ApiException(
+                    new ApiResponse("No se pudo eliminar el Actuador con ID '" + actuator.getId() + "'.",
+                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
 
-    @Override
-    public ResponseEntity<ApiResponse> DeleteActuators(List<String> ids) {
-        return null;
-    }
+    //@Override
+    //public ResponseEntity<ApiResponse> deleteActuators(List<Actuadores> ids) {
+    //    return null;
+    //}
 }

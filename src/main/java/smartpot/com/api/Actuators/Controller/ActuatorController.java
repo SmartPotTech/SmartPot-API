@@ -1,12 +1,12 @@
 package smartpot.com.api.Actuators.Controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Actuators.Model.DTO.ActuatorDTO;
 import smartpot.com.api.Actuators.Model.Entity.Actuator;
 import smartpot.com.api.Actuators.Service.SActuatorI;
+import smartpot.com.api.Exception.ApiResponse;
 
 import java.util.List;
 
@@ -52,6 +52,21 @@ public class ActuatorController {
     @GetMapping("/crop/{id}")
     public List<Actuator> getActuatorByCrop(@PathVariable String id) {
         return serviceActuator.getActuatorsByCrop(id);
+    }
+
+    @PostMapping("/Create")
+    public Actuator createActuator(@RequestBody ActuatorDTO actuator) throws Exception {
+        return serviceActuator.createActuator(actuator);
+    }
+
+    @PutMapping("/Update/{id}")
+    public Actuator updateActuator(@PathVariable String id, @RequestBody ActuatorDTO actuator) throws Exception {
+        return serviceActuator.updateActuator(serviceActuator.getActuatorById(id), actuator);
+    }
+
+    @DeleteMapping("/Delete/{id}")
+    public ResponseEntity<ApiResponse> deleteActuator(@PathVariable String id) throws Exception {
+        return serviceActuator.deleteActuatorById(serviceActuator.getActuatorById(id));
     }
 
 }

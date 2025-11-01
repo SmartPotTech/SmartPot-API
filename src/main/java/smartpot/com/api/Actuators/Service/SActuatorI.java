@@ -14,11 +14,11 @@ public interface SActuatorI {
 
     List<Actuator> getActuatorsByCrop(String crop);
 
-    Actuator CreateActuator(ActuatorDTO actuator);
+    Actuator createActuator(ActuatorDTO actuator) throws Exception;
 
-    Actuator UpdateActuator(ActuatorDTO actuator);
+    Actuator updateActuator(Actuator existingActuator , ActuatorDTO actuator);
 
-    Actuator DeleteActuatorById(String id);
+    ResponseEntity<ApiResponse> deleteActuatorById(Actuator actuator);
 
-    ResponseEntity<ApiResponse> DeleteActuators(List<String> ids);
+    //ResponseEntity<ApiResponse> deleteActuators(List<String> ids);
 }
