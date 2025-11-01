@@ -71,7 +71,7 @@ public class SActuator implements SActuatorI {
     public Actuator CreateActuator(ActuatorDTO actuator) {
         //Actuator act = new Actuator();
         //return actuatorRepository.save(actuator);
-        return null
+        return null;
     }
 
     @Override
