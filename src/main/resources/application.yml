@@ -153,3 +153,7 @@ springdoc:
     path: ${SWAGGER_UI_PATH:/}
     # URL del JSON de OpenAPI (por defecto /v3/api-docs)
     url: ${SWAGGER_UI_URL:/v3/api-docs}
+
+openapi:
+  servers:
+    - url: ${OPENAPI_SERVER_URL:http://localhost:8091}
