@@ -3,9 +3,6 @@ package smartpot.com.api.Users.Service;
 import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -405,7 +402,7 @@ public class SUser implements SUserI {
      * las excepciones comprobadas, como `ValidationException`, no harán que la transacción se revierta a menos que se
      * indique explícitamente lo contrario.
      *
-     * @param user el objeto {@link UserDTO} que contiene los nuevos valores para el usuario
+     * @param user     el objeto {@link UserDTO} que contiene los nuevos valores para el usuario
      * @param password el identificador del usuario a actualizar.
      * @return un objeto {@link UserDTO} con la información actualizada del usuario.
      * @throws Exception           si el usuario no se pudo actualizar debido a algún error general.
