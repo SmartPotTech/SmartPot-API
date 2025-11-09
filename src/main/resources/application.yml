@@ -68,6 +68,8 @@ server:
   tomcat:
     # Tiempo de espera para las conexiones de Tomcat
     connection-timeout: ${SERVER_TOMCAT_TIMEOUT:600000}
+  # Permite que Spring respete X-Forwarded-Proto / X-Forwarded-For
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
 
 # Configuración de Spring
 spring:
@@ -156,4 +158,4 @@ springdoc:
 
 openapi:
   servers:
-    - url: ${OPENAPI_SERVER_URL:http://localhost:8091}
+    url: ${OPENAPI_SERVER_URL:http://localhost:8091}
