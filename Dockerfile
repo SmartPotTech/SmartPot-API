@@ -1,5 +1,5 @@
 #  Uso de imagen base con Java 17
-FROM openjdk:17-slim
+FROM eclipse-temurin:17-jre
 
 # Directiorio donde se colocará la aplicación en el contenedor
 WORKDIR /app
