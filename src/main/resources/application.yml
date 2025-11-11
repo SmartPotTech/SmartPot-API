@@ -12,7 +12,7 @@ application:
       secret-key: ${SECURITY_JWT_SECRET_KEY:c8e9b6803afbcfa6edd9569c94c75ff4b144622b0a0570a636dffd62c24a3476}
     public:
       # Rutas públicas que no requieren autenticación
-      routes: ${SECURITY_PUBLIC_ROUTES:auth/login,auth/verify}
+      routes: ${SECURITY_PUBLIC_ROUTES:/auth/login,/auth/verify}
     aes:
       # Clave secreta para la encriptación aes 256
       key: ${SECURITY_AES_KEY:Z0Yp4Zx5mN3j6rB8VwR2oE9fT2pX1qL6dC5yK7sM0uH3nA8bJ4vF9gT1rD2eW6zP}
@@ -68,6 +68,8 @@ server:
   tomcat:
     # Tiempo de espera para las conexiones de Tomcat
     connection-timeout: ${SERVER_TOMCAT_TIMEOUT:600000}
+  # Permite que Spring respete X-Forwarded-Proto / X-Forwarded-For
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
 
 # Configuración de Spring
 spring:
@@ -153,3 +155,7 @@ springdoc:
     path: ${SWAGGER_UI_PATH:/}
     # URL del JSON de OpenAPI (por defecto /v3/api-docs)
     url: ${SWAGGER_UI_URL:/v3/api-docs}
+
+openapi:
+  servers:
+    url: ${OPENAPI_SERVER_URL:http://localhost:8091}
