@@ -1,0 +1,31 @@
+name: OWASP Noir Security Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  noir-security:
+    name: Run OWASP Noir
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+      - uses: actions/checkout@v4
+
+      # --- Escaneo de código fuente ---
+      - name: Run OWASP Noir - Source Code Scan
+        uses: owasp-noir/noir@v0.25.0
+        with:
+          targets: |
+            .
+
+      # --- Escaneo de API (OpenAPI / Swagger) ---
+      - name: Start Spring Boot App (background)
+        run: |
+          ./mvnw -q -DskipTests spring-boot:run &
+          echo "Waiting for API to start..."
+          sleep 25
