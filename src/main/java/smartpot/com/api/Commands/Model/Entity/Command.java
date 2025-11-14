@@ -36,8 +36,12 @@ public class Command {
     @Field("commandType")
     private String commandType;
 
+    @NotNull
+    @Field("actuator")
+    private ObjectId actuator;
+
     @Field("status")
-    private String status;
+    private CommandStatus status;
 
     @NotNull(message = "La fecha de creación no puede estar vacía")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
@@ -48,15 +52,14 @@ public class Command {
     @Field("dateExecuted")
     private Date dateExecuted;
 
-
     @Field("response")
     private String response;
 
     @NotNull(message = "El comando debe ejecutarse en un cultivo")
+
     //@DBRef
     @Field("crop")
     private ObjectId crop;
-
 }
 
 /*

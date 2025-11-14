@@ -13,10 +13,12 @@ public interface MCommand {
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "stringToObjectId")
+    @Mapping(source = "actuator", target = "actuator", qualifiedByName = "stringToObjectId")
     Command toEntity(CommandDTO commandDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "objectIdToString")
+    @Mapping(source = "actuator", target = "actuator", qualifiedByName = "objectIdToString")
     CommandDTO toDTO(Command command);
 
     @org.mapstruct.Named("objectIdToString")

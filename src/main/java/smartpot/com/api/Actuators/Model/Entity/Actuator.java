@@ -24,17 +24,6 @@ public class Actuator {
     @Field("_id")
     private ObjectId id;
 
-    // Si no se pone acting date, se asumira que se inicia la ejecucion apenas llege la peticion
-    @FutureOrPresent(message = "La fecha de actuacion debe ser hoy o en el futuro")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-    @Field("actingDate")
-    private Date actingDate;
-
-    // segundos
-    @NotNull(message = "El tiempo de actuacion no puede estar vacio")
-    @Field("performanceTime")
-    private int performanceTime;
-
     @NotNull(message = "El registro debe estar asociado a un cultivo")
     @Field("crop")
     private ObjectId crop;

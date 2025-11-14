@@ -17,7 +17,7 @@ import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
 
 @RestController
-@RequestMapping("/Comandos")
+@RequestMapping("/Commands")
 public class CommandController {
 
     private final SCommandI serviceCommand;
@@ -65,6 +65,27 @@ public class CommandController {
     public ResponseEntity<?> getAllCommand() {
         try {
             return new ResponseEntity<>(serviceCommand.getAllCommands(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/crop/{crop}")
+    @Operation(summary = "Obtener todos los comandos de un cultivo",
+            description = "Recupera todos los comandos asociados a un cultivo en el sistema. "
+                    + "En caso de no haber comandos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Comandos encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = CommandDTO.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron Comandos registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getCommandsByCrop(@PathVariable String crop) {
+        try {
+            return new ResponseEntity<>(serviceCommand.getCommandsByCrop(crop), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
         }

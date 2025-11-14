@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import smartpot.com.api.Commands.Mapper.MCommand;
 import smartpot.com.api.Commands.Model.DTO.CommandDTO;
+import smartpot.com.api.Commands.Model.Entity.CommandStatus;
 import smartpot.com.api.Commands.Repository.RCommand;
 import smartpot.com.api.Crops.Service.SCropI;
 
@@ -106,6 +107,30 @@ public class SCommand implements SCommandI {
     }
 
     /**
+     * Retrieves all commands for a crop from the repository and maps them to DTOs.
+     * <p>
+     * This method is cached to improve performance when retrieving the list of commands.
+     * The cache is identified by the key 'crop_<crop_id>' under the 'commands' cache.
+     * </p>
+     *
+     * @param crop the unique identifier of the crop to retrieve the commands
+     * @return a list of {@code CommandDTO} objects representing all commands
+     * @throws Exception if no commands exist in the repository
+     */
+    @Override
+    @Cacheable(value = "commands", key = "'crop_'+#crop")
+    public List<CommandDTO> getCommandsByCrop(String crop) throws Exception {
+        return Optional.of(crop)
+                .map(ObjectId::new)
+                .map(repositoryCommand::findByCropId)
+                .filter(commands -> !commands.isEmpty())
+                .map(crops -> crops.stream()
+                        .map(mapperCommand::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No existe ningún comando"));
+    }
+
+    /**
      * Retrieves a command by its unique identifier and maps it to a DTO.
      * <p>
      * This method is cached to improve performance for retrieving individual commands.
@@ -148,7 +173,7 @@ public class SCommand implements SCommandI {
                 .map(dto -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     dto.setDateCreated(formatter.format(new Date()));
-                    dto.setStatus("PENDING");
+                    dto.setStatus(CommandStatus.PENDING);
                     return dto;
                 })
                 .map(mapperCommand::toEntity)
@@ -177,7 +202,7 @@ public class SCommand implements SCommandI {
                 .map(commandDTO -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     commandDTO.setDateCreated(formatter.format(new Date()));
-                    commandDTO.setStatus("EXECUTED");
+                    commandDTO.setStatus(CommandStatus.EXECUTED);
                     commandDTO.setResponse(response);
                     return commandDTO;
                 })
