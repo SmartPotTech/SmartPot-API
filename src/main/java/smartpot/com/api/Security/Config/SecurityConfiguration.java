@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import smartpot.com.api.Security.Config.Filters.JwtAuthFilter;
 import smartpot.com.api.Security.Config.headers.CorsConfig;
-import smartpot.com.api.users.service.UserService;
+import smartpot.com.api.users.service.UserServiceImpl;
 import org.springframework.security.config.Customizer;
 
 import java.util.Arrays;
@@ -30,11 +30,11 @@ public class SecurityConfiguration {
 
     private final CorsConfig corsConfig;
     private final JwtAuthFilter jwtAuthFilter;
-    private final UserService serviceUser;
+    private final UserServiceImpl serviceUser;
     @Value("${application.security.public.routes}")
     private String publicRoutes;
 
-    public SecurityConfiguration(CorsConfig corsConfig, JwtAuthFilter jwtAuthFilter, UserService serviceUser) {
+    public SecurityConfiguration(CorsConfig corsConfig, JwtAuthFilter jwtAuthFilter, UserServiceImpl serviceUser) {
         this.corsConfig = corsConfig;
         this.jwtAuthFilter = jwtAuthFilter;
         this.serviceUser = serviceUser;
@@ -83,7 +83,7 @@ public class SecurityConfiguration {
 
     /**
      * Configura un proveedor de autenticación utilizando DaoAuthenticationProvider.
-     * Este bean es responsable de autenticar a los usuarios basándose en los datos de usuario proporcionados por {@link UserService}.
+     * Este bean es responsable de autenticar a los usuarios basándose en los datos de usuario proporcionados por {@link UserServiceImpl}.
      *
      * @return Un objeto {@link AuthenticationProvider} configurado.
      */

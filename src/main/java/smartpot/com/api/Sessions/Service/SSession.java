@@ -11,7 +11,7 @@ import smartpot.com.api.Exception.ApiResponse;
 import smartpot.com.api.Sessions.Model.Entity.Session;
 import smartpot.com.api.Sessions.Repository.RSession;
 import smartpot.com.api.users.model.dto.UserDTO;
-import smartpot.com.api.users.service.UserServiceI;
+import smartpot.com.api.users.service.UserService;
 
 import java.util.Date;
 import java.util.List;
@@ -23,10 +23,10 @@ import java.util.Optional;
 public class SSession implements SSessionI {
 
     private final RSession repositorySession;
-    private final UserServiceI user;
+    private final UserService user;
 
     @Autowired
-    public SSession(RSession repositorySession, UserServiceI user) {
+    public SSession(RSession repositorySession, UserService user) {
         this.repositorySession = repositorySession;
         this.user = user;
     }

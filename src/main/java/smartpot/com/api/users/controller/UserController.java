@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Responses.DeleteResponse;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.users.model.dto.UserDTO;
-import smartpot.com.api.users.service.UserServiceI;
+import smartpot.com.api.users.service.UserService;
 
     /**
      * Controlador REST para las operaciones relacionadas con los usuarios.
      * <p>Este controlador proporciona una serie de métodos para gestionar usuarios en el sistema.</p>
      *
-     * @see UserServiceI
+     * @see UserService
      */
     @RestController
     @RequestMapping("/Users")
@@ -37,19 +37,19 @@ import smartpot.com.api.users.service.UserServiceI;
          * ? ¿Qué tipo de error se debe lanzar si el correo electrónico no está válido o es incorrecto (formato de email inválido)?
          */
 
-        private final UserServiceI userService;
+        private final UserService userService;
 
         /**
          * Constructor del controlador {@link UserController}.
-         * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link UserServiceI} que gestionará las operaciones
+         * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link UserService} que gestionará las operaciones
          * relacionadas con los usuarios.</p>
          *
          * @param userService El servicio que contiene la lógica de negocio para manejar usuarios.
          * @throws NullPointerException Si el servicio proporcionado es {@code null}.
-         * @see UserServiceI
+         * @see UserService
          */
         @Autowired
-        public UserController(UserServiceI userService) {
+        public UserController(UserService userService) {
             this.userService = userService;
         }
 

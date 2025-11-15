@@ -17,7 +17,7 @@ import smartpot.com.api.Crops.Model.Entity.CropStatus;
 import smartpot.com.api.Crops.Model.Entity.CropType;
 import smartpot.com.api.Crops.Repository.RCrop;
 import smartpot.com.api.Crops.Validator.VCropI;
-import smartpot.com.api.users.service.UserServiceI;
+import smartpot.com.api.users.service.UserService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class SCrop implements SCropI {
 
     private final RCrop repositoryCrop;
-    private final UserServiceI serviceUser;
+    private final UserService serviceUser;
     private final MCrop mapperCrop;
     private final VCropI validatorCrop;
 
@@ -45,7 +45,7 @@ public class SCrop implements SCropI {
      * Constructor del servicio de cultivos.
      *
      * <p>Inyecta las dependencias necesarias para realizar las operaciones relacionadas con los cultivos,
-     * incluyendo el repositorio de cultivos {@link RCrop}, el servicio de usuarios {@link UserServiceI},
+     * incluyendo el repositorio de cultivos {@link RCrop}, el servicio de usuarios {@link UserService},
      * el convertidor de cultivos {@link MCrop}, y el validador de cultivos {@link VCropI}.</p>
      *
      * @param repositoryCrop El repositorio que maneja las operaciones de base de datos para cultivos.
@@ -53,12 +53,12 @@ public class SCrop implements SCropI {
      * @param mapperCrop     El convertidor que convierte las entidades de cultivos a objetos DTO correspondientes.
      * @param validatorCrop  El validador que valida los datos relacionados con los cultivos.
      * @see RCrop
-     * @see UserServiceI
+     * @see UserService
      * @see MCrop
      * @see VCropI
      */
     @Autowired
-    public SCrop(RCrop repositoryCrop, UserServiceI serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
+    public SCrop(RCrop repositoryCrop, UserService serviceUser, MCrop mapperCrop, VCropI validatorCrop) {
         this.repositoryCrop = repositoryCrop;
         this.serviceUser = serviceUser;
         this.mapperCrop = mapperCrop;
@@ -179,7 +179,7 @@ public class SCrop implements SCropI {
      * Obtiene los cultivos asociados a un usuario específico mediante su ID.
      *
      * <p>Este método busca todos los cultivos relacionados con un usuario en la base de datos utilizando el
-     * ID del usuario. Primero, valida que el ID del usuario sea válido llamando al servicio de usuarios {@link UserServiceI}.
+     * ID del usuario. Primero, valida que el ID del usuario sea válido llamando al servicio de usuarios {@link UserService}.
      * Si el usuario existe, se realiza una búsqueda de los cultivos asociados a ese usuario a través del repositorio {@link RCrop}.
      * Si se encuentran cultivos, se mapean a objetos {@link CropDTO} mediante el convertidor {@link MCrop}.
      * Si el usuario no tiene cultivos o el ID del usuario es inválido, se lanza una excepción correspondiente.</p>
@@ -188,7 +188,7 @@ public class SCrop implements SCropI {
      * @return Una lista de objetos {@link CropDTO} que representan los cultivos asociados al usuario.
      * @throws Exception Si el usuario no tiene cultivos o si el ID del usuario es inválido o no existe.
      * @see CropDTO
-     * @see UserServiceI
+     * @see UserService
      * @see RCrop
      * @see MCrop
      */

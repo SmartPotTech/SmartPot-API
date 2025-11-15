@@ -17,7 +17,7 @@ import smartpot.com.api.Mail.Service.EmailService;
 import smartpot.com.api.Mail.Validator.EmailValidatorI;
 import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
 import smartpot.com.api.users.model.dto.UserDTO;
-import smartpot.com.api.users.service.UserServiceI;
+import smartpot.com.api.users.service.UserService;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -28,7 +28,7 @@ import java.util.Optional;
 @Service
 public class JwtService implements JwtServiceI {
 
-    private final UserServiceI serviceUser;
+    private final UserService serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
     private final EncryptionServiceI encryptionService;
@@ -44,7 +44,7 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(UserServiceI serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService) {
+    public JwtService(UserService serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
         this.emailValidator = emailValidator;
