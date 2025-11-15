@@ -1,10 +1,10 @@
-package app.smartpot.api.Sessions.Service;
+package app.smartpot.api.sessions.Service;
 
-import app.smartpot.api.Sessions.Model.Entity.Session;
+import app.smartpot.api.sessions.model.entity.Session;
 
 import java.util.List;
 
-public interface SSessionI {
+public interface SessionService {
     Session getSessionById(String sessionId);
 
     List<Session> getSessionsByUser(String user);

@@ -1,4 +1,4 @@
-package app.smartpot.api.Sessions.Model.DTO;
+package app.smartpot.api.sessions.model.dto;
 
 import lombok.Data;
 

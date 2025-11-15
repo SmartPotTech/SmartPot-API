@@ -1,4 +1,4 @@
-package app.smartpot.api.Sessions.Model.Entity;
+package app.smartpot.api.sessions.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.FutureOrPresent;

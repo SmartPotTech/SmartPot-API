@@ -1,12 +1,12 @@
-package app.smartpot.api.Sessions.Controller;
+package app.smartpot.api.sessions.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Responses.ErrorResponse;
-import app.smartpot.api.Sessions.Model.Entity.Session;
-import app.smartpot.api.Sessions.Service.SSessionI;
+import app.smartpot.api.sessions.model.entity.Session;
+import app.smartpot.api.sessions.Service.SessionService;
 
 import java.util.List;
 
@@ -14,10 +14,10 @@ import java.util.List;
 @RequestMapping("/Sessions")
 public class SessionController {
 
-    private final SSessionI session;
+    private final SessionService session;
 
     @Autowired
-    public SessionController(SSessionI session) {
+    public SessionController(SessionService session) {
         this.session = session;
     }
 

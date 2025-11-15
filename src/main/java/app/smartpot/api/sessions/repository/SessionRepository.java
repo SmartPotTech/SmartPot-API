@@ -1,16 +1,16 @@
-package app.smartpot.api.Sessions.Repository;
+package app.smartpot.api.sessions.repository;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.Sessions.Model.Entity.Session;
+import app.smartpot.api.sessions.model.entity.Session;
 
 import java.util.Date;
 import java.util.List;
 
 @Repository
-public interface RSession extends MongoRepository<Session, String> {
+public interface SessionRepository extends MongoRepository<Session, String> {
 
 
     @Query("{ 'user' : ?0 }")

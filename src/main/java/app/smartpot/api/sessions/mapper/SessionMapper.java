@@ -1,15 +1,15 @@
-package app.smartpot.api.Sessions.Mapper;
+package app.smartpot.api.sessions.mapper;
 
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import app.smartpot.api.Sessions.Model.DTO.SessionDTO;
-import app.smartpot.api.Sessions.Model.Entity.Session;
+import app.smartpot.api.sessions.model.dto.SessionDTO;
+import app.smartpot.api.sessions.model.entity.Session;
 
 @Mapper(componentModel = "spring")
-public interface MSession {
-    MSession INSTANCE = Mappers.getMapper(MSession.class);
+public interface SessionMapper {
+    SessionMapper INSTANCE = Mappers.getMapper(SessionMapper.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     Session toEntity(SessionDTO sessionDTO);

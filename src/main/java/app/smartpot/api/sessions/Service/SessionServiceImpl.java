@@ -1,5 +1,6 @@
-package app.smartpot.api.Sessions.Service;
+package app.smartpot.api.sessions.Service;
 
+import app.smartpot.api.sessions.repository.SessionRepository;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -8,8 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import app.smartpot.api.Exception.ApiException;
 import app.smartpot.api.Exception.ApiResponse;
-import app.smartpot.api.Sessions.Model.Entity.Session;
-import app.smartpot.api.Sessions.Repository.RSession;
+import app.smartpot.api.sessions.model.entity.Session;
 import app.smartpot.api.users.model.dto.UserDTO;
 import app.smartpot.api.users.service.UserService;
 
@@ -20,13 +20,13 @@ import java.util.Optional;
 @Data
 @Builder
 @Service
-public class SSession implements SSessionI {
+public class SessionServiceImpl implements SessionService {
 
-    private final RSession repositorySession;
+    private final SessionRepository repositorySession;
     private final UserService user;
 
     @Autowired
-    public SSession(RSession repositorySession, UserService user) {
+    public SessionServiceImpl(SessionRepository repositorySession, UserService user) {
         this.repositorySession = repositorySession;
         this.user = user;
     }
