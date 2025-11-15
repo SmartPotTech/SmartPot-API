@@ -3,11 +3,11 @@ package app.smartpot.api.crops.mapper;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import app.smartpot.api.crops.model.DTO.CropDTO;
-import app.smartpot.api.crops.model.Entity.Crop;
+import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.model.entity.Crop;
 
 @Mapper(componentModel = "spring")
-public interface MCrop {
+public interface CropMapper {
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "user", target = "user", qualifiedByName = "stringToObjectId")
     Crop toEntity(CropDTO cropDTO);

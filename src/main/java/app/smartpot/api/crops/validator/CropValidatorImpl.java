@@ -1,9 +1,9 @@
-package app.smartpot.api.crops.Validator;
+package app.smartpot.api.crops.validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import app.smartpot.api.crops.model.Entity.CropStatus;
-import app.smartpot.api.crops.model.Entity.CropType;
+import app.smartpot.api.crops.model.entity.CropStatus;
+import app.smartpot.api.crops.model.entity.CropType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-public class VCrop implements VCropI {
+public class CropValidatorImpl implements CropValidator {
     /**
      * Indica si la validación fue exitosa.
      */
@@ -27,7 +27,7 @@ public class VCrop implements VCropI {
      * Constructor de la clase de validación de usuario.
      * Inicializa el estado de validación a "válido" y crea una lista vacía de errores.
      */
-    public VCrop() {
+    public CropValidatorImpl() {
         this.valid = true;
         this.errors = new ArrayList<>();
     }

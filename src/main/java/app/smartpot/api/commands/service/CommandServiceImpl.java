@@ -1,5 +1,7 @@
-package app.smartpot.api.Commands.Service;
+package app.smartpot.api.commands.service;
 
+import app.smartpot.api.commands.mapper.CommandMapper;
+import app.smartpot.api.commands.repository.CommandRepository;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -9,10 +11,8 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.Commands.Mapper.MCommand;
-import app.smartpot.api.Commands.Model.DTO.CommandDTO;
-import app.smartpot.api.Commands.Repository.RCommand;
-import app.smartpot.api.crops.Service.SCropI;
+import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.crops.service.CropService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -56,19 +56,19 @@ import java.util.stream.Collectors;
  * or by other services that depend on command-related operations.
  * </p>
  *
- * @see SCommandI
- * @see RCommand
- * @see SCropI
- * @see MCommand
+ * @see CommandService
+ * @see CommandRepository
+ * @see CropService
+ * @see CommandMapper
  */
 @Data
 @Builder
 @Service
-public class SCommand implements SCommandI {
+public class CommandServiceImpl implements CommandService {
 
-    private final RCommand repositoryCommand;
-    private final SCropI serviceCrop;
-    private final MCommand mapperCommand;
+    private final CommandRepository repositoryCommand;
+    private final CropService serviceCrop;
+    private final CommandMapper mapperCommand;
 
     /**
      * Constructs an instance of {@code SCommand} with the required dependencies.
@@ -78,7 +78,7 @@ public class SCommand implements SCommandI {
      * @param mapperCommand     the mapper for converting entities to DTOs and vice versa
      */
     @Autowired
-    public SCommand(RCommand repositoryCommand, SCropI serviceCrop, MCommand mapperCommand) {
+    public CommandServiceImpl(CommandRepository repositoryCommand, CropService serviceCrop, CommandMapper mapperCommand) {
         this.repositoryCommand = repositoryCommand;
         this.serviceCrop = serviceCrop;
         this.mapperCommand = mapperCommand;

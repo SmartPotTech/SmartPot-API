@@ -1,4 +1,4 @@
-package app.smartpot.api.Commands.Controller;
+package app.smartpot.api.commands.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,9 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Commands.Model.DTO.CommandDTO;
-import app.smartpot.api.Commands.Service.SCommandI;
-import app.smartpot.api.crops.model.DTO.CropDTO;
+import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.commands.service.CommandService;
+import app.smartpot.api.crops.model.dto.CropDTO;
 import app.smartpot.api.responses.DeleteResponse;
 import app.smartpot.api.responses.ErrorResponse;
 
@@ -20,10 +20,10 @@ import app.smartpot.api.responses.ErrorResponse;
 @RequestMapping("/Comandos")
 public class CommandController {
 
-    private final SCommandI serviceCommand;
+    private final CommandService serviceCommand;
 
     @Autowired
-    public CommandController(SCommandI serviceCommand) {
+    public CommandController(CommandService serviceCommand) {
         this.serviceCommand = serviceCommand;
     }
 

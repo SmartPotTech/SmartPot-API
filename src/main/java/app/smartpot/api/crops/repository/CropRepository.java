@@ -4,7 +4,7 @@ import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import app.smartpot.api.crops.model.Entity.Crop;
+import app.smartpot.api.crops.model.entity.Crop;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ import java.util.List;
  * @see Crop
  */
 @Repository
-public interface RCrop extends MongoRepository<Crop, ObjectId> {
+public interface CropRepository extends MongoRepository<Crop, ObjectId> {
     /**
      * Busca una lista de cultivos cuyo tipo coincida exactamente con el tipo proporcionado.
      *

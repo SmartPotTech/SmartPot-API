@@ -1,6 +1,6 @@
-package app.smartpot.api.Commands.Service;
+package app.smartpot.api.commands.service;
 
-import app.smartpot.api.Commands.Model.DTO.CommandDTO;
+import app.smartpot.api.commands.model.dto.CommandDTO;
 
 import java.util.List;
 
@@ -40,10 +40,10 @@ import java.util.List;
  * or other services to interact with command-related functionality.
  * </p>
  *
- * @see SCommand
+ * @see CommandServiceImpl
  * @see CommandDTO
  */
-public interface SCommandI {
+public interface CommandService {
     /**
      * Retrieves all commands available in the system.
      *

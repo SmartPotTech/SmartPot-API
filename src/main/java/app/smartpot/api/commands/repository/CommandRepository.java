@@ -1,17 +1,17 @@
-package app.smartpot.api.Commands.Repository;
+package app.smartpot.api.commands.repository;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.Commands.Model.Entity.Command;
+import app.smartpot.api.commands.model.entity.Command;
 
 import java.util.Date;
 import java.util.List;
 
 @Repository
-public interface RCommand extends MongoRepository<Command, ObjectId> {
+public interface CommandRepository extends MongoRepository<Command, ObjectId> {
 
     // Búsqueda por tipo de comando
     @Query("{ 'commandType' : { $regex: ?0, $options: 'i' } }")

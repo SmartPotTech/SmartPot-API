@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.crops.model.DTO.CropDTO;
-import app.smartpot.api.crops.Service.SCropI;
+import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.responses.ErrorResponse;
 import app.smartpot.api.users.model.dto.UserDTO;
 
@@ -21,19 +21,19 @@ import app.smartpot.api.users.model.dto.UserDTO;
 @Tag(name = "Cultivos", description = "Operaciones relacionadas con cultivos")
 public class CropController {
 
-    private final SCropI serviceCrop;
+    private final CropService serviceCrop;
 
     /**
      * Constructor del controlador {@link CropController}.
-     * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link SCropI} que gestionará las operaciones
+     * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link CropService} que gestionará las operaciones
      * relacionadas con los cultivos.</p>
      *
      * @param serviceCrop El servicio que contiene la lógica de negocio para manejar cultivos.
      * @throws NullPointerException Si el servicio proporcionado es {@code null}.
-     * @see SCropI
+     * @see CropService
      */
     @Autowired
-    public CropController(SCropI serviceCrop) {
+    public CropController(CropService serviceCrop) {
         this.serviceCrop = serviceCrop;
     }
 

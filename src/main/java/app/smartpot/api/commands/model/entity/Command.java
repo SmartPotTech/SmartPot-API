@@ -1,4 +1,4 @@
-package app.smartpot.api.Commands.Model.Entity;
+package app.smartpot.api.commands.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;

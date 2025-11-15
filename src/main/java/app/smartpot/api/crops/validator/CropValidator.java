@@ -1,8 +1,8 @@
-package app.smartpot.api.crops.Validator;
+package app.smartpot.api.crops.validator;
 
 import java.util.List;
 
-public interface VCropI {
+public interface CropValidator {
     boolean isValid();
 
     void validateId(String id);

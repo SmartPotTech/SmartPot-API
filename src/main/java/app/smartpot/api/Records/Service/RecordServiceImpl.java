@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.crops.model.DTO.CropDTO;
-import app.smartpot.api.crops.Service.SCropI;
+import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.exception.ApiResponse;
 import app.smartpot.api.records.model.dto.CropRecordDTO;
@@ -30,10 +30,10 @@ import java.util.List;
 public class RecordServiceImpl implements RecordService {
 
     private final RecordRepository repositoryHistory;
-    private final SCropI serviceCrop;
+    private final CropService serviceCrop;
 
     @Autowired
-    public RecordServiceImpl(RecordRepository repositoryHistory, SCropI serviceCrop) {
+    public RecordServiceImpl(RecordRepository repositoryHistory, CropService serviceCrop) {
         this.repositoryHistory = repositoryHistory;
         this.serviceCrop = serviceCrop;
     }

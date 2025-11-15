@@ -1,10 +1,10 @@
-package app.smartpot.api.crops.Service;
+package app.smartpot.api.crops.service;
 
-import app.smartpot.api.crops.model.DTO.CropDTO;
+import app.smartpot.api.crops.model.dto.CropDTO;
 
 import java.util.List;
 
-public interface SCropI {
+public interface CropService {
 
     List<CropDTO> getAllCrops() throws Exception;
 

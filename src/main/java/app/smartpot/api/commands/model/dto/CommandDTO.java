@@ -1,4 +1,4 @@
-package app.smartpot.api.Commands.Model.DTO;
+package app.smartpot.api.commands.model.dto;
 
 import lombok.Data;
 
