@@ -1,0 +1,105 @@
+package app.smartpot.api.notifications.service;
+
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.exception.ApiResponse;
+import app.smartpot.api.notifications.model.entity.Notification;
+import app.smartpot.api.notifications.repository.NotificationRepository;
+import lombok.Builder;
+import lombok.Data;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+
+@Data
+@Builder
+@Service
+public class NotificationServiceImpl implements NotificationService {
+
+    private final NotificationRepository notificationRepository;
+
+    @Autowired
+    public NotificationServiceImpl(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
+    }
+
+    @Override
+    public List<Notification> findAll() {
+        return notificationRepository.findAll();
+    }
+
+    @Override
+    public List<Notification> findByUser(String id) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    "Las notificaciones con user id '" + id + "' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return notificationRepository.findByUser(new ObjectId(id))
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("La notificación con id '" + id + "' no fue encontrada.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+    }
+
+    @Override
+    public List<Notification> findByUserAndType(String id, String type) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    " con user id '" + id + "' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return notificationRepository.findByUserAndType(new ObjectId(id), type)
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("No se pudo encontrar notificaciones.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+    }
+
+    @Override
+    public List<Notification> findByUserAndDate(String id, String date) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    "Las notificaciones con user id '" + id + "' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return notificationRepository.findByUserAndDate(new ObjectId(id), date)
+                .orElseThrow(() -> new ApiException(
+                        new ApiResponse("La notificación con id '" + id + "' no fue encontrada.",
+                                HttpStatus.NOT_FOUND.value())
+                ));
+    }
+
+    @Override
+    public Notification updateNotification(String id, Notification notification) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    "Las notificaciones con user id '" + id + "' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return notificationRepository.updateNotification(new ObjectId(id), notification);
+    }
+
+    @Override
+    public Notification delete(String id) {
+        if (!ObjectId.isValid(id)) {
+            throw new ApiException(new ApiResponse(
+                    "La notificaciones con id '" + id + "' no es válida. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
+                    HttpStatus.BAD_REQUEST.value()
+            ));
+        }
+        return notificationRepository.delete(new ObjectId(id));
+    }
+
+    @Override
+    public Notification save(Notification notification) {
+        return notificationRepository.save(notification);
+    }
+}
