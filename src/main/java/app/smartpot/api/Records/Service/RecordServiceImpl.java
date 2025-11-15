@@ -1,5 +1,6 @@
-package app.smartpot.api.Records.Service;
+package app.smartpot.api.records.service;
 
+import app.smartpot.api.records.mapper.RecordMapper;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +13,12 @@ import app.smartpot.api.Crops.Model.DTO.CropDTO;
 import app.smartpot.api.Crops.Service.SCropI;
 import app.smartpot.api.Exception.ApiException;
 import app.smartpot.api.Exception.ApiResponse;
-import app.smartpot.api.Records.Mapper.MRecords;
-import app.smartpot.api.Records.Model.DTO.CropRecordDTO;
-import app.smartpot.api.Records.Model.DTO.MeasuresDTO;
-import app.smartpot.api.Records.Model.DTO.RecordDTO;
-import app.smartpot.api.Records.Model.Entity.DateRange;
-import app.smartpot.api.Records.Model.Entity.History;
-import app.smartpot.api.Records.Repository.RHistory;
+import app.smartpot.api.records.model.dto.CropRecordDTO;
+import app.smartpot.api.records.model.dto.MeasuresDTO;
+import app.smartpot.api.records.model.dto.RecordDTO;
+import app.smartpot.api.records.model.entity.DateRange;
+import app.smartpot.api.records.model.entity.History;
+import app.smartpot.api.records.repository.RecordRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +27,13 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SHistory implements SHistoryI {
+public class RecordServiceImpl implements RecordService {
 
-    private final RHistory repositoryHistory;
+    private final RecordRepository repositoryHistory;
     private final SCropI serviceCrop;
 
     @Autowired
-    public SHistory(RHistory repositoryHistory, SCropI serviceCrop) {
+    public RecordServiceImpl(RecordRepository repositoryHistory, SCropI serviceCrop) {
         this.repositoryHistory = repositoryHistory;
         this.serviceCrop = serviceCrop;
     }
@@ -291,7 +291,7 @@ public class SHistory implements SHistoryI {
     public History Createhistory(RecordDTO recordDTO) throws Exception {
         ValidationMesuares(recordDTO.getMeasures());
         serviceCrop.getCropById(recordDTO.getCrop());
-        History history = MRecords.INSTANCE.toEntity(recordDTO);
+        History history = RecordMapper.INSTANCE.toEntity(recordDTO);
         return repositoryHistory.save(history);
     }
 
@@ -306,7 +306,7 @@ public class SHistory implements SHistoryI {
     @Override
     public History updatedHistory(History existingHistory, RecordDTO updateHistory) {
         if (updateHistory.getMeasures() != null && updateHistory.getCrop() != null) {
-            existingHistory = MRecords.INSTANCE.toEntity(updateHistory);
+            existingHistory = RecordMapper.INSTANCE.toEntity(updateHistory);
         }
 
         try {

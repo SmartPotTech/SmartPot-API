@@ -1,26 +1,26 @@
-package app.smartpot.api.Records.Controller;
+package app.smartpot.api.records.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Exception.ApiResponse;
-import app.smartpot.api.Records.Model.DTO.RecordDTO;
-import app.smartpot.api.Records.Model.Entity.DateRange;
-import app.smartpot.api.Records.Model.Entity.History;
-import app.smartpot.api.Records.Service.SHistoryI;
+import app.smartpot.api.records.model.dto.RecordDTO;
+import app.smartpot.api.records.model.entity.DateRange;
+import app.smartpot.api.records.model.entity.History;
+import app.smartpot.api.records.service.RecordService;
 import app.smartpot.api.responses.ErrorResponse;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/Records")
-public class HistoryController {
+public class RecordController {
 
-    private final SHistoryI serviceHistory;
+    private final RecordService serviceHistory;
 
     @Autowired
-    public HistoryController(SHistoryI serviceHistory) {
+    public RecordController(RecordService serviceHistory) {
         this.serviceHistory = serviceHistory;
     }
 

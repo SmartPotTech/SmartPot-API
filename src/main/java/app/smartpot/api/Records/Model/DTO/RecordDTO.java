@@ -1,4 +1,4 @@
-package app.smartpot.api.Records.Model.DTO;
+package app.smartpot.api.records.model.dto;
 
 import lombok.Data;
 

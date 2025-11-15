@@ -1,4 +1,4 @@
-package app.smartpot.api.Records.Model.Entity;
+package app.smartpot.api.records.model.entity;
 
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;

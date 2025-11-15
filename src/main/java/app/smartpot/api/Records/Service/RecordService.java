@@ -1,15 +1,15 @@
-package app.smartpot.api.Records.Service;
+package app.smartpot.api.records.service;
 
 import org.springframework.http.ResponseEntity;
 import app.smartpot.api.Exception.ApiResponse;
-import app.smartpot.api.Records.Model.DTO.CropRecordDTO;
-import app.smartpot.api.Records.Model.DTO.RecordDTO;
-import app.smartpot.api.Records.Model.Entity.DateRange;
-import app.smartpot.api.Records.Model.Entity.History;
+import app.smartpot.api.records.model.dto.CropRecordDTO;
+import app.smartpot.api.records.model.dto.RecordDTO;
+import app.smartpot.api.records.model.entity.DateRange;
+import app.smartpot.api.records.model.entity.History;
 
 import java.util.List;
 
-public interface SHistoryI {
+public interface RecordService {
     List<History> getAllHistories();
 
     History getHistoryById(String id);
