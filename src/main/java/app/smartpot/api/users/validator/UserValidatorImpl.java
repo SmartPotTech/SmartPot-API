@@ -1,10 +1,10 @@
 package app.smartpot.api.users.validator;
 
+import app.smartpot.api.users.model.entity.UserRole;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import app.smartpot.api.users.model.entity.UserRole;
 
 import java.util.ArrayList;
 import java.util.Arrays;

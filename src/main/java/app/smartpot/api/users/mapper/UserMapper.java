@@ -1,11 +1,11 @@
 package app.smartpot.api.users.mapper;
 
+import app.smartpot.api.users.model.dto.UserDTO;
+import app.smartpot.api.users.model.entity.User;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import app.smartpot.api.users.model.dto.UserDTO;
-import app.smartpot.api.users.model.entity.User;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

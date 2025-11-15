@@ -1,5 +1,10 @@
 package app.smartpot.api.users.service;
 
+import app.smartpot.api.users.mapper.UserMapper;
+import app.smartpot.api.users.model.dto.UserDTO;
+import app.smartpot.api.users.model.entity.UserRole;
+import app.smartpot.api.users.repository.UserRepository;
+import app.smartpot.api.users.validator.UserValidator;
 import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
@@ -12,11 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.users.repository.UserRepository;
-import app.smartpot.api.users.validator.UserValidator;
-import app.smartpot.api.users.mapper.UserMapper;
-import app.smartpot.api.users.model.dto.UserDTO;
-import app.smartpot.api.users.model.entity.UserRole;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;

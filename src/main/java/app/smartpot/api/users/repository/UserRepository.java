@@ -1,10 +1,10 @@
 package app.smartpot.api.users.repository;
 
+import app.smartpot.api.users.model.entity.User;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import app.smartpot.api.users.model.entity.User;
 
 import java.util.List;
 

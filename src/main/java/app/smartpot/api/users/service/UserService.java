@@ -1,8 +1,8 @@
 package app.smartpot.api.users.service;
 
+import app.smartpot.api.users.model.dto.UserDTO;
 import jakarta.validation.ValidationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import app.smartpot.api.users.model.dto.UserDTO;
 
 import java.util.List;
 
