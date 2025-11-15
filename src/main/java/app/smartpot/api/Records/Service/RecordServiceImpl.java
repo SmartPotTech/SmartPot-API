@@ -1,6 +1,16 @@
 package app.smartpot.api.records.service;
 
+import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.exception.ApiResponse;
 import app.smartpot.api.records.mapper.RecordMapper;
+import app.smartpot.api.records.model.dto.CropRecordDTO;
+import app.smartpot.api.records.model.dto.MeasuresDTO;
+import app.smartpot.api.records.model.dto.RecordDTO;
+import app.smartpot.api.records.model.entity.DateRange;
+import app.smartpot.api.records.model.entity.History;
+import app.smartpot.api.records.repository.RecordRepository;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -9,16 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.crops.model.dto.CropDTO;
-import app.smartpot.api.crops.service.CropService;
-import app.smartpot.api.exception.ApiException;
-import app.smartpot.api.exception.ApiResponse;
-import app.smartpot.api.records.model.dto.CropRecordDTO;
-import app.smartpot.api.records.model.dto.MeasuresDTO;
-import app.smartpot.api.records.model.dto.RecordDTO;
-import app.smartpot.api.records.model.entity.DateRange;
-import app.smartpot.api.records.model.entity.History;
-import app.smartpot.api.records.repository.RecordRepository;
 
 import java.util.ArrayList;
 import java.util.List;

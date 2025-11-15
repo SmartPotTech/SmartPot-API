@@ -1,9 +1,9 @@
 package app.smartpot.api.records.model.dto;
 
-import lombok.Data;
 import app.smartpot.api.crops.model.dto.CropDTO;
 import app.smartpot.api.records.model.entity.History;
 import app.smartpot.api.records.model.entity.Measures;
+import lombok.Data;
 
 @Data
 public class CropRecordDTO {

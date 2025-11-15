@@ -1,11 +1,11 @@
 package app.smartpot.api.records.mapper;
 
+import app.smartpot.api.records.model.dto.RecordDTO;
+import app.smartpot.api.records.model.entity.History;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import app.smartpot.api.records.model.dto.RecordDTO;
-import app.smartpot.api.records.model.entity.History;
 
 @Mapper(componentModel = "spring")
 public interface RecordMapper {
