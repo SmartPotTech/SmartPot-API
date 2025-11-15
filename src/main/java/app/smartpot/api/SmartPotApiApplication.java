@@ -8,7 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @SpringBootApplication
-@EnableMongoRepositories(basePackages = "smartpot.com.api")
+@EnableMongoRepositories(basePackages = "app.smartpot.api")
 @EnableCaching
 @Slf4j
 public class SmartPotApiApplication {
