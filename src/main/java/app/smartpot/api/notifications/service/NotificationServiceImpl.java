@@ -1,5 +1,6 @@
-package app.smartpot.api.Notifications.Service;
+package app.smartpot.api.notifications.service;
 
+import app.smartpot.api.notifications.repository.NotificationRepository;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -8,8 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import app.smartpot.api.Exception.ApiException;
 import app.smartpot.api.Exception.ApiResponse;
-import app.smartpot.api.Notifications.Model.Entity.Notification;
-import app.smartpot.api.Notifications.Repository.RNotification;
+import app.smartpot.api.notifications.model.entity.Notification;
 
 import java.util.List;
 
@@ -17,12 +17,12 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SNotification implements SNotificationI {
+public class NotificationServiceImpl implements NotificationService {
 
-    private final RNotification repositoryNotification;
+    private final NotificationRepository repositoryNotification;
 
     @Autowired
-    public SNotification(RNotification repositoryNotification) {
+    public NotificationServiceImpl(NotificationRepository repositoryNotification) {
         this.repositoryNotification = repositoryNotification;
     }
 

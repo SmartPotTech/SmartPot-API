@@ -1,10 +1,10 @@
-package app.smartpot.api.Notifications.Service;
+package app.smartpot.api.notifications.service;
 
-import app.smartpot.api.Notifications.Model.Entity.Notification;
+import app.smartpot.api.notifications.model.entity.Notification;
 
 import java.util.List;
 
-public interface SNotificationI {
+public interface NotificationService {
     List<Notification> findAll();
 
     List<Notification> findByUser(String id);

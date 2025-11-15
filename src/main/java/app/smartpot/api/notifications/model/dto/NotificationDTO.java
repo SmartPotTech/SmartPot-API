@@ -1,4 +1,4 @@
-package app.smartpot.api.Notifications.Model.DTO;
+package app.smartpot.api.notifications.model.dto;
 
 import lombok.Data;
 

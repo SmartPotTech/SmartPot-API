@@ -1,4 +1,4 @@
-package app.smartpot.api.Notifications.Model.Entity;
+package app.smartpot.api.notifications.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotEmpty;

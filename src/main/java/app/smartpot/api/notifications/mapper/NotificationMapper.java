@@ -1,15 +1,15 @@
-package app.smartpot.api.Notifications.Mapper;
+package app.smartpot.api.notifications.mapper;
 
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import app.smartpot.api.Notifications.Model.DTO.NotificationDTO;
-import app.smartpot.api.Notifications.Model.Entity.Notification;
+import app.smartpot.api.notifications.model.dto.NotificationDTO;
+import app.smartpot.api.notifications.model.entity.Notification;
 
 @Mapper(componentModel = "spring")
-public interface MNotification {
-    MNotification INSTANCE = Mappers.getMapper(MNotification.class);
+public interface NotificationMapper {
+    NotificationMapper INSTANCE = Mappers.getMapper(NotificationMapper.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "user", target = "user", qualifiedByName = "stringToObjectId")
