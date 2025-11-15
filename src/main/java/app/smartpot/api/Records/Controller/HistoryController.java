@@ -9,7 +9,7 @@ import app.smartpot.api.Records.Model.DTO.RecordDTO;
 import app.smartpot.api.Records.Model.Entity.DateRange;
 import app.smartpot.api.Records.Model.Entity.History;
 import app.smartpot.api.Records.Service.SHistoryI;
-import app.smartpot.api.Responses.ErrorResponse;
+import app.smartpot.api.responses.ErrorResponse;
 
 import java.util.List;
 

@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Crops.Model.DTO.CropDTO;
 import app.smartpot.api.Crops.Service.SCropI;
-import app.smartpot.api.Responses.ErrorResponse;
+import app.smartpot.api.responses.ErrorResponse;
 import app.smartpot.api.users.model.dto.UserDTO;
 
 @RestController

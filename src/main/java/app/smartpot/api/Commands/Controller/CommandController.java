@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Commands.Model.DTO.CommandDTO;
 import app.smartpot.api.Commands.Service.SCommandI;
 import app.smartpot.api.Crops.Model.DTO.CropDTO;
-import app.smartpot.api.Responses.DeleteResponse;
-import app.smartpot.api.Responses.ErrorResponse;
+import app.smartpot.api.responses.DeleteResponse;
+import app.smartpot.api.responses.ErrorResponse;
 
 @RestController
 @RequestMapping("/Comandos")

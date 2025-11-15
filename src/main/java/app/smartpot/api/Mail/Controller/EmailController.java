@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Mail.Model.DTO.EmailDTO;
 import app.smartpot.api.Mail.Service.EmailServiceI;
-import app.smartpot.api.Responses.ErrorResponse;
+import app.smartpot.api.responses.ErrorResponse;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -13,8 +13,8 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Responses.DeleteResponse;
-import app.smartpot.api.Responses.ErrorResponse;
+import app.smartpot.api.responses.DeleteResponse;
+import app.smartpot.api.responses.ErrorResponse;
 import app.smartpot.api.users.model.dto.UserDTO;
 import app.smartpot.api.users.service.UserService;
 
