@@ -19,16 +19,16 @@ import java.util.List;
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
-    private final NotificationRepository repositoryNotification;
+    private final NotificationRepository notificationRepository;
 
     @Autowired
-    public NotificationServiceImpl(NotificationRepository repositoryNotification) {
-        this.repositoryNotification = repositoryNotification;
+    public NotificationServiceImpl(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
     public List<Notification> findAll() {
-        return repositoryNotification.findAll();
+        return notificationRepository.findAll();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.findByUser(new ObjectId(id))
+        return notificationRepository.findByUser(new ObjectId(id))
                 .orElseThrow(() -> new ApiException(
                         new ApiResponse("La notificación con id '" + id + "' no fue encontrada.",
                                 HttpStatus.NOT_FOUND.value())
@@ -54,7 +54,7 @@ public class NotificationServiceImpl implements NotificationService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.findByUserAndType(new ObjectId(id), type)
+        return notificationRepository.findByUserAndType(new ObjectId(id), type)
                 .orElseThrow(() -> new ApiException(
                         new ApiResponse("No se pudo encontrar notificaciones.",
                                 HttpStatus.NOT_FOUND.value())
@@ -69,7 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.findByUserAndDate(new ObjectId(id), date)
+        return notificationRepository.findByUserAndDate(new ObjectId(id), date)
                 .orElseThrow(() -> new ApiException(
                         new ApiResponse("La notificación con id '" + id + "' no fue encontrada.",
                                 HttpStatus.NOT_FOUND.value())
@@ -84,7 +84,7 @@ public class NotificationServiceImpl implements NotificationService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.updateNotification(new ObjectId(id), notification);
+        return notificationRepository.updateNotification(new ObjectId(id), notification);
     }
 
     @Override
@@ -95,11 +95,11 @@ public class NotificationServiceImpl implements NotificationService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryNotification.delete(new ObjectId(id));
+        return notificationRepository.delete(new ObjectId(id));
     }
 
     @Override
     public Notification save(Notification notification) {
-        return repositoryNotification.save(notification);
+        return notificationRepository.save(notification);
     }
 }

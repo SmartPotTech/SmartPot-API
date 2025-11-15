@@ -3,8 +3,8 @@ package app.smartpot.api.security.service;
 import app.smartpot.api.exception.EncryptionException;
 import app.smartpot.api.exception.InvalidTokenException;
 import app.smartpot.api.mail.model.dto.EmailDTO;
-import app.smartpot.api.mail.service.EmailServiceImpl;
-import app.smartpot.api.mail.validator.EmailValidatorI;
+import app.smartpot.api.mail.service.EmailService;
+import app.smartpot.api.mail.validator.EmailValidator;
 import app.smartpot.api.security.model.dto.ResetTokenDTO;
 import app.smartpot.api.users.model.dto.UserDTO;
 import app.smartpot.api.users.service.UserService;
@@ -28,9 +28,9 @@ import java.util.Optional;
 @Service
 public class JwtServiceImpl implements JwtService {
 
-    private final UserService serviceUser;
-    private final EmailServiceImpl emailServiceImpl;
-    private final EmailValidatorI emailValidator;
+    private final UserService userService;
+    private final EmailService emailService;
+    private final EmailValidator emailValidator;
     private final EncryptionService encryptionService;
 
     @Value("${application.security.jwt.secret-key}")
@@ -41,19 +41,19 @@ public class JwtServiceImpl implements JwtService {
     /**
      * Constructor que inyecta las dependencias del servicio.
      *
-     * @param serviceUser servicio que maneja las operaciones de base de datos.
+     * @param userService servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtServiceImpl(UserService serviceUser, EmailServiceImpl emailServiceImpl, EmailValidatorI emailValidator, EncryptionService encryptionService) {
-        this.serviceUser = serviceUser;
-        this.emailServiceImpl = emailServiceImpl;
+    public JwtServiceImpl(UserService userService, EmailService emailService, EmailValidator emailValidator, EncryptionService encryptionService) {
+        this.userService = userService;
+        this.emailService = emailService;
         this.emailValidator = emailValidator;
         this.encryptionService = encryptionService;
     }
 
     @Override
     public String Login(UserDTO reqUser) throws Exception {
-        return Optional.of(serviceUser.getUserByEmail(reqUser.getEmail()))
+        return Optional.of(userService.getUserByEmail(reqUser.getEmail()))
                 .filter(userDTO -> new BCryptPasswordEncoder().matches(reqUser.getPassword(), userDTO.getPassword()))
                 .map(validUser -> {
                     try {
@@ -95,7 +95,7 @@ public class JwtServiceImpl implements JwtService {
         token = encryptionService.decrypt(token);
 
         String email = extractEmail(token);
-        UserDetails user = serviceUser.loadUserByUsername(email);
+        UserDetails user = userService.loadUserByUsername(email);
         if (email == null) {
             throw new InvalidTokenException("Correo no encontrado.");
         }
@@ -104,14 +104,14 @@ public class JwtServiceImpl implements JwtService {
             throw new InvalidTokenException("Se ha expirado.");
         }
 
-        UserDTO finalUser = serviceUser.getUserByEmail(email);
+        UserDTO finalUser = userService.getUserByEmail(email);
         finalUser.setPassword("");
         return finalUser;
     }
 
     @Override
     public String resetPassword(UserDTO user, String email, String resetToken) throws Exception {
-        return Optional.of(serviceUser.getUserByEmail(email))
+        return Optional.of(userService.getUserByEmail(email))
                 .map(validUser -> {
                     try {
                         String decrypted = encryptionService.decrypt(resetToken);
@@ -121,7 +121,7 @@ public class JwtServiceImpl implements JwtService {
                             throw new ValidationException("Provided reset token is not valid");
                         }
 
-                        return serviceUser.UpdateUserPassword(validUser, user.getPassword());
+                        return userService.UpdateUserPassword(validUser, user.getPassword());
                     } catch (Exception e) {
                         throw new ValidationException(e);
                     }
@@ -138,7 +138,7 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public Boolean forgotPassword(String email) throws Exception {
-        return Optional.of(serviceUser.getUserByEmail(email))
+        return Optional.of(userService.getUserByEmail(email))
                 .map(validUser -> {
                     try {
                         return generateToken(validUser.getId(), validUser.getEmail());
@@ -155,7 +155,7 @@ public class JwtServiceImpl implements JwtService {
                     }
                 })
                 .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null, "true"))
-                .map(emailServiceImpl::sendSimpleMail)
+                .map(emailService::sendSimpleMail)
                 .map(ValidDTO -> {
                     emailValidator.validateId(ValidDTO.getId());
                     emailValidator.validateMsgBody(ValidDTO.getMsgBody());
@@ -180,7 +180,7 @@ public class JwtServiceImpl implements JwtService {
 
     private Boolean validateResetToken(ResetTokenDTO resetTokenDTO) {
         String token = encryptionService.decrypt(resetTokenDTO.getToken());
-        if (!validateToken(token, serviceUser.loadUserByUsername(extractEmail(token)))) {
+        if (!validateToken(token, userService.loadUserByUsername(extractEmail(token)))) {
             return false;
         }
         return !resetTokenDTO.getExpiration().before(new Date());

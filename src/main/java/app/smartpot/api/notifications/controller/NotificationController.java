@@ -36,42 +36,42 @@ public class NotificationController {
      */
 
 
-    private final NotificationService serviceNotification;
+    private final NotificationService notificationService;
 
     @Autowired
-    public NotificationController(NotificationService serviceNotification) {
-        this.serviceNotification = serviceNotification;
+    public NotificationController(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
     @GetMapping
     public List<Notification> getAllNotifications() {
-        return serviceNotification.findAll();
+        return notificationService.findAll();
     }
 
     @GetMapping("/{id}")
     public List<Notification> getNotificationByUser(@PathVariable String id) {
-        return serviceNotification.findByUser(id);
+        return notificationService.findByUser(id);
     }
 
     @GetMapping("/{type}/{id}")
     public List<Notification> getNotificationByUserAndType(@PathVariable String type, @PathVariable String id) {
-        return serviceNotification.findByUserAndType(id, type);
+        return notificationService.findByUserAndType(id, type);
     }
 
     @PostMapping
     public Notification createNotification(@RequestBody Notification newNotification) {
-        return serviceNotification.save(newNotification);
+        return notificationService.save(newNotification);
     }
 
     @PutMapping("/{id}")
     public Notification updateNotification(@PathVariable String id, @RequestBody Notification notificationDetails) {
-        return serviceNotification.updateNotification(id, notificationDetails);
+        return notificationService.updateNotification(id, notificationDetails);
     }
 
 
     @DeleteMapping("/{id}")
     public String deleteNotification(@PathVariable String id) {
-        serviceNotification.delete(id);
+        notificationService.delete(id);
         return "eliminado";
 
     }

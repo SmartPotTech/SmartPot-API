@@ -40,19 +40,21 @@ public class DocumentController {
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("version", version);
+        model.addAttribute("author", author);
         return "redoc";
     }
 
     @GetMapping("${springdoc.scalar.path}")
     public String scalar(Model model) {
         if (!scalarEnabled) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ReDoc está deshabilitado");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Scalar está deshabilitado");
         }
 
         model.addAttribute("specUrl", specUrl);
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("version", version);
+        model.addAttribute("author", author);
         return "scalar";
     }
 }

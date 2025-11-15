@@ -14,21 +14,21 @@ import java.util.List;
 @RequestMapping("/Sessions")
 public class SessionController {
 
-    private final SessionService session;
+    private final SessionService sessionService;
 
     @Autowired
-    public SessionController(SessionService session) {
-        this.session = session;
+    public SessionController(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     @GetMapping
     public List<Session> getAllSessions() {
-        return session.getAllSessions();
+        return sessionService.getAllSessions();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Session> getSession(@PathVariable String id) {
-        Session session1 = session.getSessionById(id);
+        Session session1 = sessionService.getSessionById(id);
         if (session1 != null) {
             return ResponseEntity.ok(session1);
         } else {
@@ -39,7 +39,7 @@ public class SessionController {
     @PostMapping("/Create")
     public ResponseEntity<?> createSession(@RequestBody Session newSession) {
         try {
-            return new ResponseEntity<>(session.createSession(newSession), HttpStatus.OK);
+            return new ResponseEntity<>(sessionService.createSession(newSession), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -47,8 +47,8 @@ public class SessionController {
 
     @DeleteMapping("/Delete/{id}")
     public ResponseEntity<Session> deleteSession(@PathVariable String id) {
-        if (session.getSessionById(id) != null) {
-            session.deleteSessionById(id);
+        if (sessionService.getSessionById(id) != null) {
+            sessionService.deleteSessionById(id);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();
@@ -57,7 +57,7 @@ public class SessionController {
 
     @GetMapping("/user/{UserId}")
     public ResponseEntity<List<Session>> getSessionByUser(@PathVariable String UserId) {
-        List<Session> session1 = session.getSessionByUser(UserId);
+        List<Session> session1 = sessionService.getSessionByUser(UserId);
         if (session1 != null) {
             return ResponseEntity.ok(session1);
         } else {
@@ -67,8 +67,8 @@ public class SessionController {
 
     @DeleteMapping("/deleteUser/{UserId}")
     public ResponseEntity<Session> deleteSessionByUser(@PathVariable String UserId) {
-        if (session.getSessionByUser(UserId) != null) {
-            session.deleteSessionByIdUser(UserId);
+        if (sessionService.getSessionByUser(UserId) != null) {
+            sessionService.deleteSessionByIdUser(UserId);
             return ResponseEntity.ok().build();
         } else {
 

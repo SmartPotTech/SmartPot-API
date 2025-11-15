@@ -17,11 +17,11 @@ import java.util.List;
 @RequestMapping("/Records")
 public class RecordController {
 
-    private final RecordService serviceHistory;
+    private final RecordService recordService;
 
     @Autowired
-    public RecordController(RecordService serviceHistory) {
-        this.serviceHistory = serviceHistory;
+    public RecordController(RecordService recordService) {
+        this.recordService = recordService;
     }
 
     /**
@@ -31,7 +31,7 @@ public class RecordController {
      */
     @GetMapping("/All")
     public List<History> getAllHistories() {
-        return serviceHistory.getAllHistories();
+        return recordService.getAllHistories();
     }
 
     /**
@@ -43,7 +43,7 @@ public class RecordController {
     @PostMapping("/Create")
     @ResponseStatus(HttpStatus.CREATED)
     public History createHistory(@RequestBody RecordDTO newHistory) throws Exception {
-        return serviceHistory.Createhistory(newHistory);
+        return recordService.Createhistory(newHistory);
     }
 
     /**
@@ -54,7 +54,7 @@ public class RecordController {
      */
     @GetMapping("/crop/{id}")
     public List<History> getByCrop(@PathVariable String id) throws Exception {
-        return serviceHistory.getByCrop(id);
+        return recordService.getByCrop(id);
     }
 
     /**
@@ -66,7 +66,7 @@ public class RecordController {
      */
     @PostMapping("/crop/between/{id}")
     public List<History> getByCropAndDateRange(@PathVariable String id, @RequestBody DateRange ranges) {
-        return serviceHistory.getHistoriesByCropAndDateBetween(id, ranges);
+        return recordService.getHistoriesByCropAndDateBetween(id, ranges);
     }
 
     /**
@@ -78,7 +78,7 @@ public class RecordController {
     @GetMapping("/user/{id}")
     public ResponseEntity<?> getByUser(@PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceHistory.getByUser(id), HttpStatus.OK);
+            return new ResponseEntity<>(recordService.getByUser(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -92,7 +92,7 @@ public class RecordController {
      */
     @GetMapping("/{id}")
     public History getHistory(@PathVariable String id) {
-        return serviceHistory.getHistoryById(id);
+        return recordService.getHistoryById(id);
     }
 
 
@@ -105,7 +105,7 @@ public class RecordController {
      */
     @PutMapping("/Update/{id}")
     public History updateHistory(@PathVariable String id, @RequestBody RecordDTO historyDetails) {
-        return serviceHistory.updatedHistory(serviceHistory.getHistoryById(id), historyDetails);
+        return recordService.updatedHistory(recordService.getHistoryById(id), historyDetails);
     }
 
     /**
@@ -116,6 +116,6 @@ public class RecordController {
     @DeleteMapping("/Delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<ApiResponse> deleteHistory(@PathVariable String id) {
-        return serviceHistory.deleteHistory(serviceHistory.getHistoryById(id));
+        return recordService.deleteHistory(recordService.getHistoryById(id));
     }
 }

@@ -1,89 +1,87 @@
 package app.smartpot.api.mail.validator;
 
-import org.bson.types.ObjectId;
-import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
-@Component
-public class EmailValidator implements EmailValidatorI {
-    private static final String EMAIL_PATTERN =
-            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-    private static final int SUBJECT_MAX_LENGTH = 100;
-    private static final int BODY_MAX_LENGTH = 1000;
-    private boolean valid;
-    private List<String> errors;
+/**
+ * Interfaz para la validación de los datos de un email.
+ * <p>
+ * Esta interfaz define los métodos necesarios para validar los campos de un email, como el destinatario (recipient),
+ * el cuerpo del mensaje (msgBody), el asunto (subject) y el archivo adjunto (attachment).
+ * Implementada por clases que proporcionan la lógica de validación concreta, como {@link EmailValidatorImpl}.
+ * </p>
+ */
+public interface EmailValidator {
 
-    public EmailValidator() {
-        this.valid = true;
-        this.errors = new ArrayList<>();
-    }
+    /**
+     * Valida el ID del email.
+     * <p>
+     * El ID debe tener un formato hexadecimal de 24 caracteres (ObjectId).
+     * </p>
+     *
+     * @param id El ID del email a validar.
+     */
+    void validateId(String id);
 
-    @Override
-    public void reset() {
-        this.valid = true;
-        this.errors = new ArrayList<>();
-    }
+    /**
+     * Válida el destinatario del email.
+     * <p>
+     * Debe ser una dirección de correo electrónico válida.
+     * </p>
+     *
+     * @param recipient Dirección de correo electrónico del destinatario.
+     */
+    void validateRecipient(String recipient);
 
-    @Override
-    public boolean isValid() {
-        return valid;
-    }
+    /**
+     * Válida el cuerpo del mensaje del email.
+     * <p>
+     * Puede ser opcional, pero si se proporciona, no debe superar una longitud máxima razonable.
+     * </p>
+     *
+     * @param msgBody Cuerpo del mensaje.
+     */
+    void validateMsgBody(String msgBody);
 
-    @Override
-    public List<String> getErrors() {
-        List<String> currentErrors = errors;
-        reset();
-        return currentErrors;
-    }
+    /**
+     * Válida el asunto del email.
+     * <p>
+     * Debe ser un texto corto y no vacío. Se recomienda un límite de caracteres.
+     * </p>
+     *
+     * @param subject Asunto del email.
+     */
+    void validateSubject(String subject);
 
-    @Override
-    public void validateId(String id) {
-        if (id == null || id.isEmpty()) {
-            errors.add("El Id no puede estar vacío.");
-            valid = false;
-        } else if (!ObjectId.isValid(id)) {
-            errors.add("El Id debe ser un hexadecimal de 24 caracteres.");
-            valid = false;
-        }
-    }
+    /**
+     * Valida el nombre o ruta del archivo adjunto del email.
+     * <p>
+     * Puede ser opcional, pero si se incluye debe tener un formato válido (por ejemplo, nombre.extension).
+     * </p>
+     *
+     * @param attachment Archivo adjunto.
+     */
+    void validateAttachment(String attachment);
 
-    @Override
-    public void validateRecipient(String recipient) {
-        if (recipient == null || recipient.isEmpty()) {
-            errors.add("El destinatario no puede estar vacío.");
-            valid = false;
-        } else if (!Pattern.matches(EMAIL_PATTERN, recipient)) {
-            errors.add("El correo del destinatario no es válido.");
-            valid = false;
-        }
-    }
+    /**
+     * Resetea el estado de la validación.
+     * <p>
+     * Limpia los errores y marca el validador como válido.
+     * </p>
+     */
+    void reset();
 
-    @Override
-    public void validateSubject(String subject) {
-        if (subject != null && subject.length() > SUBJECT_MAX_LENGTH) {
-            errors.add("El asunto no puede tener más de " + SUBJECT_MAX_LENGTH + " caracteres.");
-            valid = false;
-        }
-    }
+    /**
+     * Indica si todos los campos del email son válidos.
+     *
+     * @return <code>true</code> si todos los campos son válidos, <code>false</code> si hay errores.
+     */
+    boolean isValid();
 
-    @Override
-    public void validateMsgBody(String msgBody) {
-        if (msgBody != null && msgBody.length() > BODY_MAX_LENGTH) {
-            errors.add("El mensaje no puede tener más de " + BODY_MAX_LENGTH + " caracteres.");
-            valid = false;
-        }
-    }
-
-    @Override
-    public void validateAttachment(String attachment) {
-        if (attachment != null && !attachment.isEmpty()) {
-            if (!attachment.startsWith("http://") && !attachment.startsWith("https://")) {
-                errors.add("El enlace del adjunto debe ser una URL válida (http o https).");
-                valid = false;
-            }
-        }
-    }
+    /**
+     * Devuelve la lista de errores encontrados durante la validación.
+     *
+     * @return Lista de mensajes de error.
+     */
+    List<String> getErrors();
 }
+

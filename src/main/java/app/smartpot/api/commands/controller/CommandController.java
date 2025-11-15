@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/Comandos")
 public class CommandController {
 
-    private final CommandService serviceCommand;
+    private final CommandService commandService;
 
     @Autowired
-    public CommandController(CommandService serviceCommand) {
-        this.serviceCommand = serviceCommand;
+    public CommandController(CommandService commandService) {
+        this.commandService = commandService;
     }
 
     @PostMapping("/Create")
@@ -42,7 +42,7 @@ public class CommandController {
     public ResponseEntity<?> createCommand(@Parameter(description = "Datos del nuevo comando que se va a crear. Debe incluir tipo y cultivo asociado.",
             required = true) @RequestBody CommandDTO commandDTO) {
         try {
-            return new ResponseEntity<>(serviceCommand.createCommand(commandDTO), HttpStatus.CREATED);
+            return new ResponseEntity<>(commandService.createCommand(commandDTO), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al crear el comando [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 
@@ -64,7 +64,7 @@ public class CommandController {
             })
     public ResponseEntity<?> getAllCommand() {
         try {
-            return new ResponseEntity<>(serviceCommand.getAllCommands(), HttpStatus.OK);
+            return new ResponseEntity<>(commandService.getAllCommands(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -84,7 +84,7 @@ public class CommandController {
             })
     public ResponseEntity<?> getUserById(@PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceCommand.getCommandById(id), HttpStatus.OK);
+            return new ResponseEntity<>(commandService.getCommandById(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -104,7 +104,7 @@ public class CommandController {
             })
     public ResponseEntity<?> executeCommand(@PathVariable String id, @PathVariable String response) {
         try {
-            return new ResponseEntity<>(serviceCommand.executeCommand(id, response), HttpStatus.OK);
+            return new ResponseEntity<>(commandService.executeCommand(id, response), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -124,7 +124,7 @@ public class CommandController {
             })
     public ResponseEntity<?> deleteCommand(@Parameter(description = "ID único del comando que se desea eliminar.", required = true) @PathVariable String id) {
         try {
-            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceCommand.deleteCommand(id) + "]"), HttpStatus.OK);
+            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + commandService.deleteCommand(id) + "]"), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -144,7 +144,7 @@ public class CommandController {
             })
     public ResponseEntity<?> updateCommand(@PathVariable String id, @RequestBody CommandDTO updatedCommand) {
         try {
-            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceCommand.updateCommand(id, updatedCommand) + "]"), HttpStatus.OK);
+            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + commandService.updateCommand(id, updatedCommand) + "]"), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

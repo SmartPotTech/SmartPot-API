@@ -21,20 +21,20 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Cultivos", description = "Operaciones relacionadas con cultivos")
 public class CropController {
 
-    private final CropService serviceCrop;
+    private final CropService cropService;
 
     /**
      * Constructor del controlador {@link CropController}.
      * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link CropService} que gestionará las operaciones
      * relacionadas con los cultivos.</p>
      *
-     * @param serviceCrop El servicio que contiene la lógica de negocio para manejar cultivos.
+     * @param cropService El servicio que contiene la lógica de negocio para manejar cultivos.
      * @throws NullPointerException Si el servicio proporcionado es {@code null}.
      * @see CropService
      */
     @Autowired
-    public CropController(CropService serviceCrop) {
-        this.serviceCrop = serviceCrop;
+    public CropController(CropService cropService) {
+        this.cropService = cropService;
     }
 
     /**
@@ -71,7 +71,7 @@ public class CropController {
     public ResponseEntity<?> createCrop(@Parameter(description = "Datos del nuevo cultivo que se va a crear. Debe incluir tipo y usuario asociado.",
             required = true) @RequestBody CropDTO cropDTO) {
         try {
-            return new ResponseEntity<>(serviceCrop.createCrop(cropDTO), HttpStatus.CREATED);
+            return new ResponseEntity<>(cropService.createCrop(cropDTO), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al crear el cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
 
@@ -109,7 +109,7 @@ public class CropController {
             })
     public ResponseEntity<?> getAllCrops() {
         try {
-            return new ResponseEntity<>(serviceCrop.getAllCrops(), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getAllCrops(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -149,7 +149,7 @@ public class CropController {
             })
     public ResponseEntity<?> getCropById(@Parameter(description = "ID único del cultivo", required = true) @PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.getCropById(id), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getCropById(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar el cultivo con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -187,7 +187,7 @@ public class CropController {
             })
     public ResponseEntity<?> getCropsByStatus(@Parameter(description = "Estado de los cultivos a buscar", required = true) @PathVariable String status) {
         try {
-            return new ResponseEntity<>(serviceCrop.getCropsByStatus(status), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getCropsByStatus(status), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar cultivos con estado '" + status + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -225,7 +225,7 @@ public class CropController {
             })
     public ResponseEntity<?> getAllStatus() {
         try {
-            return new ResponseEntity<>(serviceCrop.getAllStatus(), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getAllStatus(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar los estados de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -263,7 +263,7 @@ public class CropController {
             })
     public ResponseEntity<?> getCropsByType(@Parameter(description = "Tipo de los cultivos a buscar", required = true) @PathVariable String type) {
         try {
-            return new ResponseEntity<>(serviceCrop.getCropsByType(type), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getCropsByType(type), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar cultivos con tipo '" + type + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -301,7 +301,7 @@ public class CropController {
             })
     public ResponseEntity<?> getAllTypes() {
         try {
-            return new ResponseEntity<>(serviceCrop.getAllTypes(), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getAllTypes(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar los tipos de cultivo [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -340,7 +340,7 @@ public class CropController {
             })
     public ResponseEntity<?> getCropByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.getCropsByUser(id), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.getCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al buscar los cultivos del usuario con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -381,7 +381,7 @@ public class CropController {
             })
     public ResponseEntity<?> countCropsByUser(@PathVariable @Parameter(description = "ID único del usuario para buscar sus cultivos", required = true) String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.countCropsByUser(id), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.countCropsByUser(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al contar los cultivos del usuario con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -422,7 +422,7 @@ public class CropController {
             })
     public ResponseEntity<?> updateCrop(@Parameter(description = "ID único del cultivo a actualizar", required = true) @PathVariable String id, @Parameter(description = "Información del cultivo a actualizar", required = true) @RequestBody CropDTO cropDetails) {
         try {
-            return new ResponseEntity<>(serviceCrop.updatedCrop(id, cropDetails), HttpStatus.OK);
+            return new ResponseEntity<>(cropService.updatedCrop(id, cropDetails), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el cultivo con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -462,7 +462,7 @@ public class CropController {
             })
     public ResponseEntity<?> deleteCrop(@Parameter(description = "ID único del cultivo a eliminar", required = true) @PathVariable String id) {
         try {
-            return new ResponseEntity<>(serviceCrop.deleteCrop(id), HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(cropService.deleteCrop(id), HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al eliminar el cultivo con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }

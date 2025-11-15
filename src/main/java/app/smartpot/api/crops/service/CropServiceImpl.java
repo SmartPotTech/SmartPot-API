@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
 @Service
 public class CropServiceImpl implements CropService {
 
-    private final CropRepository repositoryCrop;
-    private final UserService serviceUser;
-    private final CropMapper mapperCrop;
-    private final CropValidator validatorCrop;
+    private final CropRepository cropRepository;
+    private final UserService userService;
+    private final CropMapper cropMapper;
+    private final CropValidator cropValidator;
 
     /**
      * Constructor del servicio de cultivos.
@@ -48,21 +48,21 @@ public class CropServiceImpl implements CropService {
      * incluyendo el repositorio de cultivos {@link CropRepository}, el servicio de usuarios {@link UserService},
      * el convertidor de cultivos {@link CropMapper}, y el validador de cultivos {@link CropValidator}.</p>
      *
-     * @param repositoryCrop El repositorio que maneja las operaciones de base de datos para cultivos.
-     * @param serviceUser    El servicio de usuarios, utilizado para interactuar con los detalles de los usuarios.
-     * @param mapperCrop     El convertidor que convierte las entidades de cultivos a objetos DTO correspondientes.
-     * @param validatorCrop  El validador que valida los datos relacionados con los cultivos.
+     * @param cropRepository El repositorio que maneja las operaciones de base de datos para cultivos.
+     * @param userService    El servicio de usuarios, utilizado para interactuar con los detalles de los usuarios.
+     * @param cropMapper     El convertidor que convierte las entidades de cultivos a objetos DTO correspondientes.
+     * @param cropValidator  El validador que valida los datos relacionados con los cultivos.
      * @see CropRepository
      * @see UserService
      * @see CropMapper
      * @see CropValidator
      */
     @Autowired
-    public CropServiceImpl(CropRepository repositoryCrop, UserService serviceUser, CropMapper mapperCrop, CropValidator validatorCrop) {
-        this.repositoryCrop = repositoryCrop;
-        this.serviceUser = serviceUser;
-        this.mapperCrop = mapperCrop;
-        this.validatorCrop = validatorCrop;
+    public CropServiceImpl(CropRepository cropRepository, UserService userService, CropMapper cropMapper, CropValidator cropValidator) {
+        this.cropRepository = cropRepository;
+        this.userService = userService;
+        this.cropMapper = cropMapper;
+        this.cropValidator = cropValidator;
     }
 
     /**
@@ -91,26 +91,26 @@ public class CropServiceImpl implements CropService {
     public CropDTO createCrop(CropDTO cropDTO) throws Exception {
         return Optional.of(cropDTO)
                 .map(ValidCropDTO -> {
-                    validatorCrop.validateType(ValidCropDTO.getType());
+                    cropValidator.validateType(ValidCropDTO.getType());
                     try {
-                        serviceUser.getUserById(ValidCropDTO.getUser());
+                        userService.getUserById(ValidCropDTO.getUser());
                     } catch (Exception e) {
                         throw new ValidationException(e.getMessage() + ", asocia el cultivo a un usuario existente");
                     }
 
-                    if (!validatorCrop.isValid()) {
-                        throw new ValidationException(validatorCrop.getErrors().toString());
+                    if (!cropValidator.isValid()) {
+                        throw new ValidationException(cropValidator.getErrors().toString());
                     }
-                    validatorCrop.Reset();
+                    cropValidator.Reset();
                     return ValidCropDTO;
                 })
                 .map(dto -> {
                     dto.setStatus("Unknown");
                     return dto;
                 })
-                .map(mapperCrop::toEntity)
-                .map(repositoryCrop::save)
-                .map(mapperCrop::toDTO)
+                .map(cropMapper::toEntity)
+                .map(cropRepository::save)
+                .map(cropMapper::toDTO)
                 .orElseThrow(() -> new Exception("El cultivo ya existe"));
     }
 
@@ -130,10 +130,10 @@ public class CropServiceImpl implements CropService {
     @Override
     @Cacheable(value = "crops", key = "'all_crops'")
     public List<CropDTO> getAllCrops() throws Exception {
-        return Optional.of(repositoryCrop.findAll())
+        return Optional.of(cropRepository.findAll())
                 .filter(crops -> !crops.isEmpty())
                 .map(crops -> crops.stream()
-                        .map(mapperCrop::toDTO)
+                        .map(cropMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún cultivo"));
     }
@@ -161,17 +161,17 @@ public class CropServiceImpl implements CropService {
     public CropDTO getCropById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidCropId -> {
-                    validatorCrop.validateId(ValidCropId);
-                    if (!validatorCrop.isValid()) {
-                        throw new ValidationException(validatorCrop.getErrors().toString());
+                    cropValidator.validateId(ValidCropId);
+                    if (!cropValidator.isValid()) {
+                        throw new ValidationException(cropValidator.getErrors().toString());
                     }
-                    validatorCrop.Reset();
+                    cropValidator.Reset();
                     return new ObjectId(ValidCropId);
                 })
-                .map(repositoryCrop::findById)
+                .map(cropRepository::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(mapperCrop::toDTO)
+                .map(cropMapper::toDTO)
                 .orElseThrow(() -> new Exception("El cultivo no existe"));
     }
 
@@ -195,12 +195,12 @@ public class CropServiceImpl implements CropService {
     @Override
     @Cacheable(value = "crops", key = "'user_'+#id")
     public List<CropDTO> getCropsByUser(String id) throws Exception {
-        return Optional.of(serviceUser.getUserById(id))
+        return Optional.of(userService.getUserById(id))
                 .map(validUser -> new ObjectId(validUser.getId()))
-                .map(repositoryCrop::findByUser)
+                .map(cropRepository::findByUser)
                 .filter(crops -> !crops.isEmpty())
                 .map(crops -> crops.stream()
-                        .map(mapperCrop::toDTO)
+                        .map(cropMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No tiene ningún cultivo"));
     }
@@ -247,17 +247,17 @@ public class CropServiceImpl implements CropService {
     public List<CropDTO> getCropsByType(String type) throws Exception {
         return Optional.of(type)
                 .map(ValidType -> {
-                    validatorCrop.validateType(ValidType);
-                    if (!validatorCrop.isValid()) {
-                        throw new ValidationException(validatorCrop.getErrors().toString());
+                    cropValidator.validateType(ValidType);
+                    if (!cropValidator.isValid()) {
+                        throw new ValidationException(cropValidator.getErrors().toString());
                     }
-                    validatorCrop.Reset();
+                    cropValidator.Reset();
                     return ValidType;
                 })
-                .map(repositoryCrop::findByType)
+                .map(cropRepository::findByType)
                 .filter(crops -> !crops.isEmpty())
                 .map(crops -> crops.stream()
-                        .map(mapperCrop::toDTO)
+                        .map(cropMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existen cultivos"));
     }
@@ -309,17 +309,17 @@ public class CropServiceImpl implements CropService {
     public List<CropDTO> getCropsByStatus(String status) throws Exception {
         return Optional.of(status)
                 .map(ValidStatus -> {
-                    validatorCrop.validateStatus(ValidStatus);
-                    if (!validatorCrop.isValid()) {
-                        throw new ValidationException(validatorCrop.getErrors().toString());
+                    cropValidator.validateStatus(ValidStatus);
+                    if (!cropValidator.isValid()) {
+                        throw new ValidationException(cropValidator.getErrors().toString());
                     }
-                    validatorCrop.Reset();
+                    cropValidator.Reset();
                     return ValidStatus;
                 })
-                .map(repositoryCrop::findByStatus)
+                .map(cropRepository::findByStatus)
                 .filter(crops -> !crops.isEmpty())
                 .map(crops -> crops.stream()
-                        .map(mapperCrop::toDTO)
+                        .map(cropMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existen cultivos"));
     }
@@ -383,23 +383,23 @@ public class CropServiceImpl implements CropService {
                     return existingCrop;
                 })
                 .map(dto -> {
-                    validatorCrop.validateStatus(dto.getStatus());
-                    validatorCrop.validateType(dto.getType());
+                    cropValidator.validateStatus(dto.getStatus());
+                    cropValidator.validateType(dto.getType());
                     try {
-                        serviceUser.getUserById(existingCrop.getId());
+                        userService.getUserById(existingCrop.getId());
                     } catch (Exception e) {
                         throw new ValidationException(e.getMessage() + ", asocia el cultivo a un usuario existente");
                     }
-                    if (!validatorCrop.isValid()) {
-                        throw new ValidationException(validatorCrop.getErrors().toString());
+                    if (!cropValidator.isValid()) {
+                        throw new ValidationException(cropValidator.getErrors().toString());
                     }
 
-                    validatorCrop.Reset();
+                    cropValidator.Reset();
                     return dto;
                 })
-                .map(mapperCrop::toEntity)
-                .map(repositoryCrop::save)
-                .map(mapperCrop::toDTO)
+                .map(cropMapper::toEntity)
+                .map(cropRepository::save)
+                .map(cropMapper::toDTO)
                 .orElseThrow(() -> new Exception("El cultivo no se pudo actualizar"));
     }
 
@@ -423,7 +423,7 @@ public class CropServiceImpl implements CropService {
     public String deleteCrop(String id) throws Exception {
         return Optional.of(getCropById(id))
                 .map(user -> {
-                    repositoryCrop.deleteById(new ObjectId(user.getId()));
+                    cropRepository.deleteById(new ObjectId(user.getId()));
                     return "El Cultivo con ID '" + id + "' fue eliminado.";
                 })
                 .orElseThrow(() -> new Exception("El Cultivo no existe."));

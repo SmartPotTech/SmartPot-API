@@ -29,13 +29,13 @@ import java.util.List;
 @Service
 public class RecordServiceImpl implements RecordService {
 
-    private final RecordRepository repositoryHistory;
-    private final CropService serviceCrop;
+    private final RecordRepository recordRepository;
+    private final CropService cropService;
 
     @Autowired
-    public RecordServiceImpl(RecordRepository repositoryHistory, CropService serviceCrop) {
-        this.repositoryHistory = repositoryHistory;
-        this.serviceCrop = serviceCrop;
+    public RecordServiceImpl(RecordRepository recordRepository, CropService cropService) {
+        this.recordRepository = recordRepository;
+        this.cropService = cropService;
     }
 
     //Validations
@@ -171,7 +171,7 @@ public class RecordServiceImpl implements RecordService {
      */
     @Override
     public List<History> getAllHistories() {
-        List<History> records = repositoryHistory.findAll();
+        List<History> records = recordRepository.findAll();
         if (records.isEmpty()) {
             throw new ApiException(new ApiResponse(
                     "No se encontró ningún registro en el historial",
@@ -196,7 +196,7 @@ public class RecordServiceImpl implements RecordService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositoryHistory.findById(new ObjectId(id))
+        return recordRepository.findById(new ObjectId(id))
                 .orElseThrow(() -> new ApiException(
                         new ApiResponse("El History con id '" + id + "' no fue encontrado.",
                                 HttpStatus.NOT_FOUND.value())
@@ -213,7 +213,7 @@ public class RecordServiceImpl implements RecordService {
      */
     @Override
     public List<History> getByCrop(String cropId) throws Exception {
-        return repositoryHistory.getHistoriesByCrop(new ObjectId(serviceCrop.getCropById(cropId).getId()));
+        return recordRepository.getHistoriesByCrop(new ObjectId(cropService.getCropById(cropId).getId()));
     }
 
     /**
@@ -243,7 +243,7 @@ public class RecordServiceImpl implements RecordService {
 
         // TODO: Validar correctamente las fechas
 
-        return repositoryHistory.getHistoriesByCropAndDateBetween(
+        return recordRepository.getHistoriesByCropAndDateBetween(
                 new ObjectId(cropId),
                 ranges.getStartDate(),
                 ranges.getEndDate()
@@ -262,7 +262,7 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public List<CropRecordDTO> getByUser(String id) throws Exception {
         List<CropRecordDTO> records = new ArrayList<>();
-        List<CropDTO> crops = serviceCrop.getCropsByUser(id);
+        List<CropDTO> crops = cropService.getCropsByUser(id);
         // Verificar si el usuario tiene cultivos
         if (crops.isEmpty()) {
             throw new ApiException(new ApiResponse(
@@ -271,7 +271,7 @@ public class RecordServiceImpl implements RecordService {
             ));
         }
         for (CropDTO crop : crops) {
-            List<History> histories = repositoryHistory.getHistoriesByCrop(new ObjectId(crop.getId()));
+            List<History> histories = recordRepository.getHistoriesByCrop(new ObjectId(crop.getId()));
 
             for (History history : histories) {
                 records.add(new CropRecordDTO(crop, history));
@@ -290,9 +290,9 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public History Createhistory(RecordDTO recordDTO) throws Exception {
         ValidationMesuares(recordDTO.getMeasures());
-        serviceCrop.getCropById(recordDTO.getCrop());
+        cropService.getCropById(recordDTO.getCrop());
         History history = RecordMapper.INSTANCE.toEntity(recordDTO);
-        return repositoryHistory.save(history);
+        return recordRepository.save(history);
     }
 
     /**
@@ -310,7 +310,7 @@ public class RecordServiceImpl implements RecordService {
         }
 
         try {
-            return repositoryHistory.save(existingHistory);
+            return recordRepository.save(existingHistory);
         } catch (Exception e) {
             log.error("e: ", e);
             throw new ApiException(
@@ -329,7 +329,7 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public ResponseEntity<ApiResponse> deleteHistory(History existingHistory) {
         try {
-            repositoryHistory.deleteById(existingHistory.getId());
+            recordRepository.deleteById(existingHistory.getId());
             return ResponseEntity.status(HttpStatus.OK.value()).body(
                     new ApiResponse("El History con ID '" + existingHistory.getId() + "' fue eliminado.",
                             HttpStatus.OK.value())

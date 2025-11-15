@@ -66,22 +66,22 @@ import java.util.stream.Collectors;
 @Service
 public class CommandServiceImpl implements CommandService {
 
-    private final CommandRepository repositoryCommand;
-    private final CropService serviceCrop;
-    private final CommandMapper mapperCommand;
+    private final CommandRepository commandRepository;
+    private final CropService cropService;
+    private final CommandMapper commandMapper;
 
     /**
      * Constructs an instance of {@code SCommand} with the required dependencies.
      *
-     * @param repositoryCommand the repository for command-related database operations
-     * @param serviceCrop       the service responsible for crop-related logic
-     * @param mapperCommand     the mapper for converting entities to DTOs and vice versa
+     * @param commandRepository the repository for command-related database operations
+     * @param cropService       the service responsible for crop-related logic
+     * @param commandMapper     the mapper for converting entities to DTOs and vice versa
      */
     @Autowired
-    public CommandServiceImpl(CommandRepository repositoryCommand, CropService serviceCrop, CommandMapper mapperCommand) {
-        this.repositoryCommand = repositoryCommand;
-        this.serviceCrop = serviceCrop;
-        this.mapperCommand = mapperCommand;
+    public CommandServiceImpl(CommandRepository commandRepository, CropService cropService, CommandMapper commandMapper) {
+        this.commandRepository = commandRepository;
+        this.cropService = cropService;
+        this.commandMapper = commandMapper;
     }
 
     /**
@@ -97,10 +97,10 @@ public class CommandServiceImpl implements CommandService {
     @Override
     @Cacheable(value = "commands", key = "'all_commands'")
     public List<CommandDTO> getAllCommands() throws Exception {
-        return Optional.of(repositoryCommand.findAll())
+        return Optional.of(commandRepository.findAll())
                 .filter(commands -> !commands.isEmpty())
                 .map(crops -> crops.stream()
-                        .map(mapperCommand::toDTO)
+                        .map(commandMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún comando"));
     }
@@ -121,10 +121,10 @@ public class CommandServiceImpl implements CommandService {
     public CommandDTO getCommandById(String id) throws Exception {
         return Optional.of(id)
                 .map(ObjectId::new)
-                .map(repositoryCommand::findById)
+                .map(commandRepository::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(mapperCommand::toDTO)
+                .map(commandMapper::toDTO)
                 .orElseThrow(() -> new Exception("El Comando no existe"));
     }
 
@@ -151,9 +151,9 @@ public class CommandServiceImpl implements CommandService {
                     dto.setStatus("PENDING");
                     return dto;
                 })
-                .map(mapperCommand::toEntity)
-                .map(repositoryCommand::save)
-                .map(mapperCommand::toDTO)
+                .map(commandMapper::toEntity)
+                .map(commandRepository::save)
+                .map(commandMapper::toDTO)
                 .orElseThrow(() -> new IllegalStateException("El Comando ya existe"));
     }
 
@@ -181,9 +181,9 @@ public class CommandServiceImpl implements CommandService {
                     commandDTO.setResponse(response);
                     return commandDTO;
                 })
-                .map(mapperCommand::toEntity)
-                .map(repositoryCommand::save)
-                .map(mapperCommand::toDTO)
+                .map(commandMapper::toEntity)
+                .map(commandRepository::save)
+                .map(commandMapper::toDTO)
                 .orElseThrow(() -> new Exception("El Comando no se pudo actualizar"));
     }
 
@@ -212,9 +212,9 @@ public class CommandServiceImpl implements CommandService {
                     existingCommand.setCrop(dto.getCrop() != null ? dto.getCrop() : existingCommand.getCrop());
                     return existingCommand;
                 })
-                .map(mapperCommand::toEntity)
-                .map(repositoryCommand::save)
-                .map(mapperCommand::toDTO)
+                .map(commandMapper::toEntity)
+                .map(commandRepository::save)
+                .map(commandMapper::toDTO)
                 .orElseThrow(() -> new Exception("El Comando no se pudo actualizar"));
     }
 
@@ -235,7 +235,7 @@ public class CommandServiceImpl implements CommandService {
     public String deleteCommand(String id) throws Exception {
         return Optional.of(getCommandById(id))
                 .map(command -> {
-                    repositoryCommand.deleteById(new ObjectId(command.getId()));
+                    commandRepository.deleteById(new ObjectId(command.getId()));
                     return "El Comando con ID '" + id + "' fue eliminado.";
                 })
                 .orElseThrow(() -> new Exception("El Comando no existe."));

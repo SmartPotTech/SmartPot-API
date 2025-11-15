@@ -22,13 +22,13 @@ import java.util.Optional;
 @Service
 public class SessionServiceImpl implements SessionService {
 
-    private final SessionRepository repositorySession;
-    private final UserService user;
+    private final SessionRepository sessionRepository;
+    private final UserService userService;
 
     @Autowired
-    public SessionServiceImpl(SessionRepository repositorySession, UserService user) {
-        this.repositorySession = repositorySession;
-        this.user = user;
+    public SessionServiceImpl(SessionRepository sessionRepository, UserService userService) {
+        this.sessionRepository = sessionRepository;
+        this.userService = userService;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class SessionServiceImpl implements SessionService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        return repositorySession.findById(sessionId).orElseThrow(() -> new ApiException(
+        return sessionRepository.findById(sessionId).orElseThrow(() -> new ApiException(
                 new ApiResponse("la sesion con id '" + sessionId + "' no fue encontrado.",
                         HttpStatus.NOT_FOUND.value())
         ));
@@ -47,12 +47,12 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<Session> getSessionsByUser(String user) {
-        return repositorySession.findByUser(user);
+        return sessionRepository.findByUser(user);
     }
 
     @Override
     public List<Session> getAllSessions() {
-        return repositorySession.findAll();
+        return sessionRepository.findAll();
     }
 
 
@@ -65,7 +65,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public long countSessionsByUser(String user) {
-        return repositorySession.countByUser(user);
+        return sessionRepository.countByUser(user);
     }
 /*
     public List<Session> getFutureSessions(Date currentDate) {
@@ -80,7 +80,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         // Verificar que el usuario referenciado exista en la base de datos
-        Optional<UserDTO> userOptional = Optional.ofNullable(user.getUserById(newSession.getUser()));
+        Optional<UserDTO> userOptional = Optional.ofNullable(userService.getUserById(newSession.getUser()));
         if (userOptional.isEmpty()) {
             throw new IllegalArgumentException("El usuario especificado no existe.");
         }
@@ -93,13 +93,13 @@ public class SessionServiceImpl implements SessionService {
 
         // (Opcional) Verificar si ya existe una sesión activa para el usuario
         // Esto depende de la lógica de negocio: si se permite solo una sesión activa por usuario, implementa esta verificación.
-        long activeSessions = repositorySession.countByUser(newSession.getUser());
+        long activeSessions = sessionRepository.countByUser(newSession.getUser());
         if (activeSessions > 0) {
             throw new IllegalStateException("El usuario ya tiene una sesión activa.");
         }
 
         // Si pasa todas las validaciones, guarda la nueva sesión
-        return repositorySession.save(newSession);
+        return sessionRepository.save(newSession);
     }
 
     @Override
@@ -111,11 +111,11 @@ public class SessionServiceImpl implements SessionService {
             ));
         }
         // Intenta encontrar la sesión por ID
-        Optional<Session> sessionOptional = repositorySession.findById(sessionId);
+        Optional<Session> sessionOptional = sessionRepository.findById(sessionId);
 
         // Si la sesión existe, elimínala
         if (sessionOptional.isPresent()) {
-            repositorySession.deleteById(sessionId);
+            sessionRepository.deleteById(sessionId);
         } else {
             // Si la sesión no existe, lanza una excepción
             throw new ApiException(
@@ -134,7 +134,7 @@ public class SessionServiceImpl implements SessionService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        List<Session> sessions = repositorySession.findByUser(userId);
+        List<Session> sessions = sessionRepository.findByUser(userId);
 
         if (sessions.isEmpty()) {
             throw new ApiException(new ApiResponse(
@@ -144,7 +144,7 @@ public class SessionServiceImpl implements SessionService {
         }
 
         for (Session session : sessions) {
-            repositorySession.deleteById(session.getId().toString());
+            sessionRepository.deleteById(session.getId().toString());
         }
 
     }
@@ -157,7 +157,7 @@ public class SessionServiceImpl implements SessionService {
                     HttpStatus.BAD_REQUEST.value()
             ));
         }
-        List<Session> sessions = repositorySession.findByUser(userId);
+        List<Session> sessions = sessionRepository.findByUser(userId);
 
         if (sessions.isEmpty()) {
             throw new ApiException(new ApiResponse(

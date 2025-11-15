@@ -3,6 +3,7 @@ package app.smartpot.api.security.config;
 
 import app.smartpot.api.security.config.filters.JwtAuthFilter;
 import app.smartpot.api.security.config.headers.CorsConfig;
+import app.smartpot.api.users.service.UserService;
 import app.smartpot.api.users.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,14 +31,14 @@ public class SecurityConfiguration {
 
     private final CorsConfig corsConfig;
     private final JwtAuthFilter jwtAuthFilter;
-    private final UserServiceImpl serviceUser;
+    private final UserService userService;
     @Value("${application.security.public.routes}")
     private String publicRoutes;
 
-    public SecurityConfiguration(CorsConfig corsConfig, JwtAuthFilter jwtAuthFilter, UserServiceImpl serviceUser) {
+    public SecurityConfiguration(CorsConfig corsConfig, JwtAuthFilter jwtAuthFilter, UserService userService) {
         this.corsConfig = corsConfig;
         this.jwtAuthFilter = jwtAuthFilter;
-        this.serviceUser = serviceUser;
+        this.userService = userService;
     }
 
     /**
@@ -90,7 +91,7 @@ public class SecurityConfiguration {
     @Bean
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(serviceUser);
+        provider.setUserDetailsService(userService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
