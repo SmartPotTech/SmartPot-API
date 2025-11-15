@@ -1,4 +1,4 @@
-package smartpot.com.api.Actuators.Service;
+package app.smartpot.api.actuators.service;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import smartpot.com.api.Actuators.Mapper.MActuators;
-import smartpot.com.api.Actuators.Model.DTO.ActuatorDTO;
-import smartpot.com.api.Actuators.Model.Entity.Actuator;
-import smartpot.com.api.Actuators.Repository.RActuator;
+import app.smartpot.api.actuators.mapper.ActuatorMapper;
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.model.entity.Actuator;
+import app.smartpot.api.actuators.repository.ActuatorRepository;
 import smartpot.com.api.Crops.Service.SCropI;
 import smartpot.com.api.Exception.ApiException;
 import smartpot.com.api.Exception.ApiResponse;
@@ -22,13 +22,13 @@ import java.util.List;
 @Data
 @Builder
 @Service
-public class SActuator implements SActuatorI {
+public class ServiceActuatorImpl implements ServiceActuator {
 
-    private final RActuator actuatorRepository;
+    private final ActuatorRepository actuatorRepository;
     private final SCropI serviceCrop;
 
     @Autowired
-    public SActuator(RActuator actuatorRepository, SCropI serviceCrop) {
+    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, SCropI serviceCrop) {
         this.actuatorRepository = actuatorRepository;
         this.serviceCrop = serviceCrop;
     }
@@ -74,14 +74,14 @@ public class SActuator implements SActuatorI {
     @Override
     public Actuator createActuator(ActuatorDTO actuator) throws Exception {
         serviceCrop.getCropById(actuator.getCrop());
-        Actuator act = MActuators.INSTANCE.toEntity(actuator);
+        Actuator act = ActuatorMapper.INSTANCE.toEntity(actuator);
         return actuatorRepository.save(act);
     }
 
     @Override
     public Actuator updateActuator(Actuator existingActuator, ActuatorDTO actuator) {
         if (actuator.getId() != null && actuator.getCrop() != null) {
-            existingActuator = MActuators.INSTANCE.toEntity(actuator);
+            existingActuator = ActuatorMapper.INSTANCE.toEntity(actuator);
         }
 
         try {

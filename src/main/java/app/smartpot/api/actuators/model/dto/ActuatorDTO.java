@@ -1,8 +1,8 @@
-package smartpot.com.api.Actuators.Model.DTO;
+package app.smartpot.api.actuators.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import smartpot.com.api.Actuators.Model.Entity.ActuatorType;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
 
 @Data
 public class ActuatorDTO {

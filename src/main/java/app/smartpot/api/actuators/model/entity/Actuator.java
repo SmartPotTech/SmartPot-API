@@ -1,7 +1,5 @@
-package smartpot.com.api.Actuators.Model.Entity;
+package app.smartpot.api.actuators.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,8 +9,6 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.Date;
 
 @Data
 @Builder
