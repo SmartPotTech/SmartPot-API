@@ -1,10 +1,10 @@
 package app.smartpot.api.crops.repository;
 
+import app.smartpot.api.crops.model.entity.Crop;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import app.smartpot.api.crops.model.entity.Crop;
 
 import java.util.List;
 

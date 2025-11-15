@@ -1,11 +1,11 @@
 package app.smartpot.api.notifications.repository;
 
+import app.smartpot.api.notifications.model.entity.Notification;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.notifications.model.entity.Notification;
 
 import java.util.List;
 import java.util.Optional;

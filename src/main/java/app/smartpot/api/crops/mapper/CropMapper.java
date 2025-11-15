@@ -1,10 +1,10 @@
 package app.smartpot.api.crops.mapper;
 
+import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.model.entity.Crop;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import app.smartpot.api.crops.model.dto.CropDTO;
-import app.smartpot.api.crops.model.entity.Crop;
 
 @Mapper(componentModel = "spring")
 public interface CropMapper {

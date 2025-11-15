@@ -1,11 +1,11 @@
 package app.smartpot.api.commands.mapper;
 
+import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.commands.model.entity.Command;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import app.smartpot.api.commands.model.dto.CommandDTO;
-import app.smartpot.api.commands.model.entity.Command;
 
 @Mapper(componentModel = "spring")
 public interface CommandMapper {

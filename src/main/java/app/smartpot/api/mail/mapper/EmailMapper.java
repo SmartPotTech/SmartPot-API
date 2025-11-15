@@ -1,11 +1,11 @@
 package app.smartpot.api.mail.mapper;
 
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.model.entity.EmailDetails;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import app.smartpot.api.mail.model.dto.EmailDTO;
-import app.smartpot.api.mail.model.entity.EmailDetails;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -1,5 +1,8 @@
 package app.smartpot.api.mail.controller;
 
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.service.EmailService;
+import app.smartpot.api.responses.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,9 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.mail.model.dto.EmailDTO;
-import app.smartpot.api.mail.service.EmailService;
-import app.smartpot.api.responses.ErrorResponse;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

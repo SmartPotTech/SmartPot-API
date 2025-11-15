@@ -1,5 +1,9 @@
 package app.smartpot.api.mail.service;
 
+import app.smartpot.api.mail.mapper.EmailMapper;
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.model.entity.EmailDetails;
+import app.smartpot.api.mail.repository.EmailRepository;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +16,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.mail.mapper.EmailMapper;
-import app.smartpot.api.mail.model.dto.EmailDTO;
-import app.smartpot.api.mail.model.entity.EmailDetails;
-import app.smartpot.api.mail.repository.EmailRepository;
 
 import java.io.File;
 import java.util.Date;
