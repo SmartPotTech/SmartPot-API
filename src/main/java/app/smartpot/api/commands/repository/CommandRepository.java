@@ -1,11 +1,11 @@
 package app.smartpot.api.commands.repository;
 
+import app.smartpot.api.commands.model.entity.Command;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.commands.model.entity.Command;
 
 import java.util.Date;
 import java.util.List;
