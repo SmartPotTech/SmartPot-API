@@ -1,4 +1,4 @@
-package smartpot.com.api.Users.Service;
+package smartpot.com.api.users.service;
 
 import jakarta.validation.ValidationException;
 import lombok.Builder;
@@ -12,11 +12,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import smartpot.com.api.Users.Mapper.MUser;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.UserRole;
-import smartpot.com.api.Users.Repository.RUser;
-import smartpot.com.api.Users.Validator.VUserI;
+import smartpot.com.api.users.repository.UserRepository;
+import smartpot.com.api.users.validator.UserValidatorI;
+import smartpot.com.api.users.mapper.UserMapper;
+import smartpot.com.api.users.model.dto.UserDTO;
+import smartpot.com.api.users.model.entity.UserRole;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -33,25 +33,25 @@ import java.util.stream.Collectors;
 @Data
 @Builder
 @Service
-public class SUser implements SUserI {
+public class UserService implements UserServiceI {
 
     //private static final Log log = LogFactory.getLog(SUser.class);
-    private final RUser repositoryUser;
-    private final MUser mapperUser;
-    private final VUserI validatorUser;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final UserValidatorI userValidator;
 
     /**
      * Constructor que inyecta las dependencias del servicio.
      *
-     * @param repositoryUser repositorio que maneja las operaciones de base de datos.
-     * @param mapperUser     convertidor que convierte entidades User a UserDTO.
-     * @param validatorUser  validador que valida los datos de usuario.
+     * @param userRepository repositorio que maneja las operaciones de base de datos.
+     * @param userMapper     convertidor que convierte entidades User a UserDTO.
+     * @param userValidator  validador que valida los datos de usuario.
      */
     @Autowired
-    public SUser(RUser repositoryUser, MUser mapperUser, VUserI validatorUser) {
-        this.repositoryUser = repositoryUser;
-        this.mapperUser = mapperUser;
-        this.validatorUser = validatorUser;
+    public UserService(UserRepository userRepository, UserMapper userMapper, UserValidatorI userValidator) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.userValidator = userValidator;
     }
 
     /**
@@ -86,17 +86,17 @@ public class SUser implements SUserI {
     @CachePut(value = "users", key = "'email_' + #userDTO.email")
     public UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException {
         return Optional.of(userDTO)
-                .filter(dto -> !repositoryUser.existsByEmail(dto.getEmail()))
+                .filter(dto -> !userRepository.existsByEmail(dto.getEmail()))
                 .map(ValidDTO -> {
-                    validatorUser.validateName(ValidDTO.getName());
-                    validatorUser.validateLastname(ValidDTO.getLastname());
-                    validatorUser.validateEmail(ValidDTO.getEmail());
-                    validatorUser.validatePassword(ValidDTO.getPassword());
-                    validatorUser.validateRole(ValidDTO.getRole());
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateName(ValidDTO.getName());
+                    userValidator.validateLastname(ValidDTO.getLastname());
+                    userValidator.validateEmail(ValidDTO.getEmail());
+                    userValidator.validatePassword(ValidDTO.getPassword());
+                    userValidator.validateRole(ValidDTO.getRole());
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return ValidDTO;
                 })
                 .map(dto -> {
@@ -104,9 +104,9 @@ public class SUser implements SUserI {
                     dto.setCreateAt(formatter.format(new Date()));
                     return dto;
                 })
-                .map(mapperUser::toEntity)
-                .map(repositoryUser::save)
-                .map(mapperUser::toDTO)
+                .map(userMapper::toEntity)
+                .map(userRepository::save)
+                .map(userMapper::toDTO)
                 .orElseThrow(() -> new IllegalStateException("El Usuario ya existe"));
     }
 
@@ -125,10 +125,10 @@ public class SUser implements SUserI {
     @Override
     @Cacheable(value = "users", key = "'all_users'")
     public List<UserDTO> getAllUsers() throws Exception {
-        return Optional.of(repositoryUser.findAll())
+        return Optional.of(userRepository.findAll())
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
-                        .map(mapperUser::toDTO)
+                        .map(userMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún usuario"));
     }
@@ -153,17 +153,17 @@ public class SUser implements SUserI {
     public UserDTO getUserById(String id) throws Exception {
         return Optional.of(id)
                 .map(ValidId -> {
-                    validatorUser.validateId(ValidId);
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateId(ValidId);
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return new ObjectId(ValidId);
                 })
-                .map(repositoryUser::findById)
+                .map(userRepository::findById)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(mapperUser::toDTO)
+                .map(userMapper::toDTO)
                 .orElseThrow(() -> new Exception("El Usuario no existe"));
     }
 
@@ -188,17 +188,17 @@ public class SUser implements SUserI {
     public UserDTO getUserByEmail(String email) throws Exception {
         return Optional.of(email)
                 .map(ValidEmail -> {
-                    validatorUser.validateEmail(email);
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateEmail(email);
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return ValidEmail;
                 })
-                .map(repositoryUser::findByEmail)
+                .map(userRepository::findByEmail)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.get(0))
-                .map(mapperUser::toDTO)
+                .map(userMapper::toDTO)
                 .orElseThrow(() -> new Exception("El usuario no existe"));
     }
 
@@ -223,17 +223,17 @@ public class SUser implements SUserI {
     public List<UserDTO> getUsersByName(String name) throws Exception {
         return Optional.of(name)
                 .map(ValidName -> {
-                    validatorUser.validateName(ValidName);
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateName(ValidName);
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return ValidName;
                 })
-                .map(repositoryUser::findByName)
+                .map(userRepository::findByName)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
-                        .map(mapperUser::toDTO)
+                        .map(userMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún usuario con el nombre"));
     }
@@ -259,17 +259,17 @@ public class SUser implements SUserI {
     public List<UserDTO> getUsersByLastname(String lastname) throws Exception {
         return Optional.of(lastname)
                 .map(ValidLastname -> {
-                    validatorUser.validateLastname(ValidLastname);
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateLastname(ValidLastname);
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return ValidLastname;
                 })
-                .map(repositoryUser::findByLastname)
+                .map(userRepository::findByLastname)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
-                        .map(mapperUser::toDTO)
+                        .map(userMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún usuario con el apellido"));
     }
@@ -295,17 +295,17 @@ public class SUser implements SUserI {
     public List<UserDTO> getUsersByRole(String role) throws Exception {
         return Optional.of(role)
                 .map(ValidRole -> {
-                    validatorUser.validateRole(ValidRole);
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateRole(ValidRole);
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return ValidRole;
                 })
-                .map(repositoryUser::findByRole)
+                .map(userRepository::findByRole)
                 .filter(users -> !users.isEmpty())
                 .map(users -> users.stream()
-                        .map(mapperUser::toDTO)
+                        .map(userMapper::toDTO)
                         .collect(Collectors.toList()))
                 .orElseThrow(() -> new Exception("No existe ningún usuario con el rol"));
     }
@@ -373,21 +373,21 @@ public class SUser implements SUserI {
                     return existingUser;
                 })
                 .map(existing -> {
-                    validatorUser.validateName(existing.getName());
-                    validatorUser.validateLastname(existing.getLastname());
-                    validatorUser.validateEmail(existing.getEmail());
-                    validatorUser.validatePassword(existing.getPassword());
-                    validatorUser.validateRole(existing.getRole());
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validateName(existing.getName());
+                    userValidator.validateLastname(existing.getLastname());
+                    userValidator.validateEmail(existing.getEmail());
+                    userValidator.validatePassword(existing.getPassword());
+                    userValidator.validateRole(existing.getRole());
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
 
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return existing;
                 })
-                .map(mapperUser::toEntity)
-                .map(repositoryUser::save)
-                .map(mapperUser::toDTO)
+                .map(userMapper::toEntity)
+                .map(userRepository::save)
+                .map(userMapper::toDTO)
                 .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
     }
 
@@ -422,17 +422,17 @@ public class SUser implements SUserI {
                     return user;
                 })
                 .map(existing -> {
-                    validatorUser.validatePassword(existing.getPassword());
-                    if (!validatorUser.isValid()) {
-                        throw new ValidationException(validatorUser.getErrors().toString());
+                    userValidator.validatePassword(existing.getPassword());
+                    if (!userValidator.isValid()) {
+                        throw new ValidationException(userValidator.getErrors().toString());
                     }
 
-                    validatorUser.Reset();
+                    userValidator.Reset();
                     return existing;
                 })
-                .map(mapperUser::toEntity)
-                .map(repositoryUser::save)
-                .map(mapperUser::toDTO)
+                .map(userMapper::toEntity)
+                .map(userRepository::save)
+                .map(userMapper::toDTO)
                 .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
     }
 
@@ -463,7 +463,7 @@ public class SUser implements SUserI {
         //noinspection SpringCacheableMethodCallsInspection
         return Optional.of(getUserById(id))
                 .map(user -> {
-                    repositoryUser.deleteById(new ObjectId(user.getId()));
+                    userRepository.deleteById(new ObjectId(user.getId()));
                     return "El Usuario con ID '" + id + "' fue eliminado.";
                 })
                 .orElseThrow(() -> new Exception("El Usuario no existe."));
@@ -485,7 +485,7 @@ public class SUser implements SUserI {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return repositoryUser.findByEmail(username).stream().findFirst()
+        return userRepository.findByEmail(username).stream().findFirst()
                 .map(user -> org.springframework.security.core.userdetails.User.builder()
                         .username(user.getEmail())
                         .password(user.getPassword())

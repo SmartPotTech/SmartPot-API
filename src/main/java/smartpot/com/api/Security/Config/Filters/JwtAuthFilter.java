@@ -11,7 +11,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import smartpot.com.api.Security.Service.JwtService;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.users.model.dto.UserDTO;
 
 import java.io.IOException;
 

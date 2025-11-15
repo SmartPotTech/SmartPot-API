@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import smartpot.com.api.Crops.Model.DTO.CropDTO;
 import smartpot.com.api.Crops.Service.SCropI;
 import smartpot.com.api.Responses.ErrorResponse;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.users.model.dto.UserDTO;
 
 @RestController
 @RequestMapping("/Crops")

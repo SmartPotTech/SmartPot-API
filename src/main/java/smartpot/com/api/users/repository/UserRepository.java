@@ -1,10 +1,10 @@
-package smartpot.com.api.Users.Repository;
+package smartpot.com.api.users.repository;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import smartpot.com.api.Users.Model.Entity.User;
+import smartpot.com.api.users.model.entity.User;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import java.util.List;
  */
 
 @Repository
-public interface RUser extends MongoRepository<User, ObjectId> {
+public interface UserRepository extends MongoRepository<User, ObjectId> {
 
     /**
      * Busca una lista de usuarios cuyo nombre coincida con el patrón proporcionado,

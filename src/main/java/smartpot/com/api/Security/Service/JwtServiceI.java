@@ -1,6 +1,6 @@
 package smartpot.com.api.Security.Service;
 
-import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.users.model.dto.UserDTO;
 
 public interface JwtServiceI {
     String Login(UserDTO reqUser) throws Exception;

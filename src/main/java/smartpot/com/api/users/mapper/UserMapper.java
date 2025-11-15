@@ -1,18 +1,18 @@
-package smartpot.com.api.Users.Mapper;
+package smartpot.com.api.users.mapper;
 
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
-import smartpot.com.api.Users.Model.Entity.User;
+import smartpot.com.api.users.model.dto.UserDTO;
+import smartpot.com.api.users.model.entity.User;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Mapper(componentModel = "spring")
-public interface MUser {
+public interface UserMapper {
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "password", target = "password", qualifiedByName = "encodePassword")
     @Mapping(source = "createAt", target = "createAt", qualifiedByName = "stringToDate")

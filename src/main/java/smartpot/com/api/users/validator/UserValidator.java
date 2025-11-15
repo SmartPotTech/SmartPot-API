@@ -1,10 +1,10 @@
-package smartpot.com.api.Users.Validator;
+package smartpot.com.api.users.validator;
 
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import smartpot.com.api.Users.Model.Entity.UserRole;
+import smartpot.com.api.users.model.entity.UserRole;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static smartpot.com.api.Users.Validator.UserRegex.*;
+import static smartpot.com.api.users.validator.UserRegex.*;
 
 /**
  * Clase de validación para los usuarios.
@@ -26,7 +26,7 @@ import static smartpot.com.api.Users.Validator.UserRegex.*;
  * </p>
  */
 @Component
-public class VUser implements VUserI {
+public class UserValidator implements UserValidatorI {
 
     /**
      * Indica si la validación fue exitosa.
@@ -42,7 +42,7 @@ public class VUser implements VUserI {
      * Constructor de la clase de validación de usuario.
      * Inicializa el estado de validación a "válido" y crea una lista vacía de errores.
      */
-    public VUser() {
+    public UserValidator() {
         this.valid = true;
         this.errors = new ArrayList<>();
     }

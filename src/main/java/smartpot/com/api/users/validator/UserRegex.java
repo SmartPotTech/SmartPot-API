@@ -1,11 +1,11 @@
-package smartpot.com.api.Users.Validator;
+package smartpot.com.api.users.validator;
 
 /**
  * Contiene las expresiones regulares para la validación de los campos de usuario.
  * <p>
  * Esta clase define una serie de constantes que representan las expresiones regulares (regex) utilizadas
  * para validar diversos campos del usuario, como el nombre, apellido, correo electrónico y contraseña.
- * Estas expresiones regulares se usan en los métodos de validación de la clase {@link VUser} y otras clases relacionadas.
+ * Estas expresiones regulares se usan en los métodos de validación de la clase {@link UserValidator} y otras clases relacionadas.
  * </p>
  */
 public class UserRegex {

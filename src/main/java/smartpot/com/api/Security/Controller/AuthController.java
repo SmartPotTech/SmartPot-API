@@ -13,7 +13,7 @@ import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Responses.ErrorResponse;
 import smartpot.com.api.Responses.TokenResponse;
 import smartpot.com.api.Security.Service.JwtServiceI;
-import smartpot.com.api.Users.Model.DTO.UserDTO;
+import smartpot.com.api.users.model.dto.UserDTO;
 
 @RestController
 @RequestMapping("/auth")

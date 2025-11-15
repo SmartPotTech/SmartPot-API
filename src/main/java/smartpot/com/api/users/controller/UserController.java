@@ -1,28 +1,28 @@
-    package smartpot.com.api.Users.Controller;
+package smartpot.com.api.users.controller;
 
-    import io.swagger.v3.oas.annotations.Operation;
-    import io.swagger.v3.oas.annotations.Parameter;
-    import io.swagger.v3.oas.annotations.media.ArraySchema;
-    import io.swagger.v3.oas.annotations.media.Content;
-    import io.swagger.v3.oas.annotations.media.Schema;
-    import io.swagger.v3.oas.annotations.responses.ApiResponse;
-    import io.swagger.v3.oas.annotations.tags.Tag;
-    import jakarta.validation.ValidationException;
-    import org.springframework.beans.factory.annotation.Autowired;
-    import org.springframework.cache.annotation.CacheConfig;
-    import org.springframework.http.HttpStatus;
-    import org.springframework.http.ResponseEntity;
-    import org.springframework.web.bind.annotation.*;
-    import smartpot.com.api.Responses.DeleteResponse;
-    import smartpot.com.api.Responses.ErrorResponse;
-    import smartpot.com.api.Users.Model.DTO.UserDTO;
-    import smartpot.com.api.Users.Service.SUserI;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ValidationException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import smartpot.com.api.Responses.DeleteResponse;
+import smartpot.com.api.Responses.ErrorResponse;
+import smartpot.com.api.users.model.dto.UserDTO;
+import smartpot.com.api.users.service.UserServiceI;
 
     /**
      * Controlador REST para las operaciones relacionadas con los usuarios.
      * <p>Este controlador proporciona una serie de métodos para gestionar usuarios en el sistema.</p>
      *
-     * @see SUserI
+     * @see UserServiceI
      */
     @RestController
     @RequestMapping("/Users")
@@ -37,20 +37,20 @@
          * ? ¿Qué tipo de error se debe lanzar si el correo electrónico no está válido o es incorrecto (formato de email inválido)?
          */
 
-        private final SUserI serviceUser;
+        private final UserServiceI userService;
 
         /**
          * Constructor del controlador {@link UserController}.
-         * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link SUserI} que gestionará las operaciones
+         * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link UserServiceI} que gestionará las operaciones
          * relacionadas con los usuarios.</p>
          *
-         * @param serviceUser El servicio que contiene la lógica de negocio para manejar usuarios.
+         * @param userService El servicio que contiene la lógica de negocio para manejar usuarios.
          * @throws NullPointerException Si el servicio proporcionado es {@code null}.
-         * @see SUserI
+         * @see UserServiceI
          */
         @Autowired
-        public UserController(SUserI serviceUser) {
-            this.serviceUser = serviceUser;
+        public UserController(UserServiceI userService) {
+            this.userService = userService;
         }
 
         /**
@@ -90,7 +90,7 @@
                 @Parameter(description = "Datos del nuevo usuario que se va a crear. Debe incluir nombre, apellido y un correo electrónico único.",
                         required = true) @RequestBody UserDTO userDTO) {
             try {
-                return new ResponseEntity<>(serviceUser.CreateUser(userDTO), HttpStatus.CREATED);
+                return new ResponseEntity<>(userService.CreateUser(userDTO), HttpStatus.CREATED);
             } catch (ValidationException e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al crear el usuario [" + e.getMessage() + "]", HttpStatus.FORBIDDEN.value()), HttpStatus.FORBIDDEN);
             } catch (IllegalStateException e) {
@@ -129,7 +129,7 @@
                 })
         public ResponseEntity<?> getAllUsers() {
             try {
-                return new ResponseEntity<>(serviceUser.getAllUsers(), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar los usuarios [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -169,7 +169,7 @@
                 })
         public ResponseEntity<?> getUserById(@PathVariable @Parameter(description = "ID único del usuario a buscar.", required = true) String id) {
             try {
-                return new ResponseEntity<>(serviceUser.getUserById(id), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -207,7 +207,7 @@
                 })
         public ResponseEntity<?> getUsersByEmail(@Parameter(description = "Correo electrónico del usuario", required = true) @PathVariable String email) {
             try {
-                return new ResponseEntity<>(serviceUser.getUserByEmail(email), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUserByEmail(email), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con email '" + email + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -247,7 +247,7 @@
                 })
         public ResponseEntity<?> getUsersByName(@Parameter(description = "Nombre del usuario a buscar.", required = true) @PathVariable String name) {
             try {
-                return new ResponseEntity<>(serviceUser.getUsersByName(name), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUsersByName(name), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con nombre '" + name + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -287,7 +287,7 @@
                 })
         public ResponseEntity<?> getUsersByLastname(@Parameter(description = "Apellido del usuario a buscar", required = true) @PathVariable String lastname) {
             try {
-                return new ResponseEntity<>(serviceUser.getUsersByLastname(lastname), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUsersByLastname(lastname), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con apellido '" + lastname + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -326,7 +326,7 @@
                 })
         public ResponseEntity<?> getUsersByRole(@Parameter(description = "Rol del usuario a buscar", required = true) @PathVariable String role) {
             try {
-                return new ResponseEntity<>(serviceUser.getUsersByRole(role), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUsersByRole(role), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar el usuario con rol '" + role + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -364,7 +364,7 @@
                 })
         public ResponseEntity<?> getAllRoles() {
             try {
-                return new ResponseEntity<>(serviceUser.getAllRoles(), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getAllRoles(), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al buscar los roles [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -406,7 +406,7 @@
                 @Parameter(description = "ID único del usuario que se desea actualizar.", required = true) @PathVariable String id,
                 @Parameter(description = "Datos actualizados del usuario.") @RequestBody UserDTO updatedUser) {
             try {
-                return new ResponseEntity<>(serviceUser.UpdateUser(id, updatedUser), HttpStatus.OK);
+                return new ResponseEntity<>(userService.UpdateUser(id, updatedUser), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al actualizar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
@@ -444,7 +444,7 @@
                 })
         public ResponseEntity<?> deleteUser(@Parameter(description = "ID único del usuario que se desea eliminar.", required = true) @PathVariable String id) {
             try {
-                return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + serviceUser.DeleteUser(id) + "]"), HttpStatus.OK);
+                return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + userService.DeleteUser(id) + "]"), HttpStatus.OK);
             } catch (Exception e) {
                 return new ResponseEntity<>(new ErrorResponse("Error al eliminar el usuario con id '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
             }
