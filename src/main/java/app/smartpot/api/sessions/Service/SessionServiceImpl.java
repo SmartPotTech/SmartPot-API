@@ -1,17 +1,17 @@
 package app.smartpot.api.sessions.Service;
 
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.exception.ApiResponse;
+import app.smartpot.api.sessions.model.entity.Session;
 import app.smartpot.api.sessions.repository.SessionRepository;
+import app.smartpot.api.users.model.dto.UserDTO;
+import app.smartpot.api.users.service.UserService;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.exception.ApiException;
-import app.smartpot.api.exception.ApiResponse;
-import app.smartpot.api.sessions.model.entity.Session;
-import app.smartpot.api.users.model.dto.UserDTO;
-import app.smartpot.api.users.service.UserService;
 
 import java.util.Date;
 import java.util.List;

@@ -1,12 +1,12 @@
 package app.smartpot.api.sessions.controller;
 
+import app.smartpot.api.responses.ErrorResponse;
+import app.smartpot.api.sessions.Service.SessionService;
+import app.smartpot.api.sessions.model.entity.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.responses.ErrorResponse;
-import app.smartpot.api.sessions.model.entity.Session;
-import app.smartpot.api.sessions.Service.SessionService;
 
 import java.util.List;
 

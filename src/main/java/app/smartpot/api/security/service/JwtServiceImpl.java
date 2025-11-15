@@ -1,5 +1,13 @@
 package app.smartpot.api.security.service;
 
+import app.smartpot.api.exception.EncryptionException;
+import app.smartpot.api.exception.InvalidTokenException;
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.service.EmailServiceImpl;
+import app.smartpot.api.mail.validator.EmailValidatorI;
+import app.smartpot.api.security.model.dto.ResetTokenDTO;
+import app.smartpot.api.users.model.dto.UserDTO;
+import app.smartpot.api.users.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -10,14 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.exception.EncryptionException;
-import app.smartpot.api.exception.InvalidTokenException;
-import app.smartpot.api.mail.model.dto.EmailDTO;
-import app.smartpot.api.mail.service.EmailServiceImpl;
-import app.smartpot.api.mail.validator.EmailValidatorI;
-import app.smartpot.api.security.model.dto.ResetTokenDTO;
-import app.smartpot.api.users.model.dto.UserDTO;
-import app.smartpot.api.users.service.UserService;
 
 import javax.crypto.SecretKey;
 import java.util.Date;

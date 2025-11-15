@@ -1,5 +1,7 @@
 package app.smartpot.api.security.config.filters;
 
+import app.smartpot.api.security.service.JwtServiceImpl;
+import app.smartpot.api.users.model.dto.UserDTO;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,8 +12,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import app.smartpot.api.security.service.JwtServiceImpl;
-import app.smartpot.api.users.model.dto.UserDTO;
 
 import java.io.IOException;
 

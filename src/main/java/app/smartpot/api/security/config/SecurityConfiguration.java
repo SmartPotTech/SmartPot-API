@@ -1,11 +1,15 @@
 package app.smartpot.api.security.config;
 
 
+import app.smartpot.api.security.config.filters.JwtAuthFilter;
+import app.smartpot.api.security.config.headers.CorsConfig;
+import app.smartpot.api.users.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,10 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import app.smartpot.api.security.config.filters.JwtAuthFilter;
-import app.smartpot.api.security.config.headers.CorsConfig;
-import app.smartpot.api.users.service.UserServiceImpl;
-import org.springframework.security.config.Customizer;
 
 import java.util.Arrays;
 import java.util.List;

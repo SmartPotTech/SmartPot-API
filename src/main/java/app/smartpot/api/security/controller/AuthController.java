@@ -1,5 +1,10 @@
 package app.smartpot.api.security.controller;
 
+import app.smartpot.api.exception.InvalidTokenException;
+import app.smartpot.api.responses.ErrorResponse;
+import app.smartpot.api.responses.TokenResponse;
+import app.smartpot.api.security.service.JwtService;
+import app.smartpot.api.users.model.dto.UserDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,11 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.exception.InvalidTokenException;
-import app.smartpot.api.responses.ErrorResponse;
-import app.smartpot.api.responses.TokenResponse;
-import app.smartpot.api.security.service.JwtService;
-import app.smartpot.api.users.model.dto.UserDTO;
 
 @RestController
 @RequestMapping("/auth")

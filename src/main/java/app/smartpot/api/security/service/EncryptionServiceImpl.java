@@ -1,8 +1,8 @@
 package app.smartpot.api.security.service;
 
+import app.smartpot.api.exception.EncryptionException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.exception.EncryptionException;
 
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;

@@ -1,10 +1,10 @@
 package app.smartpot.api.sessions.repository;
 
+import app.smartpot.api.sessions.model.entity.Session;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.sessions.model.entity.Session;
 
 import java.util.Date;
 import java.util.List;
