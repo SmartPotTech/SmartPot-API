@@ -1,4 +1,4 @@
-package app.smartpot.api.Cache;
+package app.smartpot.api.cache;
 
 import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
