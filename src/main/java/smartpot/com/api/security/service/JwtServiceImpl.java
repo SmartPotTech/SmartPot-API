@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Service;
+package smartpot.com.api.security.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,7 +15,7 @@ import smartpot.com.api.Exception.InvalidTokenException;
 import smartpot.com.api.Mail.Model.DTO.EmailDTO;
 import smartpot.com.api.Mail.Service.EmailService;
 import smartpot.com.api.Mail.Validator.EmailValidatorI;
-import smartpot.com.api.Security.Model.DTO.ResetTokenDTO;
+import smartpot.com.api.security.model.dto.ResetTokenDTO;
 import smartpot.com.api.users.model.dto.UserDTO;
 import smartpot.com.api.users.service.UserService;
 
@@ -26,12 +26,12 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-public class JwtService implements JwtServiceI {
+public class JwtServiceImpl implements JwtService {
 
     private final UserService serviceUser;
     private final EmailService emailService;
     private final EmailValidatorI emailValidator;
-    private final EncryptionServiceI encryptionService;
+    private final EncryptionService encryptionService;
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -44,7 +44,7 @@ public class JwtService implements JwtServiceI {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtService(UserService serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionServiceI encryptionService) {
+    public JwtServiceImpl(UserService serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionService encryptionService) {
         this.serviceUser = serviceUser;
         this.emailService = emailService;
         this.emailValidator = emailValidator;

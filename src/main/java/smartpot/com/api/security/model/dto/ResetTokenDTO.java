@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Model.DTO;
+package smartpot.com.api.security.model.dto;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

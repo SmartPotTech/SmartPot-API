@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config;
+package smartpot.com.api.security.config;
 
 
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import smartpot.com.api.Security.Config.Filters.JwtAuthFilter;
-import smartpot.com.api.Security.Config.headers.CorsConfig;
+import smartpot.com.api.security.config.filters.JwtAuthFilter;
+import smartpot.com.api.security.config.headers.CorsConfig;
 import smartpot.com.api.users.service.UserServiceImpl;
 import org.springframework.security.config.Customizer;
 

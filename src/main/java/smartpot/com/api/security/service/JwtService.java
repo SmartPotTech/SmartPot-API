@@ -1,8 +1,8 @@
-package smartpot.com.api.Security.Service;
+package smartpot.com.api.security.service;
 
 import smartpot.com.api.users.model.dto.UserDTO;
 
-public interface JwtServiceI {
+public interface JwtService {
     String Login(UserDTO reqUser) throws Exception;
 
     String Register(UserDTO reqUser) throws Exception;

@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Service;
+package smartpot.com.api.security.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,13 +14,13 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @Service
-public class AESEncryptionService implements EncryptionServiceI {
+public class EncryptionServiceImpl implements EncryptionService {
 
     SecureRandom random = new SecureRandom();
     @Value("${application.security.aes.key}")
     private String aesKey;
 
-    public AESEncryptionService() {
+    public EncryptionServiceImpl() {
     }
 
     private SecretKey getSecretKey() {

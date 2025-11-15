@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config.headers;
+package smartpot.com.api.security.config.headers;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;

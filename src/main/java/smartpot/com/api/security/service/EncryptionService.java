@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Service;
+package smartpot.com.api.security.service;
 
 import smartpot.com.api.Exception.EncryptionException;
 
@@ -9,7 +9,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public interface EncryptionServiceI {
+public interface EncryptionService {
     String encrypt(String plainText) throws EncryptionException, NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException;
 
     String decrypt(String cipherText) throws EncryptionException;

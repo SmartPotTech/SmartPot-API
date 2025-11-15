@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config.Filters;
+package smartpot.com.api.security.config.filters;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import smartpot.com.api.Security.Service.JwtService;
+import smartpot.com.api.security.service.JwtServiceImpl;
 import smartpot.com.api.users.model.dto.UserDTO;
 
 import java.io.IOException;
@@ -19,10 +19,10 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     // TODO: implement role for jwt
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtServiceImpl;
 
-    public JwtAuthFilter(JwtService jwtService) {
-        this.jwtService = jwtService;
+    public JwtAuthFilter(JwtServiceImpl jwtServiceImpl) {
+        this.jwtServiceImpl = jwtServiceImpl;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
         try {
-            UserDTO user = jwtService.validateAuthHeader(authHeader);
+            UserDTO user = jwtServiceImpl.validateAuthHeader(authHeader);
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     user, user.getPassword(), null /* user.getAuthorities() */);
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

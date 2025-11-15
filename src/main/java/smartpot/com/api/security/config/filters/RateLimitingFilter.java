@@ -1,4 +1,4 @@
-package smartpot.com.api.Security.Config.Filters;
+package smartpot.com.api.security.config.filters;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
