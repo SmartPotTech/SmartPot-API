@@ -3,7 +3,7 @@ package app.smartpot.api.actuators.service;
 import org.springframework.http.ResponseEntity;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
 import app.smartpot.api.actuators.model.entity.Actuator;
-import smartpot.com.api.Exception.ApiResponse;
+import app.smartpot.api.exception.ApiResponse;
 
 import java.util.List;
 

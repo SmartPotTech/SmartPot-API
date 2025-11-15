@@ -12,9 +12,9 @@ import app.smartpot.api.actuators.mapper.ActuatorMapper;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
 import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.actuators.repository.ActuatorRepository;
-import smartpot.com.api.Crops.Service.SCropI;
-import smartpot.com.api.Exception.ApiException;
-import smartpot.com.api.Exception.ApiResponse;
+import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.exception.ApiResponse;
 
 import java.util.List;
 
@@ -25,10 +25,10 @@ import java.util.List;
 public class ServiceActuatorImpl implements ServiceActuator {
 
     private final ActuatorRepository actuatorRepository;
-    private final SCropI serviceCrop;
+    private final CropService serviceCrop;
 
     @Autowired
-    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, SCropI serviceCrop) {
+    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, CropService serviceCrop) {
         this.actuatorRepository = actuatorRepository;
         this.serviceCrop = serviceCrop;
     }

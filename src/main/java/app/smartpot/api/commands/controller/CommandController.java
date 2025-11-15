@@ -85,7 +85,7 @@ public class CommandController {
             })
     public ResponseEntity<?> getCommandsByCrop(@PathVariable String crop) {
         try {
-            return new ResponseEntity<>(serviceCommand.getCommandsByCrop(crop), HttpStatus.OK);
+            return new ResponseEntity<>(commandService.getCommandsByCrop(crop), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
