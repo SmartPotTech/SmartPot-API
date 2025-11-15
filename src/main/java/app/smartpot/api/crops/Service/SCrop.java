@@ -1,4 +1,4 @@
-package app.smartpot.api.Crops.Service;
+package app.smartpot.api.crops.Service;
 
 import jakarta.validation.ValidationException;
 import lombok.Builder;
@@ -11,12 +11,12 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import app.smartpot.api.Crops.Mapper.MCrop;
-import app.smartpot.api.Crops.Model.DTO.CropDTO;
-import app.smartpot.api.Crops.Model.Entity.CropStatus;
-import app.smartpot.api.Crops.Model.Entity.CropType;
-import app.smartpot.api.Crops.Repository.RCrop;
-import app.smartpot.api.Crops.Validator.VCropI;
+import app.smartpot.api.crops.mapper.MCrop;
+import app.smartpot.api.crops.model.DTO.CropDTO;
+import app.smartpot.api.crops.model.Entity.CropStatus;
+import app.smartpot.api.crops.model.Entity.CropType;
+import app.smartpot.api.crops.repository.RCrop;
+import app.smartpot.api.crops.Validator.VCropI;
 import app.smartpot.api.users.service.UserService;
 
 import java.util.Arrays;

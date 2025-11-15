@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Exception.InvalidTokenException;
+import app.smartpot.api.exception.InvalidTokenException;
 import app.smartpot.api.responses.ErrorResponse;
 import app.smartpot.api.responses.TokenResponse;
 import app.smartpot.api.security.service.JwtService;

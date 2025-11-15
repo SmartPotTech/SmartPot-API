@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Exception.ApiResponse;
+import app.smartpot.api.exception.ApiResponse;
 import app.smartpot.api.records.model.dto.RecordDTO;
 import app.smartpot.api.records.model.entity.DateRange;
 import app.smartpot.api.records.model.entity.History;

@@ -1,7 +1,7 @@
 package app.smartpot.api.records.service;
 
 import org.springframework.http.ResponseEntity;
-import app.smartpot.api.Exception.ApiResponse;
+import app.smartpot.api.exception.ApiResponse;
 import app.smartpot.api.records.model.dto.CropRecordDTO;
 import app.smartpot.api.records.model.dto.RecordDTO;
 import app.smartpot.api.records.model.entity.DateRange;

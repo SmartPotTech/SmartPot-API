@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.Commands.Model.DTO.CommandDTO;
 import app.smartpot.api.Commands.Service.SCommandI;
-import app.smartpot.api.Crops.Model.DTO.CropDTO;
+import app.smartpot.api.crops.model.DTO.CropDTO;
 import app.smartpot.api.responses.DeleteResponse;
 import app.smartpot.api.responses.ErrorResponse;
 

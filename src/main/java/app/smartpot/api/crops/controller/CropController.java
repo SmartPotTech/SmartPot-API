@@ -1,4 +1,4 @@
-package app.smartpot.api.Crops.Controller;
+package app.smartpot.api.crops.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,8 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Crops.Model.DTO.CropDTO;
-import app.smartpot.api.Crops.Service.SCropI;
+import app.smartpot.api.crops.model.DTO.CropDTO;
+import app.smartpot.api.crops.Service.SCropI;
 import app.smartpot.api.responses.ErrorResponse;
 import app.smartpot.api.users.model.dto.UserDTO;
 

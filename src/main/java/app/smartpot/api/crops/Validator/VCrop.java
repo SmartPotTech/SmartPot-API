@@ -1,9 +1,9 @@
-package app.smartpot.api.Crops.Validator;
+package app.smartpot.api.crops.Validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;
-import app.smartpot.api.Crops.Model.Entity.CropStatus;
-import app.smartpot.api.Crops.Model.Entity.CropType;
+import app.smartpot.api.crops.model.Entity.CropStatus;
+import app.smartpot.api.crops.model.Entity.CropType;
 
 import java.util.ArrayList;
 import java.util.Arrays;

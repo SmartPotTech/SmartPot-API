@@ -1,4 +1,4 @@
-package app.smartpot.api.Exception;
+package app.smartpot.api.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

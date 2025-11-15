@@ -1,6 +1,6 @@
 package app.smartpot.api.security.service;
 
-import app.smartpot.api.Exception.EncryptionException;
+import app.smartpot.api.exception.EncryptionException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;

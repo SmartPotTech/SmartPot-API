@@ -1,4 +1,4 @@
-package app.smartpot.api.Documentation;
+package app.smartpot.api.documentation;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

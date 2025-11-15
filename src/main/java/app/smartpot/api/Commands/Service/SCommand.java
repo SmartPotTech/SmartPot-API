@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import app.smartpot.api.Commands.Mapper.MCommand;
 import app.smartpot.api.Commands.Model.DTO.CommandDTO;
 import app.smartpot.api.Commands.Repository.RCommand;
-import app.smartpot.api.Crops.Service.SCropI;
+import app.smartpot.api.crops.Service.SCropI;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

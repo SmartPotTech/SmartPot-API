@@ -1,4 +1,4 @@
-package app.smartpot.api.Crops.Model.Entity;
+package app.smartpot.api.crops.model.Entity;
 
 public enum CropStatus {
     Dead, Extreme_decomposition, Severe_deterioration, Moderate_deterioration, Healthy_state, intermittent,

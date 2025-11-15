@@ -1,7 +1,7 @@
 package app.smartpot.api.records.model.dto;
 
 import lombok.Data;
-import app.smartpot.api.Crops.Model.DTO.CropDTO;
+import app.smartpot.api.crops.model.DTO.CropDTO;
 import app.smartpot.api.records.model.entity.History;
 import app.smartpot.api.records.model.entity.Measures;
 

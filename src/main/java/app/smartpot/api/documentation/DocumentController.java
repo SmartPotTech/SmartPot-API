@@ -1,4 +1,4 @@
-package app.smartpot.api.Documentation;
+package app.smartpot.api.documentation;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

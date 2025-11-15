@@ -1,6 +1,6 @@
-package app.smartpot.api.Crops.Service;
+package app.smartpot.api.crops.Service;
 
-import app.smartpot.api.Crops.Model.DTO.CropDTO;
+import app.smartpot.api.crops.model.DTO.CropDTO;
 
 import java.util.List;
 

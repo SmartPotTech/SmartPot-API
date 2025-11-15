@@ -1,4 +1,4 @@
-package app.smartpot.api.Crops.Model.DTO;
+package app.smartpot.api.crops.model.DTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

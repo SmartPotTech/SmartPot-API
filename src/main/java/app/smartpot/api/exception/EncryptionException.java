@@ -1,4 +1,4 @@
-package app.smartpot.api.Exception;
+package app.smartpot.api.exception;
 
 public class EncryptionException extends RuntimeException {
     public EncryptionException(String message) {
