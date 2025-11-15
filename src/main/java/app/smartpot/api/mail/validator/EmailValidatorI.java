@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Validator;
+package app.smartpot.api.mail.validator;
 
 import java.util.List;
 

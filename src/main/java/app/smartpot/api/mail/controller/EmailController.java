@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Controller;
+package app.smartpot.api.mail.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.Mail.Model.DTO.EmailDTO;
-import app.smartpot.api.Mail.Service.EmailServiceI;
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.service.EmailService;
 import app.smartpot.api.responses.ErrorResponse;
 
 import java.text.SimpleDateFormat;
@@ -21,20 +21,20 @@ import java.util.Date;
 @RequestMapping("/Emails")
 @Tag(name = "Correos", description = "Operaciones relacionadas con correos")
 public class EmailController {
-    private final EmailServiceI emailServiceI;
+    private final EmailService emailService;
 
     /**
      * Constructor del controlador {@link EmailController}.
-     * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link EmailServiceI} que gestionará las operaciones
+     * <p>Se utiliza la inyección de dependencias para asignar el servicio {@link EmailService} que gestionará las operaciones
      * relacionadas con los correos.</p>
      *
-     * @param emailServiceI El servicio que contiene la lógica de negocio para manejar correos.
+     * @param emailService El servicio que contiene la lógica de negocio para manejar correos.
      * @throws NullPointerException Si el servicio proporcionado es {@code null}.
-     * @see EmailServiceI
+     * @see EmailService
      */
     @Autowired
-    public EmailController(EmailServiceI emailServiceI) {
-        this.emailServiceI = emailServiceI;
+    public EmailController(EmailService emailService) {
+        this.emailService = emailService;
     }
 
     /**
@@ -68,7 +68,7 @@ public class EmailController {
             })
     public ResponseEntity<?> getAllCrops() {
         try {
-            return new ResponseEntity<>(emailServiceI.getAllMails(), HttpStatus.OK);
+            return new ResponseEntity<>(emailService.getAllMails(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse(e.getMessage(), HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
         }
@@ -90,7 +90,7 @@ public class EmailController {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             emailDetails.setSendDate(formatter.format(new Date()));
             emailDetails.setSent("true");
-            return new ResponseEntity<>(emailServiceI.sendSimpleMail(emailDetails), HttpStatus.OK);
+            return new ResponseEntity<>(emailService.sendSimpleMail(emailDetails), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error sending email: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -98,7 +98,7 @@ public class EmailController {
 
     @PostMapping("/schedule")
     public ResponseEntity<EmailDTO> scheduleEmail(@RequestBody EmailDTO emailDTO) {
-        EmailDTO scheduled = emailServiceI.scheduleEmail(emailDTO);
+        EmailDTO scheduled = emailService.scheduleEmail(emailDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(scheduled);
     }
 }

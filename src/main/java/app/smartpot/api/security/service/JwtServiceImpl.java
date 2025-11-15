@@ -12,9 +12,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import app.smartpot.api.Exception.EncryptionException;
 import app.smartpot.api.Exception.InvalidTokenException;
-import app.smartpot.api.Mail.Model.DTO.EmailDTO;
-import app.smartpot.api.Mail.Service.EmailService;
-import app.smartpot.api.Mail.Validator.EmailValidatorI;
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.service.EmailServiceImpl;
+import app.smartpot.api.mail.validator.EmailValidatorI;
 import app.smartpot.api.security.model.dto.ResetTokenDTO;
 import app.smartpot.api.users.model.dto.UserDTO;
 import app.smartpot.api.users.service.UserService;
@@ -29,7 +29,7 @@ import java.util.Optional;
 public class JwtServiceImpl implements JwtService {
 
     private final UserService serviceUser;
-    private final EmailService emailService;
+    private final EmailServiceImpl emailServiceImpl;
     private final EmailValidatorI emailValidator;
     private final EncryptionService encryptionService;
 
@@ -44,9 +44,9 @@ public class JwtServiceImpl implements JwtService {
      * @param serviceUser servicio que maneja las operaciones de base de datos.
      */
     @Autowired
-    public JwtServiceImpl(UserService serviceUser, EmailService emailService, EmailValidatorI emailValidator, EncryptionService encryptionService) {
+    public JwtServiceImpl(UserService serviceUser, EmailServiceImpl emailServiceImpl, EmailValidatorI emailValidator, EncryptionService encryptionService) {
         this.serviceUser = serviceUser;
-        this.emailService = emailService;
+        this.emailServiceImpl = emailServiceImpl;
         this.emailValidator = emailValidator;
         this.encryptionService = encryptionService;
     }
@@ -155,7 +155,7 @@ public class JwtServiceImpl implements JwtService {
                     }
                 })
                 .map(token -> new EmailDTO(null, email, "Token para recuperar contraseña: " + token, "Recuperar contraseña", "", null, "true"))
-                .map(emailService::sendSimpleMail)
+                .map(emailServiceImpl::sendSimpleMail)
                 .map(ValidDTO -> {
                     emailValidator.validateId(ValidDTO.getId());
                     emailValidator.validateMsgBody(ValidDTO.getMsgBody());

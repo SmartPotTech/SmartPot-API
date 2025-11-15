@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Validator;
+package app.smartpot.api.mail.validator;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Component;

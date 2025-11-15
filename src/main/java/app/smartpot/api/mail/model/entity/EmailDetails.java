@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Model.Entity;
+package app.smartpot.api.mail.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

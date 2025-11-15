@@ -1,10 +1,10 @@
-package app.smartpot.api.Mail.Service;
+package app.smartpot.api.mail.service;
 
-import app.smartpot.api.Mail.Model.DTO.EmailDTO;
+import app.smartpot.api.mail.model.dto.EmailDTO;
 
 import java.util.List;
 
-public interface EmailServiceI {
+public interface EmailService {
 
     EmailDTO sendSimpleMail(EmailDTO emailDTO);
 

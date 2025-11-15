@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Model.DTO;
+package app.smartpot.api.mail.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

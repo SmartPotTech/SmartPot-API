@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Config;
+package app.smartpot.api.mail.config;
 
 import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Bean;

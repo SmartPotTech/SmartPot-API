@@ -1,4 +1,4 @@
-package app.smartpot.api.Mail.Service;
+package app.smartpot.api.mail.service;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.validation.ValidationException;
@@ -12,10 +12,10 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.Mail.Mapper.EmailMapper;
-import app.smartpot.api.Mail.Model.DTO.EmailDTO;
-import app.smartpot.api.Mail.Model.Entity.EmailDetails;
-import app.smartpot.api.Mail.Repository.EmailRepository;
+import app.smartpot.api.mail.mapper.EmailMapper;
+import app.smartpot.api.mail.model.dto.EmailDTO;
+import app.smartpot.api.mail.model.entity.EmailDetails;
+import app.smartpot.api.mail.repository.EmailRepository;
 
 import java.io.File;
 import java.util.Date;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class EmailService implements EmailServiceI {
+public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;
     private final EmailRepository emailRepository;
     private final EmailMapper emailMapper;
@@ -34,7 +34,7 @@ public class EmailService implements EmailServiceI {
     private String sender;
 
     @Autowired
-    public EmailService(JavaMailSender javaMailSender, EmailRepository emailRepository, EmailMapper emailMapper) {
+    public EmailServiceImpl(JavaMailSender javaMailSender, EmailRepository emailRepository, EmailMapper emailMapper) {
         this.javaMailSender = javaMailSender;
         this.emailRepository = emailRepository;
         this.emailMapper = emailMapper;
