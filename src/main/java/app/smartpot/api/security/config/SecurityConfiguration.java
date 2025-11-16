@@ -72,7 +72,6 @@ public class SecurityConfiguration {
                 )
                 .cors(cors -> cors.configurationSource(corsConfig))
                 .authorizeHttpRequests(authorizationManagerRequestMatcherRegistry -> {
-                    authorizationManagerRequestMatcherRegistry.requestMatchers(org.springframework.http.HttpMethod.OPTIONS).permitAll();
                     authorizationManagerRequestMatcherRegistry.requestMatchers(publicRoutesList.toArray(new String[0])).permitAll();
                     authorizationManagerRequestMatcherRegistry.anyRequest().authenticated();
                 })
