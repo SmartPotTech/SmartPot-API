@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.service.ServiceActuator;
+import app.smartpot.api.actuators.service.ActuatorService;
 
 @Slf4j
 @RestController
@@ -16,10 +16,10 @@ public class ActuatorController {
 
     // TODO: Documentar mejor, por ejemplo como en UserController
 
-    private final ServiceActuator serviceActuator;
+    private final ActuatorService serviceActuator;
 
     @Autowired
-    public ActuatorController(ServiceActuator serviceActuator) {
+    public ActuatorController(ActuatorService serviceActuator) {
         this.serviceActuator = serviceActuator;
     }
 

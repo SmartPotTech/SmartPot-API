@@ -20,14 +20,14 @@ import java.util.stream.Collectors;
 @Data
 @Builder
 @Service
-public class ServiceActuatorImpl implements ServiceActuator {
+public class ActuatorServiceImpl implements ActuatorService {
 
     private final ActuatorRepository actuatorRepository;
     private final CropService serviceCrop;
     private final ActuatorMapper actuatorMapper;
 
     @Autowired
-    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, CropService serviceCrop, ActuatorMapper actuatorMapper) {
+    public ActuatorServiceImpl(ActuatorRepository actuatorRepository, CropService serviceCrop, ActuatorMapper actuatorMapper) {
         this.actuatorRepository = actuatorRepository;
         this.serviceCrop = serviceCrop;
         this.actuatorMapper = actuatorMapper;

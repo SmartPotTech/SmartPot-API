@@ -1,12 +1,10 @@
 package app.smartpot.api.actuators.service;
 
-import org.springframework.http.ResponseEntity;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.exception.ApiResponse;
 
 import java.util.List;
 
-public interface ServiceActuator {
+public interface ActuatorService {
     List<ActuatorDTO> getAllActuators() throws Exception;
 
     ActuatorDTO getActuatorById(String id) throws Exception;
