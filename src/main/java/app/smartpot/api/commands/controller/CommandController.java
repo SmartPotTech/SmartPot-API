@@ -103,7 +103,7 @@ public class CommandController {
                             description = "Comando no encontrado con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
+    public ResponseEntity<?> getCommandById(@PathVariable String id) {
         try {
             return new ResponseEntity<>(commandService.getCommandById(id), HttpStatus.OK);
         } catch (Exception e) {
