@@ -1,22 +1,20 @@
 package app.smartpot.api.actuators.service;
 
+import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import app.smartpot.api.actuators.mapper.ActuatorMapper;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.actuators.repository.ActuatorRepository;
 import app.smartpot.api.crops.service.CropService;
-import app.smartpot.api.exception.ApiException;
-import app.smartpot.api.exception.ApiResponse;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Data
@@ -26,92 +24,91 @@ public class ServiceActuatorImpl implements ServiceActuator {
 
     private final ActuatorRepository actuatorRepository;
     private final CropService serviceCrop;
+    private final ActuatorMapper actuatorMapper;
 
     @Autowired
-    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, CropService serviceCrop) {
+    public ServiceActuatorImpl(ActuatorRepository actuatorRepository, CropService serviceCrop, ActuatorMapper actuatorMapper) {
         this.actuatorRepository = actuatorRepository;
         this.serviceCrop = serviceCrop;
+        this.actuatorMapper = actuatorMapper;
     }
 
     @Override
-    public List<Actuator> getAllActuators() {
-        List<Actuator> actuators = actuatorRepository.findAll();
-        if (actuators.isEmpty()) {
-            throw new ApiException(new ApiResponse(
-                    "No se encontró ningún actuador en el sistema",
-                    HttpStatus.NOT_FOUND.value()
-            ));
-        }
-        return actuators;
+    public List<ActuatorDTO> getAllActuators() throws Exception {
+        return Optional.of(actuatorRepository.findAll())
+                .filter(actuators -> !actuators.isEmpty())
+                .map(actuators -> actuators.stream()
+                        .map(actuatorMapper::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No existe ningún actuador"));
     }
 
     @Override
-    public Actuator getActuatorById(String id) {
-        if (!ObjectId.isValid(id)) {
-            throw new ApiException(new ApiResponse(
-                    "El id '" + id + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-        return actuatorRepository.findById(new ObjectId(id))
-                .orElseThrow(() -> new ApiException(
-                        new ApiResponse("El Actuador con id '" + id + "' no fue encontrado.",
-                                HttpStatus.NOT_FOUND.value())
-                ));
+    public ActuatorDTO getActuatorById(String id) throws Exception {
+        return Optional.of(id)
+                .map(ValidId -> {
+                    if (!ObjectId.isValid(id)) {
+                        throw new ValidationException("Id invalido");
+                    }
+                    return new ObjectId(ValidId);
+                })
+                .map(actuatorRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(actuatorMapper::toDTO)
+                .orElseThrow(() -> new Exception("El Actuador no existe"));
     }
 
     @Override
-    public List<Actuator> getActuatorsByCrop(String crop) {
-        if (!ObjectId.isValid(crop)) {
-            throw new ApiException(new ApiResponse(
-                    "El id de cultivo '" + crop + "' no es válido. Asegúrate de que tiene 24 caracteres y solo incluye dígitos hexadecimales (0-9, a-f, A-F).",
-                    HttpStatus.BAD_REQUEST.value()
-            ));
-        }
-        return actuatorRepository.findByCrop(new ObjectId(crop));
+    public List<ActuatorDTO> getActuatorsByCrop(String crop) throws Exception {
+        return Optional.of(crop)
+                .map(id -> {
+                    if (!ObjectId.isValid(id)) {
+                        throw new ValidationException("Id de crop invalido");
+                    }
+                    return new ObjectId(id);
+                })
+                .map(actuatorRepository::findByCrop)
+                .filter(users -> !users.isEmpty())
+                .map(actuators -> actuators.stream()
+                        .map(actuatorMapper::toDTO)
+                        .collect(Collectors.toList())
+                )
+                .orElseThrow(() -> new Exception("El actuador no existe"));
     }
 
     @Override
-    public Actuator createActuator(ActuatorDTO actuator) throws Exception {
-        serviceCrop.getCropById(actuator.getCrop());
-        Actuator act = ActuatorMapper.INSTANCE.toEntity(actuator);
-        return actuatorRepository.save(act);
+    public ActuatorDTO createActuator(ActuatorDTO actuator) throws Exception {
+        return Optional.of(actuator)
+                 .map(actuatorMapper::toEntity)
+                .map(actuatorRepository::save)
+                .map(actuatorMapper::toDTO)
+                .orElseThrow(() -> new IllegalStateException("El Usuario ya existe"));
     }
 
     @Override
-    public Actuator updateActuator(Actuator existingActuator, ActuatorDTO actuator) {
-        if (actuator.getId() != null && actuator.getCrop() != null) {
-            existingActuator = ActuatorMapper.INSTANCE.toEntity(actuator);
-        }
-
-        try {
-            return actuatorRepository.save(existingActuator);
-        } catch (Exception e) {
-            log.error("e: ", e);
-            throw new ApiException(
-                    new ApiResponse("No se pudo actualizar el actuador con ID '" + existingActuator.getId() + "'.",
-                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+    public ActuatorDTO updateActuator(String id, ActuatorDTO actuator) throws Exception {
+        ActuatorDTO existingActuator = getActuatorById(id);
+        log.debug("UPDATING......................");
+        return Optional.of(actuator)
+                .map(updated -> {
+                    existingActuator.setType(updated.getType());
+                    return existingActuator;
+                })
+                .map(actuatorMapper::toEntity)
+                .map(actuatorRepository::save)
+                .map(actuatorMapper::toDTO)
+                .orElseThrow(() -> new Exception("El usuario no se pudo actualizar"));
     }
 
     @Override
-    public ResponseEntity<ApiResponse> deleteActuatorById(Actuator actuator) {
-        try {
-            actuatorRepository.deleteById(actuator.getId());
-            return ResponseEntity.status(HttpStatus.OK.value()).body(
-                    new ApiResponse("El Actuador con ID '" + actuator.getId() + "' fue eliminado.",
-                            HttpStatus.OK.value())
-            );
-        } catch (Exception e) {
-            log.error("e: ", e);
-            throw new ApiException(
-                    new ApiResponse("No se pudo eliminar el Actuador con ID '" + actuator.getId() + "'.",
-                            HttpStatus.INTERNAL_SERVER_ERROR.value()));
-        }
+    public String deleteActuatorById(String id) throws Exception {
+        return Optional.of(getActuatorById(id))
+                .map(user -> {
+                    actuatorRepository.deleteById(new ObjectId(user.getId()));
+                    return "El Usuario con ID '" + id + "' fue eliminado.";
+                })
+                .orElseThrow(() -> new Exception("El Usuario no existe."));
     }
 
-    //@Override
-    //public ResponseEntity<ApiResponse> deleteActuators(List<Actuadores> ids) {
-    //    return null;
-    //}
 }

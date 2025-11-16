@@ -2,23 +2,22 @@ package app.smartpot.api.actuators.service;
 
 import org.springframework.http.ResponseEntity;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.exception.ApiResponse;
 
 import java.util.List;
 
 public interface ServiceActuator {
-    List<Actuator> getAllActuators();
+    List<ActuatorDTO> getAllActuators() throws Exception;
 
-    Actuator getActuatorById(String id);
+    ActuatorDTO getActuatorById(String id) throws Exception;
 
-    List<Actuator> getActuatorsByCrop(String crop);
+    List<ActuatorDTO> getActuatorsByCrop(String crop) throws Exception;
 
-    Actuator createActuator(ActuatorDTO actuator) throws Exception;
+    ActuatorDTO createActuator(ActuatorDTO actuator) throws Exception;
 
-    Actuator updateActuator(Actuator existingActuator , ActuatorDTO actuator);
+    ActuatorDTO updateActuator(String id , ActuatorDTO actuator) throws Exception;
 
-    ResponseEntity<ApiResponse> deleteActuatorById(Actuator actuator);
+    String deleteActuatorById(String id) throws Exception;
 
     //ResponseEntity<ApiResponse> deleteActuators(List<String> ids);
 }
