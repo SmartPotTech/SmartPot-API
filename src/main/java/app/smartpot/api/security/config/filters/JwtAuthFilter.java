@@ -38,8 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     user, user.getPassword(), null /* user.getAuthorities() */);
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
-        } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token Invalido o Expirado");
+        } catch (Exception ignored) {
         }
         filterChain.doFilter(request, response);
     }
