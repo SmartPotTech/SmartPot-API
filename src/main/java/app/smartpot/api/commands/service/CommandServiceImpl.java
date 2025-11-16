@@ -5,6 +5,7 @@ import app.smartpot.api.commands.model.dto.CommandDTO;
 import app.smartpot.api.commands.model.entity.CommandStatus;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.service.CropService;
+import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -170,6 +172,16 @@ public class CommandServiceImpl implements CommandService {
     @Transactional
     public CommandDTO createCommand(CommandDTO commandDTO) throws IllegalStateException {
         return Optional.of(commandDTO)
+                .map(valid -> {
+                    try {
+                        if (!Objects.equals(cropService.getCropById(commandDTO.getCrop()).getId(), commandDTO.getCrop())) {
+                           throw new ValidationException("Actuator crop is different to Command Crop");
+                        }
+                        return commandDTO;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .map(dto -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     dto.setDateCreated(formatter.format(new Date()));
