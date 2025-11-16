@@ -1,7 +1,6 @@
 package app.smartpot.api.actuators.controller;
 
 import app.smartpot.api.responses.ErrorResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
 import app.smartpot.api.actuators.service.ActuatorService;
 
-@Slf4j
 @RestController
 @RequestMapping("/Actuators")
 public class ActuatorController {
@@ -81,7 +79,6 @@ public class ActuatorController {
     @PutMapping("/Update/{id}")
     public ResponseEntity<?> updateActuator(@PathVariable String id, @RequestBody ActuatorDTO actuator) {
         try {
-            log.debug("CONTROLLER.................");
             return new ResponseEntity<>(serviceActuator.updateActuator(serviceActuator.getActuatorById(id).getId(), actuator), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el actuador [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);

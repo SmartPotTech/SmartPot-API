@@ -3,7 +3,6 @@ package app.smartpot.api.actuators.service;
 import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Data
 @Builder
 @Service
@@ -89,7 +87,6 @@ public class ActuatorServiceImpl implements ActuatorService {
     @Override
     public ActuatorDTO updateActuator(String id, ActuatorDTO actuator) throws Exception {
         ActuatorDTO existingActuator = getActuatorById(id);
-        log.debug("UPDATING......................");
         return Optional.of(actuator)
                 .map(updated -> {
                     existingActuator.setType(updated.getType());
