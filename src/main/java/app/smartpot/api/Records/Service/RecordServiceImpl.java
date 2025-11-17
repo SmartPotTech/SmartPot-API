@@ -292,6 +292,7 @@ public class RecordServiceImpl implements RecordService {
         ValidationMesuares(recordDTO.getMeasures());
         cropService.getCropById(recordDTO.getCrop());
         History history = RecordMapper.INSTANCE.toEntity(recordDTO);
+        history.setDate(new java.util.Date());
         return recordRepository.save(history);
     }
 
