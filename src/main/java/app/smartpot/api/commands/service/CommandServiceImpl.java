@@ -2,8 +2,10 @@ package app.smartpot.api.commands.service;
 
 import app.smartpot.api.commands.mapper.CommandMapper;
 import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.commands.model.entity.CommandStatus;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.service.CropService;
+import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -106,6 +109,30 @@ public class CommandServiceImpl implements CommandService {
     }
 
     /**
+     * Retrieves all commands for a crop from the repository and maps them to DTOs.
+     * <p>
+     * This method is cached to improve performance when retrieving the list of commands.
+     * The cache is identified by the key 'crop_<crop_id>' under the 'commands' cache.
+     * </p>
+     *
+     * @param crop the unique identifier of the crop to retrieve the commands
+     * @return a list of {@code CommandDTO} objects representing all commands
+     * @throws Exception if no commands exist in the repository
+     */
+    @Override
+    @Cacheable(value = "commands", key = "'crop_'+#crop")
+    public List<CommandDTO> getCommandsByCrop(String crop) throws Exception {
+        return Optional.of(crop)
+                .map(ObjectId::new)
+                .map(commandRepository::findByCropId)
+                .filter(commands -> !commands.isEmpty())
+                .map(crops -> crops.stream()
+                        .map(commandMapper::toDTO)
+                        .collect(Collectors.toList()))
+                .orElseThrow(() -> new Exception("No existe ningún comando"));
+    }
+
+    /**
      * Retrieves a command by its unique identifier and maps it to a DTO.
      * <p>
      * This method is cached to improve performance for retrieving individual commands.
@@ -145,10 +172,20 @@ public class CommandServiceImpl implements CommandService {
     @Transactional
     public CommandDTO createCommand(CommandDTO commandDTO) throws IllegalStateException {
         return Optional.of(commandDTO)
+                .map(valid -> {
+                    try {
+                        if (!Objects.equals(cropService.getCropById(commandDTO.getCrop()).getId(), commandDTO.getCrop())) {
+                           throw new ValidationException("Actuator crop is different to Command Crop");
+                        }
+                        return commandDTO;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .map(dto -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     dto.setDateCreated(formatter.format(new Date()));
-                    dto.setStatus("PENDING");
+                    dto.setStatus(CommandStatus.PENDING);
                     return dto;
                 })
                 .map(commandMapper::toEntity)
@@ -174,10 +211,10 @@ public class CommandServiceImpl implements CommandService {
     @CachePut(value = "commands", key = "'id:'+#id")
     public CommandDTO executeCommand(String id, String response) throws Exception {
         return Optional.of(getCommandById(id))
-                .map(commandDTO -> {
+                .map( commandDTO -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     commandDTO.setDateCreated(formatter.format(new Date()));
-                    commandDTO.setStatus("EXECUTED");
+                    commandDTO.setStatus(CommandStatus.EXECUTED);
                     commandDTO.setResponse(response);
                     return commandDTO;
                 })

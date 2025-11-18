@@ -53,6 +53,15 @@ public interface CommandService {
     List<CommandDTO> getAllCommands() throws Exception;
 
     /**
+     * Retrieves all commands for a crop in the system.
+     *
+     * @param crop the unique identifier of the crop
+     * @return a list of {@link CommandDTO} representing all commands.
+     * @throws Exception if an error occurs during retrieval or if no commands exist.
+     */
+    List<CommandDTO> getCommandsByCrop(String crop) throws Exception;
+
+    /**
      * Retrieves a specific command by its ID.
      *
      * @param id the unique identifier of the command.

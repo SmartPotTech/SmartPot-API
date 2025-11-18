@@ -1,25 +1,23 @@
-package app.smartpot.api.commands.mapper;
+package app.smartpot.api.actuators.mapper;
 
-import app.smartpot.api.commands.model.dto.CommandDTO;
-import app.smartpot.api.commands.model.entity.Command;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.model.entity.Actuator;
 
 @Mapper(componentModel = "spring")
-public interface CommandMapper {
-    CommandMapper INSTANCE = Mappers.getMapper(CommandMapper.class);
+public interface ActuatorMapper {
+    ActuatorMapper INSTANCE = Mappers.getMapper(ActuatorMapper.class);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "stringToObjectId")
-    @Mapping(source = "actuator", target = "actuator", qualifiedByName = "stringToObjectId")
-    Command toEntity(CommandDTO commandDTO);
+    Actuator toEntity(ActuatorDTO recordDTO);
 
     @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
     @Mapping(source = "crop", target = "crop", qualifiedByName = "objectIdToString")
-    @Mapping(source = "actuator", target = "actuator", qualifiedByName = "objectIdToString")
-    CommandDTO toDTO(Command command);
+    ActuatorDTO toDTO(Actuator history);
 
     @org.mapstruct.Named("objectIdToString")
     default String objectIdToString(ObjectId objectId) {

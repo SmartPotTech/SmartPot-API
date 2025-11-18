@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/Comandos")
+@RequestMapping("/Commands")
 public class CommandController {
 
     private final CommandService commandService;
@@ -70,6 +70,27 @@ public class CommandController {
         }
     }
 
+    @GetMapping("/crop/{crop}")
+    @Operation(summary = "Obtener todos los comandos de un cultivo",
+            description = "Recupera todos los comandos asociados a un cultivo en el sistema. "
+                    + "En caso de no haber comandos, se devolverá una excepción.",
+            responses = {
+                    @ApiResponse(description = "Comandos encontrados",
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    array = @ArraySchema(schema = @Schema(implementation = CommandDTO.class)))),
+                    @ApiResponse(responseCode = "404",
+                            description = "No se encontraron Comandos registrados.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+            })
+    public ResponseEntity<?> getCommandsByCrop(@PathVariable String crop) {
+        try {
+            return new ResponseEntity<>(commandService.getCommandsByCrop(crop), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/id/{id}")
     @Operation(summary = "Buscar comando por ID",
             description = "Recupera un comando utilizando su ID único. "
@@ -82,7 +103,7 @@ public class CommandController {
                             description = "Comando no encontrado con el ID especificado.",
                             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
             })
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
+    public ResponseEntity<?> getCommandById(@PathVariable String id) {
         try {
             return new ResponseEntity<>(commandService.getCommandById(id), HttpStatus.OK);
         } catch (Exception e) {
