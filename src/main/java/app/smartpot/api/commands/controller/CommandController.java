@@ -1,10 +1,13 @@
 package app.smartpot.api.commands.controller;
 
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
 import app.smartpot.api.commands.model.dto.CommandDTO;
 import app.smartpot.api.commands.service.CommandService;
 import app.smartpot.api.crops.model.dto.CropDTO;
 import app.smartpot.api.responses.DeleteResponse;
 import app.smartpot.api.responses.ErrorResponse;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
+import app.smartpot.api.actuators.service.ActuatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -21,12 +24,13 @@ import org.springframework.web.bind.annotation.*;
 public class CommandController {
 
     private final CommandService commandService;
+    private final ActuatorService actuatorService;
 
-    @Autowired
-    public CommandController(CommandService commandService) {
+   @Autowired
+    public CommandController(CommandService commandService, ActuatorService actuatorService) {
         this.commandService = commandService;
+        this.actuatorService = actuatorService;
     }
-
     @PostMapping("/Create")
     @Operation(summary = "Crear un nuevo comando",
             description = "Crea un nuevo comando utilizando los datos proporcionados en el objeto CommandDTO. "
@@ -168,6 +172,32 @@ public class CommandController {
             return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + commandService.updateCommand(id, updatedCommand) + "]"), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping("/ActivateUVLight/{cropId}")
+    @Operation(summary = "Activar luz ultravioleta",
+            description = "Crea un comando para activar la luz UV del cultivo especificado")
+    public ResponseEntity<?> activateUVLight(@PathVariable String cropId) {
+        try {
+           
+        ActuatorDTO uvLight = actuatorService.getActuatorsByCrop(cropId)
+                .stream()
+                .filter(a -> a.getType() == ActuatorType.UV_LIGHT)
+                .findFirst()
+                .orElseThrow(() -> new Exception("No se encontró luz UV para este cultivo"));
+            
+            CommandDTO command = new CommandDTO();
+            command.setCommandType("ACTIVATE_UV_LIGHT");
+            command.setActuator(uvLight.getId());
+            command.setCrop(cropId);
+            
+            return new ResponseEntity<>(commandService.createCommand(command), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(
+                new ErrorResponse("Error al activar la luz UV [" + e.getMessage() + "]", 
+                HttpStatus.BAD_REQUEST.value()), 
+                HttpStatus.BAD_REQUEST);
         }
     }
 

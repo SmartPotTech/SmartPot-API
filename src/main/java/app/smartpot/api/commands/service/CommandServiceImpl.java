@@ -213,7 +213,7 @@ public class CommandServiceImpl implements CommandService {
         return Optional.of(getCommandById(id))
                 .map( commandDTO -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    commandDTO.setDateCreated(formatter.format(new Date()));
+                    commandDTO.setDateExecuted(formatter.format(new Date()));
                     commandDTO.setStatus(CommandStatus.EXECUTED);
                     commandDTO.setResponse(response);
                     return commandDTO;
