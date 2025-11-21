@@ -14,21 +14,54 @@
     </parent>
 
     <!-- Basic project information -->
-    <groupId>smarpot.com</groupId>
+    <groupId>smarpot.app</groupId>
     <artifactId>api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>SmartPot-API</name>
     <description>SmartPot-API</description>
-    <url />
+    <url>https://github.com/SmartPotTech/SmartPot-API</url>
 
     <!-- Licenses for the project -->
     <licenses>
-        <license />
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
     </licenses>
+
 
     <!-- Developers involved in the project -->
     <developers>
-        <developer />
+        <developer>
+            <id>SebastianLopezO</id>
+            <name>Sebastián López Osorno</name>
+            <email>sebastianlopezosorno2005@gmail.com</email>
+            <url>https://github.com/SebastianLopezO</url>
+            <roles>
+                <role>Lead Developer</role>
+            </roles>
+        </developer>
+
+        <developer>
+            <id>darwingtx</id>
+            <name>Darwin David Castaño</name>
+            <email></email>
+            <url>https://github.com/darwingtx</url>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+
+        <developer>
+            <id>Andres2204</id>
+            <name>Andrés Medina Martínez</name>
+            <email></email>
+            <url>https://github.com/Andres2204</url>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <!-- Source control management (SCM) configuration -->
