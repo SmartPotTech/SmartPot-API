@@ -45,11 +45,13 @@ logging:
     root:
       # Nivel de log para el nivel raíz
       root: ${DEBUGGER_MODE:INFO}
-    smartpot:
-      com:
+    app:
+      smartpot:
         api:
           Security:
             jwt: ${DEBUGGER_MODE:INFO}  # Nivel de log para JWT en la API de seguridad
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%-5p){cyan} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){blue} - %clr(%msg){green}%n"
 
 # Configuración de limitación de tasa (Rate Limiting)
 rate:
@@ -104,6 +106,10 @@ spring:
       port: ${CACHE_PORT:6379}
       timeout: ${CACHE_TIMEOUT:2000}
       username: ${CACHE_USERNAME:default}
+
+  output:
+    ansi:
+      enabled: always
 
   mail:
     # Configuración para el servidor de correo
