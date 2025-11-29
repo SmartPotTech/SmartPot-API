@@ -89,12 +89,12 @@ public class SecurityConfiguration {
      * @return Un objeto {@link AuthenticationProvider} configurado.
      */
     @Bean
-    AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userService);
+    AuthenticationProvider authenticationProvider(UserService userService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
+
 
     /**
      * Configura un codificador de contraseñas utilizando {@link BCryptPasswordEncoder}.
