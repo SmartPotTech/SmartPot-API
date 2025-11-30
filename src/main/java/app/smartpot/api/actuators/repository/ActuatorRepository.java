@@ -1,11 +1,11 @@
 package app.smartpot.api.actuators.repository;
 
+import app.smartpot.api.actuators.model.entity.Actuator;
 import jakarta.validation.constraints.NotNull;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import app.smartpot.api.actuators.model.entity.Actuator;
 
 import java.util.List;
 import java.util.Optional;

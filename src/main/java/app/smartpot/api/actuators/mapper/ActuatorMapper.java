@@ -1,11 +1,11 @@
 package app.smartpot.api.actuators.mapper;
 
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.model.entity.Actuator;
 import org.bson.types.ObjectId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.model.entity.Actuator;
 
 @Mapper(componentModel = "spring")
 public interface ActuatorMapper {

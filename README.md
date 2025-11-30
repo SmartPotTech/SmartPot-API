@@ -12,7 +12,10 @@
 
 ## Descripción
 
-SmartPot-API es una API RESTful desarrollada en **Java 17** con **Spring Boot 3.5.7**, diseñada para gestionar el sistema de cultivos inteligentes SmartPot. La aplicación utiliza **MongoDB** como base de datos principal, **Redis** para almacenamiento en caché, y cuenta con autenticación mediante **JWT** (JSON Web Tokens). La API está completamente documentada con **Swagger/OpenAPI** y ofrece múltiples interfaces de documentación (Swagger UI, ReDoc, Scalar).
+SmartPot-API es una API RESTful desarrollada en **Java 17** con **Spring Boot 3.5.7**, diseñada para gestionar el
+sistema de cultivos inteligentes SmartPot. La aplicación utiliza **MongoDB** como base de datos principal, **Redis**
+para almacenamiento en caché, y cuenta con autenticación mediante **JWT** (JSON Web Tokens). La API está completamente
+documentada con **Swagger/OpenAPI** y ofrece múltiples interfaces de documentación (Swagger UI, ReDoc, Scalar).
 
 ## Tecnologías Principales
 
@@ -29,6 +32,7 @@ SmartPot-API es una API RESTful desarrollada en **Java 17** con **Spring Boot 3.
 - **Maven** - Gestión de dependencias
 
 ## Estructura del Proyecto
+
 ```
 
 SmartPot-API/
@@ -170,80 +174,104 @@ SmartPot-API/
 ├── mvnw / mvnw.cmd                   # Maven Wrapper
 └── pom.xml                           # Configuración de Maven
 ```
+
 ## Descripción de Módulos
 
 ### Cache
+
 **Propósito**: Configuración de Redis para almacenamiento en caché.
+
 - `RedisConfig.java`: Configuración de conexión y serialización de Redis.
 
 ### Commands
+
 **Propósito**: Gestión de comandos enviados a dispositivos IoT SmartPot.
+
 - **Controlador**: Endpoints REST para crear, leer, actualizar y eliminar comandos.
 - **Servicio**: Lógica de negocio para procesamiento de comandos.
 - **Repositorio**: Persistencia de comandos en MongoDB.
 
 ### Crops
+
 **Propósito**: Administración completa del ciclo de vida de cultivos.
+
 - **Entidades**: `Crop`, `CropStatus`, `CropType`.
 - **Validación**: Validadores personalizados para integridad de datos de cultivos.
 - **Mapper**: Conversión entre DTOs y entidades usando MapStruct.
 
 ### Documentation
+
 **Propósito**: Configuración de documentación automática de la API.
+
 - `SwaggerConfig.java`: Configuración de OpenAPI/Swagger.
 - `DocumentController.java`: Endpoints para servir múltiples UIs de documentación.
 - **Interfaces disponibles**:
-  - Swagger UI
-  - ReDoc
-  - Scalar
+    - Swagger UI
+    - ReDoc
+    - Scalar
 
 ### Exception
+
 **Propósito**: Manejo centralizado de errores y excepciones.
+
 - `ApiHandler.java`: Manejador global de excepciones con `@ControllerAdvice`.
 - `ApiException.java`: Excepción personalizada base.
 - `InvalidTokenException.java`: Excepción específica para tokens JWT inválidos.
 - `EncryptionException.java`: Excepción para errores de cifrado.
 
 ### Mail
+
 **Propósito**: Sistema de envío de correos electrónicos.
+
 - **Configuración asíncrona**: `AsyncConfig.java` para envío no bloqueante.
 - **Validación**: Validadores para verificar formato de correos.
 - **Repositorio**: Historial de correos enviados.
 
 ### Notifications
+
 **Propósito**: Sistema de notificaciones a usuarios.
+
 - Gestión de notificaciones push y en tiempo real.
 - Registro de historial de notificaciones.
 
 ### Records
+
 **Propósito**: Gestión de historial de mediciones de sensores.
+
 - **Entidades**: `History`, `Measures`, `DateRange`.
 - **DTOs**: `RecordDTO`, `MeasuresDTO`, `CropRecordDTO`.
 - Almacena datos de temperatura, humedad, pH, etc.
 
 ### Security
+
 **Propósito**: Autenticación, autorización y seguridad.
+
 - **JWT**: Generación y validación de tokens.
 - **Filtros**:
-  - `JwtAuthFilter`: Validación de tokens en cada request.
-  - `RateLimitingFilter`: Limitación de tasa de peticiones.
+    - `JwtAuthFilter`: Validación de tokens en cada request.
+    - `RateLimitingFilter`: Limitación de tasa de peticiones.
 - **CORS**: Configuración de orígenes permitidos.
 - **Encriptación**: Servicios de cifrado AES para datos sensibles.
 
 ### Users
+
 **Propósito**: Gestión completa de usuarios del sistema.
+
 - **Entidades**: `User`, `UserRole`.
 - **Validación**: Expresiones regulares personalizadas (`UserRegex`).
 - Autenticación y gestión de perfiles.
 
 ### Sessions
+
 **Propósito**: Gestión de sesiones activas de usuarios.
+
 - Registro de dispositivos y tokens activos.
 - Control de sesiones concurrentes.
 
 ## Guía de Despliegue
 
 ### Requisitos Previos
+
 - Java 17 o superior
 - Maven 3.9+
 - Docker (opcional, para contenedorización)
@@ -251,24 +279,30 @@ SmartPot-API/
 - Redis 6.0+
 
 ### 1. Compilación de la Aplicación
+
 ```
 bash
 # Compilar sin ejecutar tests
 mvn clean package -DskipTests -P docker -f pom.xml
 ```
+
 **Explicación**:
+
 - `clean`: Limpia compilaciones previas.
 - `package`: Empaqueta la aplicación en un JAR.
 - `-DskipTests`: Omite la ejecución de tests.
 - `-P docker`: Activa el perfil de compilación para Docker.
 
 ### 2. Construcción de Imagen Docker
+
 ```
 bash
 # Construir imagen para arquitectura AMD64
 docker build --platform linux/amd64 -t sebastian190030/api-smartpot:latest .
 ```
+
 ### 3. Publicación en Docker Hub
+
 ```
 bash
 # Login en Docker Hub
@@ -277,9 +311,11 @@ docker login
 # Subir imagen
 docker push sebastian190030/api-smartpot:latest
 ```
+
 ### 4. Despliegue en Render.com
 
 #### 4.1 Configuración Inicial
+
 1. Crear cuenta en [Render.com](https://render.com)
 2. Crear nuevo **Web Service**
 3. Seleccionar **Docker** como tipo de despliegue
@@ -287,6 +323,7 @@ docker push sebastian190030/api-smartpot:latest
 5. Configurar variables de entorno (ver sección Variables de Entorno)
 
 #### 4.2 Despliegue Automático
+
 ```
 bash
 # Usando deploy hook (Windows)
@@ -295,6 +332,7 @@ cmd /c deploy.render.cmd
 # Usando curl directamente
 curl -X POST https://api.render.com/deploy/srv-YOUR_SERVICE_ID?key=YOUR_DEPLOY_KEY
 ```
+
 ## 🔧 Configuración
 
 ### Variables de Entorno
@@ -302,6 +340,7 @@ curl -X POST https://api.render.com/deploy/srv-YOUR_SERVICE_ID?key=YOUR_DEPLOY_K
 Copia el archivo `.env.example` a `.env` y configura las siguientes variables:
 
 #### Configuración de la Aplicación
+
 ```
 bash
 APP_NAME=SmartPot-API
@@ -311,7 +350,9 @@ DESCRIPTION=Documentación de la API REST de SmartPot
 VERSION=1.0.0
 AUTHOR=SmartPot Developers
 ```
+
 #### MongoDB
+
 ```
 bash
 DATA_CONNECTION_METHOD=mongodb
@@ -321,7 +362,9 @@ DATA_SOURCE_DOMAIN=db-smartpot:27017
 DATA_SOURCE_DB=smartpot
 DATA_PARAMS=authSource=admin&directConnection=true&serverSelectionTimeoutMS=100000&socketTimeoutMS=10000&appName=mongo
 ```
+
 #### Redis (Cache)
+
 ```
 bash
 CACHE_TYPE=redis
@@ -340,7 +383,9 @@ CACHE_LETTUCE_POOL_MIN_IDLE=8
 CACHE_TIME_TO_LIVE=300000
 CACHE_NULL_VALUES=false
 ```
+
 #### Email (SMTP)
+
 ```
 bash
 MAIL_HOST=mail-smartpot
@@ -350,7 +395,9 @@ MAIL_PASSWORD=password123
 MAIL_PROPERTIES_SMTP_AUTH=true
 MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE=false
 ```
+
 #### Seguridad (JWT)
+
 ```
 bash
 SECURITY_JWT_SECRET_KEY=your-secret-key-here
@@ -359,25 +406,33 @@ SECURITY_PUBLIC_ROUTES=/auth/login,/auth/verify
 SECURITY_AES_KEY=your-aes-key-here
 SECURITY_SCHEME_NAME=bearerAuth
 ```
+
 #### Rate Limiting
+
 ```
 bash
 RATE_LIMITING_MAX_REQUESTS=5
 RATE_LIMITING_TIME_WINDOW=60000
 RATE_LIMITING_PUBLIC_ROUTES=/swagger-ui/,/v3/api-docs,/swagger-resources/,/webjars/
 ```
+
 #### CORS
+
 ```
 bash
 HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
+
 #### Servidor
+
 ```
 bash
 SERVER_TOMCAT_TIMEOUT=600000
 SERVER_FORWARD_HEADERS_STRATEGY=framework
 ```
+
 #### Swagger/OpenAPI
+
 ```
 bash
 SWAGGER_API_DOCS_ENABLED=true
@@ -396,12 +451,16 @@ SWAGGER_UI_DISPLAY_REQUEST_DURATION=true
 SWAGGER_UI_DOC_EXPANSION=list
 OPENAPI_SERVER_URL=http://localhost:8091
 ```
+
 #### Logging
+
 ```
 bash
 DEBUGGER_MODE=INFO
 ```
+
 ### Ejemplo de Ejecución con Docker
+
 ```
 bash
 docker run -d --name smartpot-api-dev -p 8091:8091 \
@@ -456,7 +515,9 @@ docker run -d --name smartpot-api-dev -p 8091:8091 \
 -e DEBUGGER_MODE=INFO \
 sebastian190030/api-smartpot:latest
 ```
+
 ## Testing
+
 ```
 bash
 # Ejecutar todos los tests
@@ -465,6 +526,7 @@ mvn test
 # Ejecutar tests específicos
 mvn test -Dtest=UserControllerTest
 ```
+
 ## Documentación de la API
 
 Una vez que la aplicación esté en ejecución, accede a las interfaces de documentación:

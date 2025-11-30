@@ -175,7 +175,7 @@ public class CommandServiceImpl implements CommandService {
                 .map(valid -> {
                     try {
                         if (!Objects.equals(cropService.getCropById(commandDTO.getCrop()).getId(), commandDTO.getCrop())) {
-                           throw new ValidationException("Actuator crop is different to Command Crop");
+                            throw new ValidationException("Actuator crop is different to Command Crop");
                         }
                         return commandDTO;
                     } catch (Exception e) {
@@ -211,7 +211,7 @@ public class CommandServiceImpl implements CommandService {
     @CachePut(value = "commands", key = "'id:'+#id")
     public CommandDTO executeCommand(String id, String response) throws Exception {
         return Optional.of(getCommandById(id))
-                .map( commandDTO -> {
+                .map(commandDTO -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     commandDTO.setDateExecuted(formatter.format(new Date()));
                     commandDTO.setStatus(CommandStatus.EXECUTED);

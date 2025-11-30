@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <!-- Model version for Maven POM -->
     <modelVersion>4.0.0</modelVersion>
 
@@ -10,7 +10,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.0.0</version>
-        <relativePath /> <!-- lookup parent from repository -->
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <!-- Basic project information -->
@@ -66,10 +66,10 @@
 
     <!-- Source control management (SCM) configuration -->
     <scm>
-        <connection />
-        <developerConnection />
-        <tag />
-        <url />
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
     </scm>
 
     <!-- Global properties -->
@@ -118,7 +118,8 @@
         <!-- ===================== Security Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId> <!-- Spring Security for authentication and authorization -->
+            <artifactId>spring-boot-starter-security
+            </artifactId> <!-- Spring Security for authentication and authorization -->
         </dependency>
 
         <dependency>
@@ -162,14 +163,16 @@
         <!-- ===================== Development & Tools Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId> <!-- Developer tools for faster development (restarts, etc.) -->
+            <artifactId>spring-boot-devtools
+            </artifactId> <!-- Developer tools for faster development (restarts, etc.) -->
             <scope>runtime</scope> <!-- Available only during runtime -->
             <optional>true</optional> <!-- Optional dependency -->
         </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId> <!-- Lombok for reducing boilerplate code (getters/setters, constructors, etc.) -->
+            <artifactId>lombok
+            </artifactId> <!-- Lombok for reducing boilerplate code (getters/setters, constructors, etc.) -->
             <scope>compile</scope> <!-- Available at compile time -->
         </dependency>
 

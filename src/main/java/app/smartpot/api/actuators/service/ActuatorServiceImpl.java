@@ -1,15 +1,15 @@
 package app.smartpot.api.actuators.service;
 
+import app.smartpot.api.actuators.mapper.ActuatorMapper;
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.repository.ActuatorRepository;
+import app.smartpot.api.crops.service.CropService;
 import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import app.smartpot.api.actuators.mapper.ActuatorMapper;
-import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.repository.ActuatorRepository;
-import app.smartpot.api.crops.service.CropService;
 
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class ActuatorServiceImpl implements ActuatorService {
     @Override
     public ActuatorDTO createActuator(ActuatorDTO actuator) throws Exception {
         return Optional.of(actuator)
-                 .map(actuatorMapper::toEntity)
+                .map(actuatorMapper::toEntity)
                 .map(actuatorRepository::save)
                 .map(actuatorMapper::toDTO)
                 .orElseThrow(() -> new IllegalStateException("El Usuario ya existe"));

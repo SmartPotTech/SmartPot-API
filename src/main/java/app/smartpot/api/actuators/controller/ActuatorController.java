@@ -1,12 +1,12 @@
 package app.smartpot.api.actuators.controller;
 
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.service.ActuatorService;
 import app.smartpot.api.responses.ErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.service.ActuatorService;
 
 @RestController
 @RequestMapping("/Actuators")

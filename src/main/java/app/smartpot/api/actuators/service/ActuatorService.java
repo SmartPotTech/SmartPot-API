@@ -13,7 +13,7 @@ public interface ActuatorService {
 
     ActuatorDTO createActuator(ActuatorDTO actuator) throws Exception;
 
-    ActuatorDTO updateActuator(String id , ActuatorDTO actuator) throws Exception;
+    ActuatorDTO updateActuator(String id, ActuatorDTO actuator) throws Exception;
 
     String deleteActuatorById(String id) throws Exception;
 
