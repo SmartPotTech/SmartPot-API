@@ -179,7 +179,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.0</version> <!-- OpenAPI support for automatic API documentation -->
+            <version>3.0.1</version> <!-- OpenAPI support for automatic API documentation -->
         </dependency>
 
         <dependency>
