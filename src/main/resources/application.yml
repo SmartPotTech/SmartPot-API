@@ -89,7 +89,7 @@ spring:
   data:
     mongodb:
       # URI de conexión a MongoDB
-      uri: ${DATA_CONNECTION_METHOD:mongodb}://${DATA_SOURCE_USERNAME:admin}:${DATA_SOURCE_PASSWORD:admin}@${DATA_SOURCE_DOMAIN:db-smartpot:27017}/${DATA_SOURCE_DB:smartpot}?${DATA_PARAMS:authSource=admin&directConnection=true&serverSelectionTimeoutMS=100000&socketTimeoutMS=10000&appName=mongo}
+      uri: ${DATA_CONNECTION_METHOD:mongodb}://${DATA_SOURCE_USERNAME:admin}:${DATA_SOURCE_PASSWORD:admin}@${DATA_SOURCE_DOMAIN:db-smartpot}/${DATA_SOURCE_DB:smartpot}?${DATA_PARAMS:authSource=admin&directConnection=true&serverSelectionTimeoutMS=100000&socketTimeoutMS=10000&appName=mongo}
     redis:
       # Configuración de la base de datos Redis
       database: ${CACHE_DB:0}
