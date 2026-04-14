@@ -36,7 +36,7 @@ public class DocumentController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ReDoc está deshabilitado");
         }
 
-        model.addAttribute("specUrl", specUrl);
+        model.addAttribute("specUrl", "/api/v1" + specUrl);
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("version", version);
@@ -50,7 +50,7 @@ public class DocumentController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Scalar está deshabilitado");
         }
 
-        model.addAttribute("specUrl", specUrl);
+        model.addAttribute("specUrl", "/api/v1" + specUrl);
         model.addAttribute("title", title);
         model.addAttribute("description", description);
         model.addAttribute("version", version);
