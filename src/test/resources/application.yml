@@ -51,4 +51,4 @@ springdoc:
     doc-expansion: list
     enabled: true
     path: /
-    url: /v3/api-docs
+    url: /api-docs

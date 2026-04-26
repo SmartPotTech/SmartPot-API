@@ -37,7 +37,7 @@ public class SwaggerConfig {
                         .title(title)
                         .version("v" + version)
                         .description(description)
-                        .termsOfService("https://github.com/SmarPotTech/SmartPot-API/blob/main/LICENSE")
+                        .termsOfService("https://github.com/SmartPotTech/SmartPot-API/blob/main/LICENSE")
                         .license(new License().name("MIT License").url("https://opensource.org/license/mit"))
                         .contact(new Contact().name(author).url("https://github.com/SmarPotTech").email("smartpottech@gmail.com"))
                 )
