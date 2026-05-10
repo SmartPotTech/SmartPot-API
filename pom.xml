@@ -46,7 +46,7 @@
         <developer>
             <id>darwingtx</id>
             <name>Darwin David Castaño</name>
-            <email></email>
+            <email>darwingtx@gmail.com</email>
             <url>https://github.com/darwingtx</url>
             <roles>
                 <role>Developer</role>
@@ -221,6 +221,16 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId> <!-- Apache Commons Pool for Redis connection management -->
             <version>2.13.1</version>
+        </dependency>
+
+        <!-- ===================== MQTT Dependencies ===================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-integration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-mqtt</artifactId>
         </dependency>
 
     </dependencies>

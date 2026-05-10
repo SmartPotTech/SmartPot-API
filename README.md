@@ -402,7 +402,7 @@ MAIL_PROPERTIES_SMTP_STARTTLS_ENABLE=false
 bash
 SECURITY_JWT_SECRET_KEY=your-secret-key-here
 SECURITY_JWT_EXPIRATION=86400000
-SECURITY_PUBLIC_ROUTES=/auth/login,/auth/verify
+SECURITY_PUBLIC_ROUTES=/api/v1/auth/login,/api/v1/auth/verify
 SECURITY_AES_KEY=your-aes-key-here
 SECURITY_SCHEME_NAME=bearerAuth
 ```
@@ -413,7 +413,7 @@ SECURITY_SCHEME_NAME=bearerAuth
 bash
 RATE_LIMITING_MAX_REQUESTS=5
 RATE_LIMITING_TIME_WINDOW=60000
-RATE_LIMITING_PUBLIC_ROUTES=/swagger-ui/,/v3/api-docs,/swagger-resources/,/webjars/
+RATE_LIMITING_PUBLIC_ROUTES=/api/v1/auth/login,/api/v1/auth/verify
 ```
 
 #### CORS
@@ -502,11 +502,11 @@ docker run -d --name smartpot-api-dev -p 8091:8091 \
 \
 -e SECURITY_JWT_SECRET_KEY=c8e9b6803afbcfa6edd9569c94c75ff4b144622b0a0570a636dffd62c24a3476 \
 -e SECURITY_JWT_EXPIRATION=86400000 \
--e SECURITY_PUBLIC_ROUTES="/auth/login,/auth/verify" \
+-e SECURITY_PUBLIC_ROUTES="/api/v1/auth/login,/api/v1/auth/verify" \
 \
 -e RATE_LIMITING_MAX_REQUESTS=5 \
 -e RATE_LIMITING_TIME_WINDOW=60000 \
--e RATE_LIMITING_PUBLIC_ROUTES="/swagger-ui/,/v3/api-docs,/swagger-resources/,/webjars/" \
+-e RATE_LIMITING_PUBLIC_ROUTES="/api/v1/auth/login,/api/v1/auth/verify" \
 \
 -e HEADER_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
 \
@@ -535,10 +535,12 @@ Una vez que la aplicación esté en ejecución, accede a las interfaces de docum
 - **ReDoc**: `http://localhost:8091/redoc`
 - **Scalar**: `http://localhost:8091/scalar`
 - **OpenAPI JSON**: `http://localhost:8091/v3/api-docs`
+- **Versionado**: los endpoints funcionales de la API usan prefijo `http://localhost:8091/api/v1/...`
 
 ## Seguridad
 
 - **Autenticación JWT**: Todas las rutas (excepto las públicas) requieren un token JWT válido.
+- **Documentación protegida**: Swagger UI, ReDoc y Scalar requieren JWT (no son rutas públicas por defecto).
 - **Rate Limiting**: Límite de 5 peticiones por minuto por IP en endpoints protegidos.
 - **CORS**: Configurado para aceptar peticiones desde orígenes específicos.
 - **Encriptación AES**: Datos sensibles cifrados antes de almacenarse.
