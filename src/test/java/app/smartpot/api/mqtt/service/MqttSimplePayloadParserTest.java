@@ -101,7 +101,9 @@ class MqttSimplePayloadParserTest {
 
     @Test
     void parsesIndividualBme280Reading() {
-        String json = """{"temp": 24.5, "hum": 60, "press": 1013.2}""";
+        String json = """
+                {"temp": 24.5, "hum": 60, "press": 1013.2}
+                """;
         SimpleReadingMessage reading = parser.parseReading(json, MqttTopicConstants.SENSOR_BME280);
         MeasuresDTO measures = reading.measures();
 
@@ -112,7 +114,9 @@ class MqttSimplePayloadParserTest {
 
     @Test
     void parsesIndividualLuxReading() {
-        String json = """{"lux": 700}""";
+        String json = """
+                {"lux": 700}
+                """;
         SimpleReadingMessage reading = parser.parseReading(json, MqttTopicConstants.SENSOR_LUX);
         MeasuresDTO measures = reading.measures();
 
@@ -121,7 +125,9 @@ class MqttSimplePayloadParserTest {
 
     @Test
     void parsesIndividualPhReading() {
-        String json = """{"ph": 6.8}""";
+        String json = """
+                {"ph": 6.8}
+                """;
         SimpleReadingMessage reading = parser.parseReading(json, MqttTopicConstants.SENSOR_PH);
         MeasuresDTO measures = reading.measures();
 
@@ -130,7 +136,9 @@ class MqttSimplePayloadParserTest {
 
     @Test
     void parsesIndividualTdsReading() {
-        String json = """{"tds": 410}""";
+        String json = """
+                {"tds": 410}
+                """;
         SimpleReadingMessage reading = parser.parseReading(json, MqttTopicConstants.SENSOR_TDS);
         MeasuresDTO measures = reading.measures();
 
