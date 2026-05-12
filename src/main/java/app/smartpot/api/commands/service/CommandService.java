@@ -106,4 +106,14 @@ public interface CommandService {
      * @throws Exception if the command does not exist or execution fails.
      */
     CommandDTO executeCommand(String id, String response) throws Exception;
+
+    /**
+     * Marks a command as failed and records the device response.
+     *
+     * @param id       the unique identifier of the command to fail.
+     * @param response the failure response received from the device.
+     * @return the updated {@link CommandDTO} reflecting the failure details.
+     * @throws Exception if the command does not exist or the update fails.
+     */
+    CommandDTO failCommand(String id, String response) throws Exception;
 }

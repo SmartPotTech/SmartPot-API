@@ -43,16 +43,17 @@ public class RecordServiceImpl implements RecordService {
     /**
      * Válida las medidas proporcionadas en el objeto `MeasuresDTO`.
      * Llama a las funciones de validación específicas para cada tipo de medida.
+     * Solo valida los campos que no son null (permite payloads parciales de sensores).
      *
      * @param measures Objeto que contiene las medidas a validar.
      */
     private void ValidationMesuares(MeasuresDTO measures) {
-        validateAtmosphere(measures.getAtmosphere());
-        validateBrightness(measures.getBrightness());
-        validateTemperature(measures.getTemperature());
-        validatePh(measures.getPh());
-        validateTds(measures.getTds());
-        validateHumidity(measures.getHumidity());
+        if (measures.getAtmosphere() != null) validateAtmosphere(measures.getAtmosphere());
+        if (measures.getBrightness() != null) validateBrightness(measures.getBrightness());
+        if (measures.getTemperature() != null) validateTemperature(measures.getTemperature());
+        if (measures.getPh() != null) validatePh(measures.getPh());
+        if (measures.getTds() != null) validateTds(measures.getTds());
+        if (measures.getHumidity() != null) validateHumidity(measures.getHumidity());
     }
 
     /**

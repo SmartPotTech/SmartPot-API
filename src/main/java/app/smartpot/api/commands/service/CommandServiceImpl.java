@@ -1,10 +1,13 @@
 package app.smartpot.api.commands.service;
 
+import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.service.ActuatorService;
 import app.smartpot.api.commands.mapper.CommandMapper;
 import app.smartpot.api.commands.model.dto.CommandDTO;
 import app.smartpot.api.commands.model.entity.CommandStatus;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.mqtt.service.MqttCommandPublisher;
 import jakarta.validation.ValidationException;
 import lombok.Builder;
 import lombok.Data;
@@ -72,6 +75,8 @@ public class CommandServiceImpl implements CommandService {
     private final CommandRepository commandRepository;
     private final CropService cropService;
     private final CommandMapper commandMapper;
+    private final ActuatorService actuatorService;
+    private final MqttCommandPublisher mqttCommandPublisher;
 
     /**
      * Constructs an instance of {@code SCommand} with the required dependencies.
@@ -81,10 +86,17 @@ public class CommandServiceImpl implements CommandService {
      * @param commandMapper     the mapper for converting entities to DTOs and vice versa
      */
     @Autowired
-    public CommandServiceImpl(CommandRepository commandRepository, CropService cropService, CommandMapper commandMapper) {
+    public CommandServiceImpl(
+            CommandRepository commandRepository,
+            CropService cropService,
+            CommandMapper commandMapper,
+            ActuatorService actuatorService,
+            MqttCommandPublisher mqttCommandPublisher) {
         this.commandRepository = commandRepository;
         this.cropService = cropService;
         this.commandMapper = commandMapper;
+        this.actuatorService = actuatorService;
+        this.mqttCommandPublisher = mqttCommandPublisher;
     }
 
     /**
@@ -191,6 +203,7 @@ public class CommandServiceImpl implements CommandService {
                 .map(commandMapper::toEntity)
                 .map(commandRepository::save)
                 .map(commandMapper::toDTO)
+                .map(this::publishMqttCommand)
                 .orElseThrow(() -> new IllegalStateException("El Comando ya existe"));
     }
 
@@ -208,13 +221,30 @@ public class CommandServiceImpl implements CommandService {
      * @throws Exception if the command cannot be found or updated
      */
     @Override
-    @CachePut(value = "commands", key = "'id:'+#id")
+    @CachePut(value = "commands", key = "'id_'+#id")
     public CommandDTO executeCommand(String id, String response) throws Exception {
         return Optional.of(getCommandById(id))
                 .map(commandDTO -> {
                     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     commandDTO.setDateExecuted(formatter.format(new Date()));
                     commandDTO.setStatus(CommandStatus.EXECUTED);
+                    commandDTO.setResponse(response);
+                    return commandDTO;
+                })
+                .map(commandMapper::toEntity)
+                .map(commandRepository::save)
+                .map(commandMapper::toDTO)
+                .orElseThrow(() -> new Exception("El Comando no se pudo actualizar"));
+    }
+
+    @Override
+    @CachePut(value = "commands", key = "'id_'+#id")
+    public CommandDTO failCommand(String id, String response) throws Exception {
+        return Optional.of(getCommandById(id))
+                .map(commandDTO -> {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    commandDTO.setDateExecuted(formatter.format(new Date()));
+                    commandDTO.setStatus(CommandStatus.FAILED);
                     commandDTO.setResponse(response);
                     return commandDTO;
                 })
@@ -276,6 +306,16 @@ public class CommandServiceImpl implements CommandService {
                     return "El Comando con ID '" + id + "' fue eliminado.";
                 })
                 .orElseThrow(() -> new Exception("El Comando no existe."));
+    }
+
+    private CommandDTO publishMqttCommand(CommandDTO commandDTO) {
+        try {
+            ActuatorDTO actuator = actuatorService.getActuatorById(commandDTO.getActuator());
+            mqttCommandPublisher.publish(commandDTO, actuator.getType());
+            return commandDTO;
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo publicar el comando por MQTT: " + e.getMessage(), e);
+        }
     }
 
 

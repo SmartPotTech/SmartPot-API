@@ -2,8 +2,10 @@ package app.smartpot.api.records.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class MeasuresDTO {
     private String atmosphere;

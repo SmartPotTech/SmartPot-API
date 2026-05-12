@@ -22,6 +22,19 @@ application:
   version: ${VERSION:1.0.0}
   # Modo de desarrollo (habilita CORS para localhost)
   development: ${DEVELOPMENT_MODE:false}
+  mqtt:
+    enabled: ${MQTT_ENABLED:true}
+    broker-uri: ${MQTT_BROKER_URI:ssl://localhost:8883}
+    client-id: ${MQTT_CLIENT_ID:smartpot-api}
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}
+    clean-session: ${MQTT_CLEAN_SESSION:false}
+    keep-alive-seconds: ${MQTT_KEEP_ALIVE_SECONDS:60}
+    connection-timeout-seconds: ${MQTT_CONNECTION_TIMEOUT_SECONDS:10}
+    command-qos: ${MQTT_COMMAND_QOS:1}
+    telemetry-qos: ${MQTT_TELEMETRY_QOS:0}
+    topic-prefix: ${MQTT_TOPIC_PREFIX:smartpot}
+    topic-version: ${MQTT_TOPIC_VERSION:v1}
 
 # Configuración HTTP
 http:
@@ -112,10 +125,6 @@ spring:
   output:
     ansi:
       enabled: always
-
-  mqtt:
-    host: ${MQTT_BROKER_URL}
-    client-id: ${MQTT_CLIENT_ID}
 
   mail:
     # Configuración para el servidor de correo

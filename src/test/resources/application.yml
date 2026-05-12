@@ -1,6 +1,8 @@
 application:
   author: SmartPot Developers
   description: Entorno de Prueba para API de SmartPot
+  mqtt:
+    enabled: false
   security:
     jwt:
       expiration: 4102444800
