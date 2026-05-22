@@ -1,6 +1,8 @@
 package app.smartpot.api.commands.service;
 
 import app.smartpot.api.actuators.model.dto.ActuatorDTO;
+import app.smartpot.api.actuators.model.entity.Actuator;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
 import app.smartpot.api.actuators.service.ActuatorService;
 import app.smartpot.api.commands.mapper.CommandMapper;
 import app.smartpot.api.commands.model.dto.CommandDTO;
@@ -308,10 +310,12 @@ public class CommandServiceImpl implements CommandService {
                 .orElseThrow(() -> new Exception("El Comando no existe."));
     }
 
-    private CommandDTO publishMqttCommand(CommandDTO commandDTO) {
+    @Override
+    public CommandDTO publishMqttCommand(CommandDTO commandDTO) {
         try {
-            ActuatorDTO actuator = actuatorService.getActuatorById(commandDTO.getActuator());
-            mqttCommandPublisher.publish(commandDTO, actuator.getType());
+            String type = commandDTO.getActuator();
+            ActuatorType actuator = ActuatorType.valueOf(type);
+            mqttCommandPublisher.publish(commandDTO, actuator);
             return commandDTO;
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo publicar el comando por MQTT: " + e.getMessage(), e);

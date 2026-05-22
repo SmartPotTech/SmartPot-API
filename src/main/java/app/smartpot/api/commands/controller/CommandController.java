@@ -202,4 +202,44 @@ public class CommandController {
         }
     }
 
+
+    @PostMapping("/ActivateHumidifier/{cropId}")
+    @Operation(summary = "Activar luz humidificador",
+            description = "Crea un comando para activar la luz UV del cultivo especificado")
+    public ResponseEntity<?> activateHumidifier(@PathVariable String cropId) {
+        try {
+            ActuatorDTO humidifier = actuatorService.getActuatorsByCrop(cropId)
+                    .stream()
+                    .filter(a -> a.getType() == ActuatorType.HUMIDIFIER)
+                    .findFirst()
+                    .orElseThrow(() -> new Exception("No se encontró humidificador para este cultivo"));
+
+            CommandDTO command = new CommandDTO();
+            command.setCommandType("ACTIVATE_HUMIDIFIER");
+            command.setActuator(humidifier.getId());
+            command.setCrop(cropId);
+
+            commandService.publishMqttCommand(command);
+            return new ResponseEntity<>(commandService.createCommand(command), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(
+                    new ErrorResponse("Error al activar humidificador [" + e.getMessage() + "]",
+                            HttpStatus.BAD_REQUEST.value()),
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/uncheked")
+    @Operation(summary = "Envia un comando al servidor mqtt sin verificar",
+            description = "Crea un comando no almacenado que se envia directamente al servidor mqtt")
+    public ResponseEntity<?> uncheckedCommand(@RequestBody CommandDTO command) {
+        try {
+            return new ResponseEntity<>( commandService.publishMqttCommand(command), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(
+                    new ErrorResponse("Error al enviar el comando [" + e.getMessage() + "]",
+                            HttpStatus.BAD_REQUEST.value()),
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
 }

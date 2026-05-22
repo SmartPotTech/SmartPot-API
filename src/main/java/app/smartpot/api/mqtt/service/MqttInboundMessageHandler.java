@@ -28,6 +28,7 @@ public class MqttInboundMessageHandler {
     public void handle(Message<?> message) {
         String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC, String.class);
         String payload = String.valueOf(message.getPayload());
+        log.info("Processing MQTT topic {}, {}", topic, payload);
 
         try {
             if (topic != null && mqttTopicResolver.isSensorTopic(topic)) {

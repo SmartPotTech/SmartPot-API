@@ -57,6 +57,8 @@ logging:
       springdoc: ${DEBUGGER_MODE:INFO}
       springframework: ${DEBUGGER_MODE:INFO}
       springframework.data.mongodb: ${DEBUGGER_MODE:INFO}
+      springframework.integration.mqtt: INFO
+      eclipse.paho: INFO
     root:
       # Nivel de log para el nivel raíz
       root: ${DEBUGGER_MODE:INFO}

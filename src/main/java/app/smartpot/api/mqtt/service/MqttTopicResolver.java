@@ -33,6 +33,9 @@ public class MqttTopicResolver {
                 + actuatorId + "/" + MqttTopicConstants.SEGMENT_COMMANDS;
     }
 
+    public String simpleCommandTopic(String cropId) {
+        return basePath() + "/" + cropId + "/" + MqttTopicConstants.SEGMENT_COMMANDS;
+    }
     // ---- Parsing from incoming topics ----
 
     public String cropIdFromReadingTopic(String topic) {

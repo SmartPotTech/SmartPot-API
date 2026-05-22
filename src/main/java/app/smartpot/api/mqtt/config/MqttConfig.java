@@ -1,5 +1,6 @@
 package app.smartpot.api.mqtt.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,6 +18,14 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import app.smartpot.api.mqtt.service.MqttTopicResolver;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+@Slf4j
 @Configuration
 @IntegrationComponentScan(basePackages = "app.smartpot.api.mqtt")
 @ConditionalOnProperty(prefix = "application.mqtt", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -36,6 +45,30 @@ public class MqttConfig {
         }
         if (properties.getPassword() != null && !properties.getPassword().isBlank()) {
             options.setPassword(properties.getPassword().toCharArray());
+        }
+
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+                    }
+            };
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            options.setSocketFactory(sslContext.getSocketFactory());
+            options.setHttpsHostnameVerificationEnabled(false);
+            options.setSSLHostnameVerifier((hostname, session) -> true);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         return options;
@@ -79,7 +112,7 @@ public class MqttConfig {
     @Bean
     public MessageHandler mqttOutboundHandler(MqttProperties properties, MqttPahoClientFactory mqttClientFactory) {
         MqttPahoMessageHandler handler = new MqttPahoMessageHandler(properties.getClientId() + "-out", mqttClientFactory);
-        handler.setAsync(true);
+        handler.setAsync(false);
         handler.setDefaultQos(properties.getCommandQos());
         handler.setDefaultRetained(false);
         return handler;

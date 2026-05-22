@@ -37,7 +37,7 @@ public class SpringIntegrationMqttCommandPublisher implements MqttCommandPublish
 
     @Override
     public void publish(CommandDTO command, ActuatorType actuatorType) {
-        String topic = mqttTopicResolver.commandTopic(command.getCrop(), command.getActuator());
+        String topic = mqttTopicResolver.simpleCommandTopic(command.getCrop());
         String payload = commandPayloadMapper.toPayload(command.getCommandType(), actuatorType);
         payloadParser.validateCommandPayload(payload);
 

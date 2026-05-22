@@ -116,4 +116,12 @@ public interface CommandService {
      * @throws Exception if the command does not exist or the update fails.
      */
     CommandDTO failCommand(String id, String response) throws Exception;
+
+    /**
+     * Sends and command trough mqtt without verifications
+     *
+     * @param commandDTO the {@link CommandDTO} containing the command details.
+     * @return back the {@link CommandDTO}.
+     */
+    CommandDTO publishMqttCommand(CommandDTO commandDTO);
 }
