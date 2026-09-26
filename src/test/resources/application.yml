@@ -1,56 +1,37 @@
-application:
-  author: SmartPot Developers
-  description: Entorno de Prueba para API de SmartPot
+smartpot:
+  web-base-url: http://localhost:5173
+  public-api-url: http://localhost:8091
+  security:
+    jwt-secret: test-secret-for-smartpot-api-unit-tests-0123456789
+    jwt-expiration: PT1H
+    aes-key: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+    cors-allowed-origins: http://localhost:5173
+    rate-limit-per-minute: 1000
+    auth-rate-limit-per-minute: 1000
+    password-reset-expiration: PT30M
+  readings:
+    min-interval: PT5S
+    max-page-size: 2000
+  mail:
+    enabled: false
+    from: SmartPot <no-reply@smartpot.test>
   mqtt:
     enabled: false
-  security:
-    jwt:
-      expiration: 4102444800
-      secret-key: mySuperSecretKey
-    public:
-      routes: /**
-  title: SmartPot-API-Test
-  version: 1.0.0
-http:
-  header:
-    cors:
-      allowedOrigins: '*'
-logging:
-  level:
-    com:
-      mongodb: DEBUG
-    io:
-      swagger: DEBUG
-    org:
-      springdoc: DEBUG
-      springframework: DEBUG
-      springframework.data.mongodb: DEBUG
-      springframework.web.filter: DEBUG
-    root: DEBUG
-    smartpot:
-      com:
-        api:
-          Security:
-            jwt: DEBUG
-server:
-  port: 8091
-  tomcat:
-    connection-timeout: 100000000
-spring:
-  application:
-    name: SmartPot-API-Test
-  data:
-    mongodb:
-      uri: mongo://localhost:27017/smartpot
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    default-model-expand-depth: 1
-    default-model-rendering: example
-    display-operation-id: false
-    display-request-duration: true
-    doc-expansion: list
-    enabled: true
-    path: /
-    url: /api-docs
+    broker-uri: tcp://localhost:1883
+    client-id: smartpot-api-test
+    username: smartpot-api
+    password: ""
+    topic-prefix: smartpot/v1
+    public-host: localhost
+    public-port: 1883
+    public-tls: false
+    websocket-url: ws://localhost:9001
+    command-timeout: PT2M
+  ai:
+    enabled: false
+    base-url: http://localhost:8000
+    token: test
+    timeout: PT2S
+    evaluation-interval: PT5M
+    automation-cooldown: PT10M
+    history-size: 48
