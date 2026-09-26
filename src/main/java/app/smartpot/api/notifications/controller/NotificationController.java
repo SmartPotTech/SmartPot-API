@@ -1,79 +1,68 @@
 package app.smartpot.api.notifications.controller;
 
-import app.smartpot.api.notifications.model.entity.Notification;
+import app.smartpot.api.notifications.mapper.NotificationMapper;
+import app.smartpot.api.notifications.model.dto.NotificationResponse;
 import app.smartpot.api.notifications.service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/Notificaciones")
+@RequestMapping("/notifications")
+@Tag(name = "Notificaciones", description = "Alertas de los cultivos, del dispositivo y del asistente de IA")
 public class NotificationController {
-
-    /**
-     * TODO: Implementar integración con Spring Mail para enviar notificaciones por correo electrónico.
-     * <p>Usar la dependencia <code>spring-boot-starter-mail</code> para configurar el servicio de correo en la aplicación.</p>
-     * <p>Se debe crear un servicio de correo que envíe mensajes de notificación a los usuarios cuando se realicen acciones importantes en la plataforma.</p>
-     *
-     * <h3>Pasos a seguir:</h3>
-     * <ul>
-     *     <li>Configurar las propiedades de SMTP en el archivo <code>application.properties</code> o <code>application.yml</code>, como el servidor de correo, puerto, usuario, y contraseña.</li>
-     *     <li>Crear una clase <code>EmailService</code> que se encargue de enviar correos electrónicos.</li>
-     *     <li>El servicio debe permitir enviar correos a una o más direcciones, con asunto y cuerpo personalizados.</li>
-     *     <li>Considerar la posibilidad de enviar correos HTML o correos con archivos adjuntos.</li>
-     *     <li>Implementar un sistema de plantillas para personalizar los correos electrónicos según el tipo de notificación.</li>
-     * </ul>
-     *
-     * <h3> Preguntas a considerar:</h3>
-     * <ul>
-     *     <li><b>¿Qué tipo de notificaciones necesitan ser enviadas por correo electrónico?</b> Ejemplos: registro de usuario, cambios en el perfil, alertas, etc.</li>
-     *     <li><b>¿Cómo manejaremos la seguridad de los datos</b> (por ejemplo, contraseñas, tokens) en los correos electrónicos?</li>
-     *     <li><b>¿Cómo gestionaremos los errores de envío de correos electrónicos?</b> Considerar la implementación de un mecanismo de reintentos o notificación de fallos.</li>
-     * </ul>
-     *
-     * <p>Este proceso debe garantizar que los correos electrónicos sean enviados de forma confiable y segura, cumpliendo con las políticas de privacidad y seguridad de la plataforma.</p>
-     */
-
 
     private final NotificationService notificationService;
 
-    @Autowired
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
     }
 
     @GetMapping
-    public List<Notification> getAllNotifications() {
-        return notificationService.findAll();
+    @Operation(summary = "Listar mis notificaciones", description = "Más recientes primero; máximo 100")
+    public List<NotificationResponse> list(@AuthenticationPrincipal Jwt jwt,
+                                           @RequestParam(defaultValue = "false") boolean unreadOnly,
+                                           @RequestParam(defaultValue = "50") int limit) {
+        return notificationService.list(jwt.getSubject(), unreadOnly, limit).stream()
+                .map(NotificationMapper::toResponse)
+                .toList();
     }
 
-    @GetMapping("/{id}")
-    public List<Notification> getNotificationByUser(@PathVariable String id) {
-        return notificationService.findByUser(id);
+    @GetMapping("/unread-count")
+    @Operation(summary = "Contar notificaciones sin leer")
+    public Map<String, Long> unreadCount(@AuthenticationPrincipal Jwt jwt) {
+        return Map.of("unread", notificationService.unreadCount(jwt.getSubject()));
     }
 
-    @GetMapping("/{type}/{id}")
-    public List<Notification> getNotificationByUserAndType(@PathVariable String type, @PathVariable String id) {
-        return notificationService.findByUserAndType(id, type);
+    @PutMapping("/{id}/read")
+    @Operation(summary = "Marcar una notificación como leída")
+    public NotificationResponse markRead(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        return NotificationMapper.toResponse(notificationService.markRead(jwt.getSubject(), id));
     }
 
-    @PostMapping
-    public Notification createNotification(@RequestBody Notification newNotification) {
-        return notificationService.save(newNotification);
+    @PutMapping("/read-all")
+    @Operation(summary = "Marcar todas como leídas")
+    public ResponseEntity<Void> markAllRead(@AuthenticationPrincipal Jwt jwt) {
+        notificationService.markAllRead(jwt.getSubject());
+        return ResponseEntity.noContent().build();
     }
-
-    @PutMapping("/{id}")
-    public Notification updateNotification(@PathVariable String id, @RequestBody Notification notificationDetails) {
-        return notificationService.updateNotification(id, notificationDetails);
-    }
-
 
     @DeleteMapping("/{id}")
-    public String deleteNotification(@PathVariable String id) {
-        notificationService.delete(id);
-        return "eliminado";
-
+    @Operation(summary = "Eliminar una notificación")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        notificationService.delete(jwt.getSubject(), id);
+        return ResponseEntity.noContent().build();
     }
-
 }
