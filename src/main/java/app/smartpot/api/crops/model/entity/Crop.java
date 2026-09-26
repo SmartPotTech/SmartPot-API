@@ -1,50 +1,42 @@
 package app.smartpot.api.crops.model.entity;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
-import java.io.Serializable;
+import java.time.Instant;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "cultivos")
-public class Crop implements Serializable {
-
-    /**
-     * Representa un cultivo en el sistema.
-     * * Esta clase contiene información sobre un cultivo, incluyendo su estado,
-     * * tipo y el usuario al que pertenece. Se utiliza en la colección "cultivos"
-     * * de MongoDB.
-     * TODO: Considerar usar un enum para los estados del cultivo (ej. GROWING, HARVESTED).
-     * ? ¿Cómo manejar cambios de estado del cultivo en la aplicación?
-     */
+@Document(collection = "crops")
+@CompoundIndex(name = "owner_created", def = "{'ownerId': 1, 'createdAt': -1}")
+public class Crop {
 
     @Id
-    @Field("_id")
-    private ObjectId id;
+    private String id;
 
-    @Field("status")
-    private CropStatus cropStatus;
+    @Field(targetType = FieldType.OBJECT_ID)
+    private String ownerId;
 
-    @NotEmpty(message = "El tipo no puede estar vacío")
-    @Field("type")
-    private CropType cropType;
+    private String name;
 
-    /**
-     * ! No se puede hacer referencia a los objetos, dado que obliga a usar la entidad completa, no solo el ObjectId.
-     */
-    //@DBRef
-    @NotNull(message = "El cultivo debe pertenecer a un usuario")
-    @Field("user")
-    private ObjectId user;
+    private CropType type;
+
+    private boolean automationEnabled;
+
+    private Device device;
+
+    private CropHealth health;
+
+    private Instant createdAt;
+
+    private Instant updatedAt;
 }
