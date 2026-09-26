@@ -1,99 +1,83 @@
 package app.smartpot.api.mqtt.service;
 
+import app.smartpot.api.exception.ObjectIds;
 import app.smartpot.api.mqtt.config.MqttProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Contrato de tópicos v1: {prefijo}/{cropId}/telemetry | commands | commands/ack | status.
+ */
 @Component
 public class MqttTopicResolver {
-    private final MqttProperties mqttProperties;
 
-    public MqttTopicResolver(MqttProperties mqttProperties) {
-        this.mqttProperties = mqttProperties;
+    public static final String CONTROL_TOPIC = "$CONTROL/dynamic-security/v1";
+    public static final String CONTROL_RESPONSE_TOPIC = CONTROL_TOPIC + "/response";
+
+    private final String prefix;
+
+    public MqttTopicResolver(MqttProperties properties) {
+        this.prefix = properties.topicPrefix();
     }
 
-    private String basePath() {
-        return mqttProperties.getTopicPrefix() + "/" + mqttProperties.getTopicVersion();
+    public enum Kind { TELEMETRY, COMMAND_ACK, STATUS }
+
+    public record ParsedTopic(String cropId, Kind kind) {
     }
 
-    // ---- Pattern builders for subscription ----
-
-    public String sensorTopicPattern() {
-        return basePath() + "/+/" + MqttTopicConstants.SEGMENT_SENSORS + "/" + MqttTopicConstants.WILDCARD_MULTI;
+    public String telemetry(String cropId) {
+        return prefix + "/" + cropId + "/telemetry";
     }
 
-    public String commandAckTopicPattern() {
-        return basePath() + "/+/" + MqttTopicConstants.SEGMENT_ACTUATORS + "/+/"
-                + MqttTopicConstants.SEGMENT_COMMANDS + "/+/" + MqttTopicConstants.SEGMENT_ACK;
+    public String commands(String cropId) {
+        return prefix + "/" + cropId + "/commands";
     }
 
-    // ---- Concrete topic builders ----
-
-    public String commandTopic(String cropId, String actuatorId) {
-        return basePath() + "/" + cropId + "/" + MqttTopicConstants.SEGMENT_ACTUATORS + "/"
-                + actuatorId + "/" + MqttTopicConstants.SEGMENT_COMMANDS;
+    public String commandAck(String cropId) {
+        return prefix + "/" + cropId + "/commands/ack";
     }
 
-    public String simpleCommandTopic(String cropId) {
-        return basePath() + "/" + cropId + "/" + MqttTopicConstants.SEGMENT_COMMANDS;
+    public String status(String cropId) {
+        return prefix + "/" + cropId + "/status";
     }
-    // ---- Parsing from incoming topics ----
 
-    public String cropIdFromReadingTopic(String topic) {
-        String[] segments = splitTopic(topic);
-        if (segments.length >= 4 && basePrefixMatches(segments)
-                && MqttTopicConstants.SEGMENT_SENSORS.equals(segments[3])) {
-            return segments[2];
+    public List<String> subscriptions() {
+        return List.of(telemetry("+"), commandAck("+"), status("+"));
+    }
+
+    /** Patrones para las ACL del rol de dispositivo: %u es el usuario MQTT, que es el id del cultivo. */
+    public List<String> devicePublishPatterns() {
+        return List.of(telemetry("%u"), commandAck("%u"), status("%u"));
+    }
+
+    public String deviceSubscribePattern() {
+        return commands("%u");
+    }
+
+    public String serviceScope() {
+        return prefix + "/#";
+    }
+
+    public Optional<ParsedTopic> parse(String topic) {
+        if (topic == null || !topic.startsWith(prefix + "/")) {
+            return Optional.empty();
         }
-        throw new IllegalArgumentException("Invalid readings topic: " + topic);
-    }
-
-    public String sensorTypeFromReadingTopic(String topic) {
-        String[] segments = splitTopic(topic);
-        if (segments.length >= 4 && basePrefixMatches(segments)
-                && MqttTopicConstants.SEGMENT_SENSORS.equals(segments[3])) {
-            return segments.length >= 5 ? segments[4] : null;
+        String[] segments = topic.substring(prefix.length() + 1).split("/");
+        if (segments.length < 2 || !ObjectIds.isValid(segments[0])) {
+            return Optional.empty();
         }
-        throw new IllegalArgumentException("Invalid readings topic: " + topic);
-    }
-
-    public boolean isSensorTopic(String topic) {
-        String[] segments = splitTopic(topic);
-        return segments.length >= 4 && basePrefixMatches(segments)
-                && MqttTopicConstants.SEGMENT_SENSORS.equals(segments[3]);
-    }
-
-    public boolean isAckTopic(String topic) {
-        String[] segments = splitTopic(topic);
-        return segments.length >= 8 && basePrefixMatches(segments)
-                && MqttTopicConstants.SEGMENT_ACTUATORS.equals(segments[3])
-                && MqttTopicConstants.SEGMENT_COMMANDS.equals(segments[5])
-                && MqttTopicConstants.SEGMENT_ACK.equals(segments[7]);
-    }
-
-    public AckTopic ackTopicFrom(String topic) {
-        String[] segments = splitTopic(topic);
-        if (segments.length >= 8 && basePrefixMatches(segments)
-                && MqttTopicConstants.SEGMENT_ACTUATORS.equals(segments[3])
-                && MqttTopicConstants.SEGMENT_COMMANDS.equals(segments[5])
-                && MqttTopicConstants.SEGMENT_ACK.equals(segments[7])) {
-            return new AckTopic(segments[2], segments[4], segments[6]);
+        String cropId = segments[0];
+        if (segments.length == 2 && "telemetry".equals(segments[1])) {
+            return Optional.of(new ParsedTopic(cropId, Kind.TELEMETRY));
         }
-        throw new IllegalArgumentException("Invalid ACK topic: " + topic);
-    }
-
-    private boolean basePrefixMatches(String[] segments) {
-        return segments.length >= 2
-                && mqttProperties.getTopicPrefix().equals(segments[0])
-                && mqttProperties.getTopicVersion().equals(segments[1]);
-    }
-
-    private String[] splitTopic(String topic) {
-        if (topic == null || topic.isBlank()) {
-            throw new IllegalArgumentException("MQTT topic cannot be empty");
+        if (segments.length == 2 && "status".equals(segments[1])) {
+            return Optional.of(new ParsedTopic(cropId, Kind.STATUS));
         }
-        return topic.split("/");
-    }
-
-    public record AckTopic(String cropId, String actuatorId, String commandId) {
+        if (segments.length == 3 && "commands".equals(segments[1]) && "ack".equals(segments[2])) {
+            return Optional.of(new ParsedTopic(cropId, Kind.COMMAND_ACK));
+        }
+        return Optional.empty();
     }
 }
