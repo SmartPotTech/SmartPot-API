@@ -52,7 +52,7 @@ class DeviceProvisionerTest {
         assertThat(commands.get(0).path("username").asString()).isEqualTo(CROP);
         assertThat(commands.get(0).path("password").asString()).isEqualTo("clave-secreta");
         assertThat(commands.get(0).path("roles").get(0).path("rolename").asString()).isEqualTo("device");
-        assertThat(commands).hasSize(3);
+        assertThat(commands).hasSize(2);
     }
 
     @Test

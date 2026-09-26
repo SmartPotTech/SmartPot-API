@@ -129,11 +129,10 @@ public class DeviceProvisioner {
         Map<String, Object> create = command("createClient", "username", cropId);
         create.put("password", key);
         create.put("roles", List.of(Map.of("rolename", DEVICE_ROLE)));
+        // Si el cliente ya existe, createClient falla sin efectos y setClientPassword deja la clave vigente.
         Map<String, Object> password = command("setClientPassword", "username", cropId);
         password.put("password", key);
-        Map<String, Object> role = command("addClientRole", "username", cropId);
-        role.put("rolename", DEVICE_ROLE);
-        return List.of(create, password, role);
+        return List.of(create, password);
     }
 
     private static Map<String, Object> acl(String role, String type, String topic) {
