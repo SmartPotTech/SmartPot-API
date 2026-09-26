@@ -1,40 +1,27 @@
 package app.smartpot.api.notifications.repository;
 
 import app.smartpot.api.notifications.model.entity.Notification;
-import org.bson.types.ObjectId;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
-
 @Repository
-public interface NotificationRepository extends MongoRepository<Notification, ObjectId> {
+public interface NotificationRepository extends MongoRepository<Notification, String> {
 
-    @Query("{}")
-    List<Notification> findAll();
+    List<Notification> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    @Query("{ '_id' : ?0 }")
-    Optional<Notification> findById(ObjectId id);
+    List<Notification> findByUserIdAndReadFalseOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    @Query("{ 'user_id' : ?0  }")
-    Optional<List<Notification>> findByUser(ObjectId id);
+    List<Notification> findByUserIdAndReadFalse(String userId);
 
-    @Query("{ 'user_id': ?0, 'type': ?1}")
-    Optional<List<Notification>> findByUserAndType(ObjectId id, String type);
+    long countByUserIdAndReadFalse(String userId);
 
-    @Query("{ 'user_id': ?0, 'date': ?1}")
-    Optional<List<Notification>> findByUserAndDate(ObjectId id, String date);
+    Optional<Notification> findByIdAndUserId(String id, String userId);
 
-    @Transactional
-    @Query("{'_id': ?0}")
-    Notification updateNotification(ObjectId id, Notification notification);
+    void deleteByUserId(String userId);
 
-    @Transactional
-    @Query("{'_id':  ?0}")
-    Notification delete(ObjectId id);
-
+    void deleteByCropId(String cropId);
 }
