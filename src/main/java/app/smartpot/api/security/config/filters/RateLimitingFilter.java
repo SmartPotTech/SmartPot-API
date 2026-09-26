@@ -1,79 +1,64 @@
 package app.smartpot.api.security.config.filters;
 
-import jakarta.servlet.*;
+import app.smartpot.api.cache.CacheStore;
+import app.smartpot.api.config.SmartPotProperties;
+import app.smartpot.api.security.config.JsonErrorWriter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Clock;
+import java.time.Duration;
 
-@Component
-public class RateLimitingFilter implements Filter {
+/**
+ * Ventana fija de un minuto por IP. Las rutas de autenticación tienen un cupo menor
+ * para frenar ataques de fuerza bruta. Se instancia en la configuración de seguridad.
+ */
+public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private final Map<String, AtomicInteger> requestsCount = new ConcurrentHashMap<>();
+    private static final Duration WINDOW = Duration.ofMinutes(1);
 
-    @Value("${rate.limiting.max-requests}")
-    private int MAX_REQUESTS;
+    private final CacheStore cacheStore;
+    private final JsonErrorWriter errorWriter;
+    private final Clock clock;
+    private final int generalLimit;
+    private final int authLimit;
 
-    @Value("${rate.limiting.time-window}")
-    private long TIME_WINDOW;
-
-    @Value("${rate.limiting.public-routes}")
-    private String publicRoutes;
-
-    private long windowStart = System.currentTimeMillis();
-
-    private List<String> publicRoutesList;
-
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-        // Convertir el string de rutas públicas en una lista
-        if (publicRoutes != null && !publicRoutes.isEmpty()) {
-            publicRoutesList = Arrays.asList(publicRoutes.split(","));
-        }
+    public RateLimitingFilter(CacheStore cacheStore, JsonErrorWriter errorWriter, Clock clock, SmartPotProperties properties) {
+        this.cacheStore = cacheStore;
+        this.errorWriter = errorWriter;
+        this.clock = clock;
+        this.generalLimit = properties.security().rateLimitPerMinute();
+        this.authLimit = properties.security().authRateLimitPerMinute();
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return "OPTIONS".equalsIgnoreCase(request.getMethod()) || path.equals("/health");
+    }
 
-        if (isPublicRoute(httpRequest.getRequestURI())) {
-            chain.doFilter(request, response);
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain chain) throws ServletException, IOException {
+        boolean authRoute = request.getRequestURI().startsWith("/api/v1/auth/");
+        int limit = authRoute ? authLimit : generalLimit;
+        long minute = clock.instant().getEpochSecond() / 60;
+        String key = "rate:" + (authRoute ? "auth:" : "all:") + request.getRemoteAddr() + ":" + minute;
+
+        long count = cacheStore.increment(key, WINDOW);
+        if (count > limit) {
+            long retryAfter = 60 - clock.instant().getEpochSecond() % 60;
+            response.setHeader("Retry-After", String.valueOf(retryAfter));
+            errorWriter.write(request, response, HttpStatus.TOO_MANY_REQUESTS,
+                    "Enviaste demasiadas solicitudes. Intenta de nuevo en " + retryAfter + " segundos");
             return;
         }
-
-        String clientIP = request.getRemoteAddr();
-        long currentTime = System.currentTimeMillis();
-
-        if (currentTime - windowStart > TIME_WINDOW) {
-            windowStart = currentTime;
-            requestsCount.clear();
-        }
-
-        requestsCount.putIfAbsent(clientIP, new AtomicInteger(0));
-        int currentCount = requestsCount.get(clientIP).incrementAndGet();
-
-        if (currentCount >= MAX_REQUESTS) {
-            ((HttpServletResponse) response).setStatus(429);  // Too Many Requests
-            response.getWriter().write("Haz enviado demasiadas solicitudes, intenta de nuevo más tarde");
-            return;
-        }
-
         chain.doFilter(request, response);
-    }
-
-    private boolean isPublicRoute(String uri) {
-        for (String route : publicRoutesList) {
-            if (uri.startsWith(route)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
