@@ -1,116 +1,76 @@
 package app.smartpot.api.users.service;
 
-import app.smartpot.api.users.model.dto.UserDTO;
-import jakarta.validation.ValidationException;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.notifications.service.NotificationService;
+import app.smartpot.api.security.repository.PasswordResetTokenRepository;
+import app.smartpot.api.users.model.dto.ChangePasswordRequest;
+import app.smartpot.api.users.model.dto.UpdateProfileRequest;
+import app.smartpot.api.users.model.entity.User;
+import app.smartpot.api.users.repository.UserRepository;
+import app.smartpot.api.users.validator.PasswordPolicy;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Clock;
+import java.util.Locale;
 
-/**
- * Interfaz que define los métodos para la gestión de usuarios.
- * Esta interfaz extiende {@link UserDetailsService}, lo que permite integrar
- * las funcionalidades de autenticación de usuarios en un sistema basado en Spring Security.
- * Los métodos permiten crear, obtener, actualizar y eliminar usuarios,
- * así como realizar búsquedas por diferentes criterios como nombre, apellido,
- * correo electrónico y rol.
- */
-public interface UserService extends UserDetailsService {
-    /**
-     * Crea un nuevo usuario en el sistema.
-     *
-     * @param userDTO el objeto que contiene los datos del nuevo usuario a crear.
-     * @return el objeto {@link UserDTO} del usuario creado.
-     * @throws ValidationException,IllegalStateException si el usuario ya existe o si ocurre un error durante la creación.
-     */
-    UserDTO CreateUser(UserDTO userDTO) throws ValidationException, IllegalStateException;
+@Slf4j
+@Service
+public class UserService {
 
-    /**
-     * Obtiene todos los usuarios registrados en el sistema.
-     *
-     * @return una lista de objetos {@link UserDTO} que representan a todos los usuarios.
-     * @throws Exception si ocurre un error al obtener los usuarios.
-     */
-    List<UserDTO> getAllUsers() throws Exception;
+    private final UserRepository userRepository;
+    private final CropService cropService;
+    private final NotificationService notificationService;
+    private final PasswordResetTokenRepository resetTokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Clock clock;
 
-    /**
-     * Obtiene un usuario por su ID.
-     *
-     * @param id el identificador único del usuario a obtener.
-     * @return el objeto {@link UserDTO} correspondiente al usuario con el ID proporcionado.
-     * @throws Exception si no se encuentra el usuario o si ocurre un error.
-     */
-    UserDTO getUserById(String id) throws Exception;
+    public UserService(UserRepository userRepository, CropService cropService, NotificationService notificationService,
+                       PasswordResetTokenRepository resetTokenRepository, PasswordEncoder passwordEncoder, Clock clock) {
+        this.userRepository = userRepository;
+        this.cropService = cropService;
+        this.notificationService = notificationService;
+        this.resetTokenRepository = resetTokenRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.clock = clock;
+    }
 
-    /**
-     * Obtiene un usuario por su correo electrónico.
-     *
-     * @param email el correo electrónico del usuario a obtener.
-     * @return el objeto {@link UserDTO} correspondiente al usuario con el correo electrónico proporcionado.
-     * @throws Exception si no se encuentra el usuario o si ocurre un error.
-     */
-    UserDTO getUserByEmail(String email) throws Exception;
+    public static String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
 
-    /**
-     * Obtiene una lista de usuarios que coinciden con un nombre.
-     *
-     * @param name el nombre del usuario a buscar.
-     * @return una lista de objetos {@link UserDTO} que coinciden con el nombre proporcionado.
-     * @throws Exception si no se encuentran usuarios o si ocurre un error durante la búsqueda.
-     */
-    List<UserDTO> getUsersByName(String name) throws Exception;
+    public User getById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.unauthorized("Tu cuenta ya no existe. Inicia sesión de nuevo"));
+    }
 
-    /**
-     * Obtiene una lista de usuarios que coinciden con un apellido.
-     *
-     * @param lastname el apellido del usuario a buscar.
-     * @return una lista de objetos {@link UserDTO} que coinciden con el apellido proporcionado.
-     * @throws Exception si no se encuentran usuarios o si ocurre un error durante la búsqueda.
-     */
-    List<UserDTO> getUsersByLastname(String lastname) throws Exception;
+    public User updateProfile(String userId, UpdateProfileRequest request) {
+        User user = getById(userId);
+        user.setName(request.name().trim());
+        user.setLastName(request.lastName().trim());
+        user.setUpdatedAt(clock.instant());
+        return userRepository.save(user);
+    }
 
-    /**
-     * Obtiene una lista de usuarios que coinciden con un rol específico.
-     *
-     * @param role el rol de usuario a buscar.
-     * @return una lista de objetos {@link UserDTO} que coinciden con el rol proporcionado.
-     * @throws Exception si no se encuentran usuarios o si ocurre un error durante la búsqueda.
-     */
-    List<UserDTO> getUsersByRole(String role) throws Exception;
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        User user = getById(userId);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw ApiException.badRequest("La contraseña actual no es correcta");
+        }
+        PasswordPolicy.validate(request.newPassword());
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setUpdatedAt(clock.instant());
+        userRepository.save(user);
+    }
 
-    /**
-     * Obtiene todos los roles de usuario registrados en el sistema.
-     *
-     * @return una lista de objetos {@link String} que representan a todos los roles de usuario.
-     * @throws Exception si ocurre un error al obtener los roles de usuario.
-     */
-    List<String> getAllRoles() throws Exception;
-
-    /**
-     * Actualiza los datos de un usuario.
-     *
-     * @param id          el identificador único del usuario a actualizar.
-     * @param updatedUser un objeto {@link UserDTO} con los datos actualizados del usuario.
-     * @return el objeto {@link UserDTO} con los datos del usuario actualizado.
-     * @throws Exception si no se encuentra el usuario o si ocurre un error durante la actualización.
-     */
-    UserDTO UpdateUser(String id, UserDTO updatedUser) throws Exception;
-
-    /**
-     * Elimina un usuario del sistema.
-     *
-     * @param id el identificador único del usuario a eliminar.
-     * @return un mensaje indicando que el usuario fue eliminado.
-     * @throws Exception si no se encuentra el usuario o si ocurre un error durante la eliminación.
-     */
-    String DeleteUser(String id) throws Exception;
-
-    /**
-     * Actualiza únicamente la contraseña del usuario, sin verificar los demás datos.
-     *
-     * @param user     El objeto {@link UserDTO} del usuario que va a actualizar.
-     * @param password Contraseña en texto claro.
-     * @return el objeto {@link UserDTO} con los datos del usuario actualizado.
-     * @throws Exception si no se encuentra el usuario o si ocurre un error durante la actualización.
-     */
-    UserDTO UpdateUserPassword(UserDTO user, String password) throws Exception;
+    public void deleteAccount(String userId) {
+        User user = getById(userId);
+        cropService.deleteAllOwnedBy(userId);
+        notificationService.deleteAllForUser(userId);
+        resetTokenRepository.deleteByUserId(userId);
+        userRepository.delete(user);
+        log.info("Cuenta {} eliminada con todos sus datos", userId);
+    }
 }
