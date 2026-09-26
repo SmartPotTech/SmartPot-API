@@ -1,270 +1,149 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <!-- Model version for Maven POM -->
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Parent project information -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.6</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>4.1.1</version>
+        <relativePath/>
     </parent>
 
-    <!-- Basic project information -->
-    <groupId>smarpot.app</groupId>
-    <artifactId>api</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <groupId>app.smartpot</groupId>
+    <artifactId>smartpot-api</artifactId>
+    <version>2.0.0</version>
     <name>SmartPot-API</name>
-    <description>SmartPot-API</description>
+    <description>API REST y MQTT de SmartPot para el monitoreo y la automatización de cultivos hidropónicos</description>
     <url>https://github.com/SmartPotTech/SmartPot-API</url>
 
-    <!-- Licenses for the project -->
     <licenses>
         <license>
             <name>MIT License</name>
             <url>https://opensource.org/licenses/MIT</url>
-            <distribution>repo</distribution>
         </license>
     </licenses>
 
-
-    <!-- Developers involved in the project -->
     <developers>
         <developer>
             <id>SebastianLopezO</id>
             <name>Sebastián López Osorno</name>
-            <email>sebastianlopezosorno2005@gmail.com</email>
             <url>https://github.com/SebastianLopezO</url>
-            <roles>
-                <role>Lead Developer</role>
-            </roles>
         </developer>
-
         <developer>
             <id>darwingtx</id>
             <name>Darwin David Castaño</name>
-            <email>darwingtx@gmail.com</email>
             <url>https://github.com/darwingtx</url>
-            <roles>
-                <role>Developer</role>
-            </roles>
         </developer>
-
         <developer>
             <id>Andres2204</id>
             <name>Andrés Medina Martínez</name>
-            <email></email>
             <url>https://github.com/Andres2204</url>
-            <roles>
-                <role>Developer</role>
-            </roles>
         </developer>
     </developers>
 
-    <!-- Source control management (SCM) configuration -->
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
-
-    <!-- Global properties -->
     <properties>
-        <!-- Java version used for the project -->
-        <java.version>17</java.version>
+        <java.version>21</java.version>
+        <springdoc.version>3.1.1</springdoc.version>
+        <paho.version>1.2.5</paho.version>
     </properties>
 
-    <!-- Project dependencies -->
     <dependencies>
-
-        <!-- ===================== Spring Boot Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId> <!-- For monitoring and health checks -->
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId> <!-- For building RESTful web services -->
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId> <!-- For validation support using annotations -->
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
-        <!-- ===================== Data & Persistence Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId> <!-- MongoDB integration -->
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId> <!-- Redis integration -->
-            <version>4.0.6</version>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId> <!-- Redis client library -->
-            <version>7.4.1</version>
-        </dependency>
-
-        <!-- ===================== Security Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security
-            </artifactId> <!-- Spring Security for authentication and authorization -->
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId> <!-- Testing utilities for Spring Security -->
-            <scope>test</scope> <!-- Available only in test scope -->
-        </dependency>
-
-        <!-- ===================== JWT (JSON Web Token) Dependencies ===================== -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.13.0</version> <!-- JWT core library -->
-        </dependency>
-
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.13.0</version> <!-- JWT implementation -->
-        </dependency>
-
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.13.0</version> <!-- JWT support for Jackson (JSON parsing) -->
-        </dependency>
-
-        <!-- ===================== Testing Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId> <!-- Testing utilities for Spring Boot -->
-            <scope>test</scope> <!-- Available only in test scope -->
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.restdocs</groupId>
-            <artifactId>spring-restdocs-mockmvc</artifactId> <!-- REST Docs for generating API documentation -->
-            <scope>test</scope> <!-- Available only in test scope -->
-        </dependency>
-
-        <!-- ===================== Development & Tools Dependencies ===================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools
-            </artifactId> <!-- Developer tools for faster development (restarts, etc.) -->
-            <scope>runtime</scope> <!-- Available only during runtime -->
-            <optional>true</optional> <!-- Optional dependency -->
+            <artifactId>spring-boot-starter-restclient</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok
-            </artifactId> <!-- Lombok for reducing boilerplate code (getters/setters, constructors, etc.) -->
-            <scope>compile</scope> <!-- Available at compile time -->
-        </dependency>
-
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.3</version> <!-- OpenAPI support for automatic API documentation -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>3.2.0</version> <!-- Load environment variables from a .env file -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.6.3</version> <!-- MapStruct for object mapping -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>1.6.3</version> <!-- MapStruct annotation processor -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId> <!-- Spring Boot caching support -->
-        </dependency>
-
-        <!-- ===================== Mail Dependencies ===================== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId> <!-- Spring Boot mail support -->
-        </dependency>
-
-        <!-- ===================== Miscellaneous Dependencies ===================== -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId> <!-- Apache Commons Pool for Redis connection management -->
-            <version>2.13.1</version>
-        </dependency>
-
-        <!-- ===================== MQTT Dependencies ===================== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-integration</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.integration</groupId>
-            <artifactId>spring-integration-mqtt</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.paho</groupId>
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-            <version>1.2.5</version>
+            <version>${paho.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-    <!-- Build configuration -->
     <build>
+        <finalName>smartpot-api</finalName>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <!-- Profiles for different configurations -->
-    <profiles>
-        <!-- Profiles for Docker -->
-        <profile>
-            <id>docker</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.5.0</version>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
