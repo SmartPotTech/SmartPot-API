@@ -1,30 +1,37 @@
 package app.smartpot.api.actuators.model.entity;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+
+import java.time.Instant;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "actuadores")
+@Document(collection = "actuators")
+@CompoundIndex(name = "crop_type", def = "{'cropId': 1, 'type': 1}", unique = true)
 public class Actuator {
+
     @Id
-    @Field("_id")
-    private ObjectId id;
+    private String id;
 
-    @NotNull(message = "El registro debe estar asociado a un cultivo")
-    @Field("crop")
-    private ObjectId crop;
+    @Field(targetType = FieldType.OBJECT_ID)
+    private String cropId;
 
-    @NotNull(message = "El tipo de actuador no puede ser nulo")
-    @Field("type")
     private ActuatorType type;
+
+    /** Último estado confirmado por la maceta. */
+    private boolean active;
+
+    private Instant lastChangedAt;
+
+    private Instant createdAt;
 }

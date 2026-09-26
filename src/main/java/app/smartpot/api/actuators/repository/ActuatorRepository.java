@@ -1,36 +1,23 @@
 package app.smartpot.api.actuators.repository;
 
 import app.smartpot.api.actuators.model.entity.Actuator;
-import jakarta.validation.constraints.NotNull;
-import org.bson.types.ObjectId;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ActuatorRepository extends MongoRepository<Actuator, ObjectId> {
+public interface ActuatorRepository extends MongoRepository<Actuator, String> {
 
-    /**
-     * Busca el registro de actuador con la id espesificada
-     *
-     * @param id El identificado del registro del actuador.
-     * @return Devuelve el actuador, en caso de ser encontrado.
-     */
-    @Query("{'_id': ?0}")
-    Optional<Actuator> findById(
-            @NotNull(message = "Se necesita el id del actuador")
-            ObjectId id);
+    List<Actuator> findByCropIdOrderByCreatedAtAsc(String cropId);
 
-    /**
-     * Busca los registros de actuadorres con el identificador del cultivo espesificado
-     *
-     * @param crop El identificado del cultivo relacionado a registros del actuadores.
-     * @return Devuelve una lista de actuadores.
-     */
-    List<Actuator> findByCrop(
-            @NotNull(message = "El registro debe estar asociado a un cultivo")
-            ObjectId crop);
+    Optional<Actuator> findByIdAndCropId(String id, String cropId);
+
+    Optional<Actuator> findByCropIdAndType(String cropId, ActuatorType type);
+
+    boolean existsByCropIdAndType(String cropId, ActuatorType type);
+
+    void deleteByCropId(String cropId);
 }
