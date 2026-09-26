@@ -1,60 +1,43 @@
 package app.smartpot.api.notifications.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
-import java.io.Serializable;
-import java.util.Date;
+import java.time.Instant;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "notificaciones")
-public class Notification implements Serializable {
-
-    /**
-     * Representa una notificación en el sistema.
-     * * Esta clase se utiliza para informar al usuario sobre eventos importantes
-     * * relacionados con sus cultivos, como alertas sobre condiciones ambientales
-     * * o estados de comandos. Incluye un mensaje, tipo de notificación y
-     * * el usuario destinatario.
-     * TODO: Considerar usar un enum para los tipos de notificación para mayor claridad.
-     * ! Asegurarse de que la fecha esté correctamente establecida y sea válida.
-     * ? ¿Qué pasa si un usuario no puede recibir la notificación?
-     */
+@Document(collection = "notifications")
+@CompoundIndex(name = "user_created", def = "{'userId': 1, 'createdAt': -1}")
+public class Notification {
 
     @Id
-    @Field("_id")
-    private ObjectId id;
+    private String id;
 
-    @NotEmpty(message = "El mensaje no puede estar vacío")
-    @Size(max = 250, message = "El mensaje no puede tener más de 250 caracteres")
-    @Field("message")
+    @Field(targetType = FieldType.OBJECT_ID)
+    private String userId;
+
+    @Field(targetType = FieldType.OBJECT_ID)
+    private String cropId;
+
+    private NotificationType type;
+
+    private String title;
+
     private String message;
 
-    @NotEmpty(message = "El tipo no puede estar vacío")
-    @Field("type")
-    private String type;
+    private boolean read;
 
-    @NotNull(message = "La fecha no puede estar vacía")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    @Field("date")
-    private Date date;
-
-    @DBRef
-    @NotNull(message = "La notificación debe ir dirigida a un usuario")
-    @Field("user_id")
-    private ObjectId user;
+    @Indexed(expireAfter = "90d")
+    private Instant createdAt;
 }
