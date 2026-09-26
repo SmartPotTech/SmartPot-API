@@ -1,127 +1,173 @@
 package app.smartpot.api.commands.service;
 
-import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.actuators.model.entity.Actuator;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
+import app.smartpot.api.actuators.service.ActuatorService;
+import app.smartpot.api.commands.model.dto.CommandRequest;
+import app.smartpot.api.commands.model.entity.Command;
+import app.smartpot.api.commands.model.entity.CommandAction;
+import app.smartpot.api.commands.model.entity.CommandSource;
+import app.smartpot.api.commands.model.entity.CommandStatus;
+import app.smartpot.api.commands.repository.CommandRepository;
+import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.exception.ObjectIds;
+import app.smartpot.api.mqtt.config.MqttProperties;
+import app.smartpot.api.mqtt.model.CommandAckMessage;
+import app.smartpot.api.mqtt.model.CommandMessage;
+import app.smartpot.api.mqtt.service.MqttGateway;
+import app.smartpot.api.mqtt.service.MqttTopicResolver;
+import app.smartpot.api.notifications.model.entity.NotificationType;
+import app.smartpot.api.notifications.service.NotificationService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Interface for the Command Service.
- *
- * <p>
- * Defines the contract for managing command-related operations, including
- * CRUD operations and execution logic. Implementations of this interface
- * are expected to provide the core functionality for working with commands.
- * </p>
- *
- * <h3>Responsibilities:</h3>
- * <ul>
- *     <li>Retrieve all commands from the data source.</li>
- *     <li>Retrieve a specific command by its ID.</li>
- *     <li>Create a new command with specified details.</li>
- *     <li>Update the details of an existing command.</li>
- *     <li>Delete a command by its ID.</li>
- *     <li>Execute a command and record its response.</li>
- * </ul>
- *
- * <h3>Methods:</h3>
- * <ul>
- *     <li>{@link #getAllCommands()} - Fetches all available commands.</li>
- *     <li>{@link #getCommandById(String)} - Retrieves a command by its unique ID.</li>
- *     <li>{@link #createCommand(CommandDTO)} - Creates a new command in the system.</li>
- *     <li>{@link #updateCommand(String, CommandDTO)} - Updates the details of a command.</li>
- *     <li>{@link #deleteCommand(String)} - Deletes a command by its ID.</li>
- *     <li>{@link #executeCommand(String, String)} - Executes a command and logs its response.</li>
- * </ul>
- *
- * <h3>Usage:</h3>
- * <p>
- * This interface is typically implemented by a service class, such as {@code SCommand},
- * to provide the actual logic for managing commands. It is used by controllers
- * or other services to interact with command-related functionality.
- * </p>
- *
- * @see CommandServiceImpl
- * @see CommandDTO
- */
-public interface CommandService {
-    /**
-     * Retrieves all commands available in the system.
-     *
-     * @return a list of {@link CommandDTO} representing all commands.
-     * @throws Exception if an error occurs during retrieval or if no commands exist.
-     */
-    List<CommandDTO> getAllCommands() throws Exception;
+@Slf4j
+@Service
+public class CommandService {
 
-    /**
-     * Retrieves all commands for a crop in the system.
-     *
-     * @param crop the unique identifier of the crop
-     * @return a list of {@link CommandDTO} representing all commands.
-     * @throws Exception if an error occurs during retrieval or if no commands exist.
-     */
-    List<CommandDTO> getCommandsByCrop(String crop) throws Exception;
+    private static final EnumSet<CommandStatus> IN_FLIGHT = EnumSet.of(CommandStatus.PENDING, CommandStatus.SENT);
+    private static final Duration FAILURE_NOTICE_COOLDOWN = Duration.ofMinutes(15);
 
-    /**
-     * Retrieves a specific command by its ID.
-     *
-     * @param id the unique identifier of the command.
-     * @return the {@link CommandDTO} representing the command.
-     * @throws Exception if the command does not exist or retrieval fails.
-     */
-    CommandDTO getCommandById(String id) throws Exception;
+    private final CommandRepository repository;
+    private final CropService cropService;
+    private final ActuatorService actuatorService;
+    private final NotificationService notificationService;
+    private final MqttGateway gateway;
+    private final MqttTopicResolver topics;
+    private final JsonMapper jsonMapper;
+    private final Clock clock;
+    private final Duration timeout;
 
-    /**
-     * Creates a new command in the system.
-     *
-     * @param newCommand the {@link CommandDTO} containing the command details.
-     * @return the created {@link CommandDTO}.
-     */
-    CommandDTO createCommand(CommandDTO newCommand);
+    public CommandService(CommandRepository repository, CropService cropService, ActuatorService actuatorService,
+                          NotificationService notificationService, MqttGateway gateway, MqttTopicResolver topics,
+                          JsonMapper jsonMapper, Clock clock, MqttProperties mqttProperties) {
+        this.repository = repository;
+        this.cropService = cropService;
+        this.actuatorService = actuatorService;
+        this.notificationService = notificationService;
+        this.gateway = gateway;
+        this.topics = topics;
+        this.jsonMapper = jsonMapper;
+        this.clock = clock;
+        this.timeout = mqttProperties.commandTimeout();
+    }
 
-    /**
-     * Updates the details of an existing command.
-     *
-     * @param id            the unique identifier of the command to update.
-     * @param updateCommand the {@link CommandDTO} containing updated details.
-     * @return the updated {@link CommandDTO}.
-     * @throws Exception if the command does not exist or the update fails.
-     */
-    CommandDTO updateCommand(String id, CommandDTO updateCommand) throws Exception;
+    public Command request(String ownerId, String cropId, CommandRequest request) {
+        Crop crop = cropService.getOwned(ownerId, cropId);
+        Actuator actuator = actuatorService.getForCrop(crop.getId(), request.actuatorId());
+        if (!gateway.isEnabled()) {
+            throw ApiException.unavailable("La comunicación con las macetas no está habilitada en este servidor");
+        }
+        return dispatch(create(crop, actuator, request.action(), request.durationSeconds(), CommandSource.USER, null));
+    }
 
-    /**
-     * Deletes a command by its unique ID.
-     *
-     * @param id the unique identifier of the command to delete.
-     * @return a message confirming the deletion.
-     * @throws Exception if the command does not exist or the deletion fails.
-     */
-    String deleteCommand(String id) throws Exception;
+    /** Comando decidido por el agente. Se omite si el cultivo no tiene ese actuador o ya hay uno en curso. */
+    public Optional<Command> requestFromAgent(Crop crop, ActuatorType type, CommandAction action,
+                                              Integer durationSeconds, String reason) {
+        Optional<Actuator> actuator = actuatorService.findByType(crop.getId(), type);
+        if (actuator.isEmpty() || !gateway.isEnabled()
+                || repository.existsByActuatorIdAndStatusIn(actuator.get().getId(), IN_FLIGHT)) {
+            return Optional.empty();
+        }
+        return Optional.of(dispatch(create(crop, actuator.get(), action, durationSeconds, CommandSource.AGENT, reason)));
+    }
 
-    /**
-     * Executes a command and records its response.
-     *
-     * @param id       the unique identifier of the command to execute.
-     * @param response the response or result of the command execution.
-     * @return the updated {@link CommandDTO} reflecting the execution details.
-     * @throws Exception if the command does not exist or execution fails.
-     */
-    CommandDTO executeCommand(String id, String response) throws Exception;
+    public List<Command> list(String ownerId, String cropId, int limit) {
+        cropService.getOwned(ownerId, cropId);
+        return repository.findByCropIdOrderByCreatedAtDesc(cropId, PageRequest.of(0, Math.clamp(limit, 1, 100)));
+    }
 
-    /**
-     * Marks a command as failed and records the device response.
-     *
-     * @param id       the unique identifier of the command to fail.
-     * @param response the failure response received from the device.
-     * @return the updated {@link CommandDTO} reflecting the failure details.
-     * @throws Exception if the command does not exist or the update fails.
-     */
-    CommandDTO failCommand(String id, String response) throws Exception;
+    public void acknowledge(String cropId, CommandAckMessage ack) {
+        if (ack == null || !ObjectIds.isValid(ack.id())) {
+            return;
+        }
+        repository.findByIdAndCropId(ack.id(), cropId).ifPresent(command -> {
+            if (!IN_FLIGHT.contains(command.getStatus())) {
+                return;
+            }
+            command.setStatus(ack.executed() ? CommandStatus.EXECUTED : CommandStatus.FAILED);
+            command.setMessage(truncate(ack.message()));
+            command.setCompletedAt(clock.instant());
+            repository.save(command);
+            if (ack.executed()) {
+                boolean active = command.getAction() == CommandAction.ACTIVATE && command.getDurationSeconds() == null;
+                actuatorService.updateState(command.getActuatorId(), active);
+            } else {
+                notifyFailure(command, "La maceta no pudo ejecutar el comando: " + orDefault(ack.message()));
+            }
+        });
+    }
 
-    /**
-     * Sends and command trough mqtt without verifications
-     *
-     * @param commandDTO the {@link CommandDTO} containing the command details.
-     * @return back the {@link CommandDTO}.
-     */
-    CommandDTO publishMqttCommand(CommandDTO commandDTO);
+    @Scheduled(fixedDelay = 30_000, initialDelay = 30_000)
+    public void expireStale() {
+        Instant limit = clock.instant().minus(timeout);
+        for (Command command : repository.findByStatusAndSentAtBefore(CommandStatus.SENT, limit)) {
+            command.setStatus(CommandStatus.EXPIRED);
+            command.setMessage("La maceta no confirmó el comando a tiempo");
+            command.setCompletedAt(clock.instant());
+            repository.save(command);
+            notifyFailure(command, "La maceta no respondió al comando. Revisa que esté conectada.");
+        }
+    }
+
+    private Command create(Crop crop, Actuator actuator, CommandAction action, Integer durationSeconds,
+                           CommandSource source, String reason) {
+        return repository.save(Command.builder()
+                .cropId(crop.getId())
+                .actuatorId(actuator.getId())
+                .actuatorType(actuator.getType())
+                .action(action)
+                .durationSeconds(action == CommandAction.ACTIVATE ? durationSeconds : null)
+                .status(CommandStatus.PENDING)
+                .source(source)
+                .reason(reason)
+                .createdAt(clock.instant())
+                .build());
+    }
+
+    private Command dispatch(Command command) {
+        CommandMessage message = new CommandMessage(command.getId(), command.getActuatorType().name(),
+                command.getAction().name(), command.getDurationSeconds());
+        boolean sent = gateway.publish(topics.commands(command.getCropId()), jsonMapper.writeValueAsString(message), 1, false);
+        if (sent) {
+            command.setStatus(CommandStatus.SENT);
+            command.setSentAt(clock.instant());
+        } else {
+            command.setStatus(CommandStatus.FAILED);
+            command.setMessage("El broker MQTT no está disponible en este momento");
+            command.setCompletedAt(clock.instant());
+        }
+        log.info("Comando {} {} para {} ({})", command.getAction(), command.getActuatorType(), command.getCropId(),
+                command.getStatus());
+        return repository.save(command);
+    }
+
+    private void notifyFailure(Command command, String message) {
+        cropService.find(command.getCropId()).ifPresent(crop -> notificationService.notifyOnce(
+                "command-failure:" + crop.getId(), FAILURE_NOTICE_COOLDOWN, crop.getOwnerId(), crop.getId(),
+                NotificationType.COMMAND, "Comando sin ejecutar en " + crop.getName(), message));
+    }
+
+    private static String truncate(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() <= 200 ? value : value.substring(0, 200);
+    }
+
+    private static String orDefault(String value) {
+        return value == null || value.isBlank() ? "sin detalle" : truncate(value);
+    }
 }
