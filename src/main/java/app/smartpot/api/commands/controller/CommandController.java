@@ -1,245 +1,50 @@
 package app.smartpot.api.commands.controller;
 
-import app.smartpot.api.actuators.model.dto.ActuatorDTO;
-import app.smartpot.api.actuators.model.entity.ActuatorType;
-import app.smartpot.api.actuators.service.ActuatorService;
-import app.smartpot.api.commands.model.dto.CommandDTO;
+import app.smartpot.api.commands.mapper.CommandMapper;
+import app.smartpot.api.commands.model.dto.CommandRequest;
+import app.smartpot.api.commands.model.dto.CommandResponse;
 import app.smartpot.api.commands.service.CommandService;
-import app.smartpot.api.crops.model.dto.CropDTO;
-import app.smartpot.api.responses.DeleteResponse;
-import app.smartpot.api.responses.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/Commands")
+@RequestMapping("/crops/{cropId}/commands")
+@Tag(name = "Comandos", description = "Órdenes a los actuadores, enviadas por MQTT y confirmadas por la maceta")
 public class CommandController {
 
     private final CommandService commandService;
-    private final ActuatorService actuatorService;
 
-    @Autowired
-    public CommandController(CommandService commandService, ActuatorService actuatorService) {
+    public CommandController(CommandService commandService) {
         this.commandService = commandService;
-        this.actuatorService = actuatorService;
     }
 
-    @PostMapping("/Create")
-    @Operation(summary = "Crear un nuevo comando",
-            description = "Crea un nuevo comando utilizando los datos proporcionados en el objeto CommandDTO. "
-                    + "Si la creación es exitosa, se devuelve el comando recién creado.",
-            responses = {
-                    @ApiResponse(description = "Comando creado",
-                            responseCode = "201",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CropDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo crear el Comando debido a un error.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> createCommand(@Parameter(description = "Datos del nuevo comando que se va a crear. Debe incluir tipo y cultivo asociado.",
-            required = true) @RequestBody CommandDTO commandDTO) {
-        try {
-            return new ResponseEntity<>(commandService.createCommand(commandDTO), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al crear el comando [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-
-        }
+    @GetMapping
+    @Operation(summary = "Historial de comandos", description = "Más recientes primero; máximo 100")
+    public List<CommandResponse> list(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
+                                      @RequestParam(defaultValue = "30") int limit) {
+        return commandService.list(jwt.getSubject(), cropId, limit).stream().map(CommandMapper::toResponse).toList();
     }
 
-    @GetMapping("/All")
-    @Operation(summary = "Obtener todos los comandos",
-            description = "Recupera todos los comandos registrados en el sistema. "
-                    + "En caso de no haber comandos, se devolverá una excepción.",
-            responses = {
-                    @ApiResponse(description = "Comandos encontrados",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = CommandDTO.class)))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se encontraron Comandos registrados.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> getAllCommand() {
-        try {
-            return new ResponseEntity<>(commandService.getAllCommands(), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("/crop/{crop}")
-    @Operation(summary = "Obtener todos los comandos de un cultivo",
-            description = "Recupera todos los comandos asociados a un cultivo en el sistema. "
-                    + "En caso de no haber comandos, se devolverá una excepción.",
-            responses = {
-                    @ApiResponse(description = "Comandos encontrados",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    array = @ArraySchema(schema = @Schema(implementation = CommandDTO.class)))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se encontraron Comandos registrados.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> getCommandsByCrop(@PathVariable String crop) {
-        try {
-            return new ResponseEntity<>(commandService.getCommandsByCrop(crop), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al obtener los comandos [" + e.getMessage() + "]", HttpStatus.INTERNAL_SERVER_ERROR.value()), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @GetMapping("/id/{id}")
-    @Operation(summary = "Buscar comando por ID",
-            description = "Recupera un comando utilizando su ID único. "
-                    + "Si el comando no existe, se devolverá un error con el código HTTP 404.",
-            responses = {
-                    @ApiResponse(description = "Comando encontrado",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommandDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "Comando no encontrado con el ID especificado.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> getCommandById(@PathVariable String id) {
-        try {
-            return new ResponseEntity<>(commandService.getCommandById(id), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al buscar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @PutMapping("/{id}/run/{response}")
-    @Operation(summary = "Actualizar un comando a ejecutado",
-            description = "Actualiza los datos de un comando existente utilizando su ID. "
-                    + "Si el comando no existe o hay un error, se devolverá un error con código HTTP 404.",
-            responses = {
-                    @ApiResponse(description = "Comando actualizado",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = CommandDTO.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo actualizar el Comando. El Comando puede no existir o los datos pueden ser incorrectos.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> executeCommand(@PathVariable String id, @PathVariable String response) {
-        try {
-            return new ResponseEntity<>(commandService.executeCommand(id, response), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @DeleteMapping("/Delete/{id}")
-    @Operation(summary = "Eliminar un Comando",
-            description = "Elimina un Comando existente utilizando su ID. "
-                    + "Si el Comando no existe o hay un error, se devolverá un error con código HTTP 404.",
-            responses = {
-                    @ApiResponse(description = "Comando eliminado",
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = DeleteResponse.class))),
-                    @ApiResponse(responseCode = "404",
-                            description = "No se pudo eliminar el Comando.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> deleteCommand(@Parameter(description = "ID único del comando que se desea eliminar.", required = true) @PathVariable String id) {
-        try {
-            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + commandService.deleteCommand(id) + "]"), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @PutMapping("/Update/{id}")
-    @Operation(summary = "Eliminar un comando",
-            description = "Elimina un comando existente utilizando su ID. "
-                    + "Si el comando no existe o hay un error en el proceso, se devolverá un error con el código HTTP 404.",
-            responses = {
-                    @ApiResponse(description = "Comando eliminado",
-                            responseCode = "204",
-                            content = @Content(mediaType = "application/json")),
-                    @ApiResponse(responseCode = "404",
-                            description = "Comando no encontrado o error en la eliminación.",
-                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-            })
-    public ResponseEntity<?> updateCommand(@PathVariable String id, @RequestBody CommandDTO updatedCommand) {
-        try {
-            return new ResponseEntity<>(new DeleteResponse("Se ha eliminado un recurso [" + commandService.updateCommand(id, updatedCommand) + "]"), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(new ErrorResponse("Error al actualizar el comando con ID '" + id + "' [" + e.getMessage() + "]", HttpStatus.NOT_FOUND.value()), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @PostMapping("/ActivateUVLight/{cropId}")
-    @Operation(summary = "Activar luz ultravioleta",
-            description = "Crea un comando para activar la luz UV del cultivo especificado")
-    public ResponseEntity<?> activateUVLight(@PathVariable String cropId) {
-        try {
-
-            ActuatorDTO uvLight = actuatorService.getActuatorsByCrop(cropId)
-                    .stream()
-                    .filter(a -> a.getType() == ActuatorType.UV_LIGHT)
-                    .findFirst()
-                    .orElseThrow(() -> new Exception("No se encontró luz UV para este cultivo"));
-
-            CommandDTO command = new CommandDTO();
-            command.setCommandType("ACTIVATE_UV_LIGHT");
-            command.setActuator(uvLight.getId());
-            command.setCrop(cropId);
-
-            return new ResponseEntity<>(commandService.createCommand(command), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(
-                    new ErrorResponse("Error al activar la luz UV [" + e.getMessage() + "]",
-                            HttpStatus.BAD_REQUEST.value()),
-                    HttpStatus.BAD_REQUEST);
-        }
-    }
-
-
-    @PostMapping("/ActivateHumidifier/{cropId}")
-    @Operation(summary = "Activar luz humidificador",
-            description = "Crea un comando para activar la luz UV del cultivo especificado")
-    public ResponseEntity<?> activateHumidifier(@PathVariable String cropId) {
-        try {
-            ActuatorDTO humidifier = actuatorService.getActuatorsByCrop(cropId)
-                    .stream()
-                    .filter(a -> a.getType() == ActuatorType.HUMIDIFIER)
-                    .findFirst()
-                    .orElseThrow(() -> new Exception("No se encontró humidificador para este cultivo"));
-
-            CommandDTO command = new CommandDTO();
-            command.setCommandType("ACTIVATE_HUMIDIFIER");
-            command.setActuator(humidifier.getId());
-            command.setCrop(cropId);
-
-            commandService.publishMqttCommand(command);
-            return new ResponseEntity<>(commandService.createCommand(command), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(
-                    new ErrorResponse("Error al activar humidificador [" + e.getMessage() + "]",
-                            HttpStatus.BAD_REQUEST.value()),
-                    HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @PostMapping("/uncheked")
-    @Operation(summary = "Envia un comando al servidor mqtt sin verificar",
-            description = "Crea un comando no almacenado que se envia directamente al servidor mqtt")
-    public ResponseEntity<?> uncheckedCommand(@RequestBody CommandDTO command) {
-        try {
-            return new ResponseEntity<>( commandService.publishMqttCommand(command), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(
-                    new ErrorResponse("Error al enviar el comando [" + e.getMessage() + "]",
-                            HttpStatus.BAD_REQUEST.value()),
-                    HttpStatus.BAD_REQUEST);
-        }
+    @PostMapping
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Enviar un comando",
+            description = "Responde con el estado SENT; la confirmación de la maceta llega después (EXECUTED o FAILED)")
+    public CommandResponse send(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
+                                @Valid @RequestBody CommandRequest request) {
+        return CommandMapper.toResponse(commandService.request(jwt.getSubject(), cropId, request));
     }
 }
