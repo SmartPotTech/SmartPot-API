@@ -37,7 +37,11 @@ public class AiClient {
         this.properties = properties;
         this.cacheStore = cacheStore;
         this.clock = clock;
-        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(properties.timeout()).build();
+        // HTTP/1.1 explícito: uvicorn rechaza el intento de actualización a h2c del cliente de Java.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(properties.timeout())
+                .build();
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(properties.timeout());
         this.restClient = builder
