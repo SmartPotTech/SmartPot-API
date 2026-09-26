@@ -35,3 +35,4 @@ smartpot:
     evaluation-interval: PT5M
     automation-cooldown: PT10M
     history-size: 48
+    timezone: America/Bogota

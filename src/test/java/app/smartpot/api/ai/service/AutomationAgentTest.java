@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,7 +53,7 @@ class AutomationAgentTest {
     void setUp() {
         agent = new AutomationAgent(insightService, commandService, notificationService, cacheStore, aiClient,
                 new AiProperties(true, "http://ai", "t", Duration.ofSeconds(2), Duration.ofMinutes(5),
-                        Duration.ofMinutes(10), 48));
+                        Duration.ofMinutes(10), 48, ZoneId.of("America/Bogota")));
         when(aiClient.isEnabled()).thenReturn(true);
         when(cacheStore.setIfAbsent(anyString(), any())).thenReturn(true);
         when(insightService.evaluate(any(), any())).thenReturn(insight);
