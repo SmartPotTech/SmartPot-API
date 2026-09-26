@@ -84,6 +84,7 @@ smartpot:
     evaluation-interval: ${AI_EVALUATION_INTERVAL:PT5M}
     automation-cooldown: ${AI_AUTOMATION_COOLDOWN:PT10M}
     history-size: ${AI_HISTORY_SIZE:48}
+    timezone: ${AI_TIMEZONE:America/Bogota}
 
 springdoc:
   api-docs:
