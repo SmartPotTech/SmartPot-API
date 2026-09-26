@@ -1,14 +1,32 @@
-#  Uso de imagen base con Java 17
-FROM eclipse-temurin:17-jre
+FROM maven:3.9-eclipse-temurin-21 AS build
 
-# Directiorio donde se colocará la aplicación en el contenedor
+WORKDIR /workspace
+
+COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
+
+COPY src ./src
+RUN mvn -B -q -DskipTests package
+
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL org.opencontainers.image.title="SmartPot API" \
+      org.opencontainers.image.description="API REST y MQTT de SmartPot" \
+      org.opencontainers.image.source="https://github.com/SmartPotTech/SmartPot-API" \
+      org.opencontainers.image.licenses="MIT"
+
 WORKDIR /app
 
-# Copiar el archivo jar del proyecto al directorio /app en el contenedor
-COPY target/api-0.0.1-SNAPSHOT.jar /app/api-smarpot.jar
+COPY --from=build /workspace/target/smartpot-api.jar /app/smartpot-api.jar
 
-# Exponer el puerto que usa la aplicación
+ENV PORT=8091 \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.io.tmpdir=/tmp -Duser.timezone=UTC"
+
+USER 1000:1000
+
 EXPOSE 8091
 
-# Comando para ejecutar aplicación
-CMD ["java","-jar","/app/api-smarpot.jar"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/health" || exit 1
+
+ENTRYPOINT ["java", "-jar", "/app/smartpot-api.jar"]
