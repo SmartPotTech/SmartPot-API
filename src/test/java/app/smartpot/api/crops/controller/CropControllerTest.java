@@ -1,0 +1,102 @@
+package app.smartpot.api.crops.controller;
+
+import app.smartpot.api.cache.CacheStore;
+import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropType;
+import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
+import app.smartpot.api.readings.service.ReadingService;
+import app.smartpot.api.support.WebTestConfig;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = CropController.class)
+@Import(WebTestConfig.class)
+class CropControllerTest {
+
+    private static final String OWNER = "6718f0a1b2c3d4e5f6a7b000";
+    private static final String CROP = "6718f0a1b2c3d4e5f6a7b8c9";
+
+    @Autowired
+    private MockMvc mvc;
+
+    @MockitoBean
+    private CropService cropService;
+
+    @MockitoBean
+    private ReadingService readingService;
+
+    @MockitoBean
+    private CacheStore cacheStore;
+
+    @Test
+    void requiresAToken() throws Exception {
+        mvc.perform(get("/api/v1/crops"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Inicia sesión para continuar"));
+    }
+
+    @Test
+    void rejectsInvalidTokens() throws Exception {
+        mvc.perform(get("/api/v1/crops").header("Authorization", "Bearer no-es-un-jwt"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void listsOnlyTheCallersCrops() throws Exception {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE)
+                .createdAt(Instant.now()).build();
+        when(cropService.list(OWNER)).thenReturn(List.of(crop));
+        when(readingService.latest(CROP)).thenReturn(Optional.empty());
+
+        mvc.perform(get("/api/v1/crops").with(jwt().jwt(token -> token.subject(OWNER))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(CROP))
+                .andExpect(jsonPath("$[0].type").value("LETTUCE"))
+                .andExpect(jsonPath("$[0].device.online").value(false));
+    }
+
+    @Test
+    void foreignCropsLookMissing() throws Exception {
+        when(cropService.getOwned(anyString(), anyString())).thenThrow(ApiException.notFound("El cultivo no existe"));
+
+        mvc.perform(get("/api/v1/crops/" + CROP).with(jwt().jwt(token -> token.subject("intruso"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("El cultivo no existe"));
+    }
+
+    @Test
+    void validatesTheCropType() throws Exception {
+        mvc.perform(post("/api/v1/crops").with(jwt().jwt(token -> token.subject(OWNER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Menta\",\"type\":\"MINT\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void automationRequiresAnExplicitValue() throws Exception {
+        mvc.perform(put("/api/v1/crops/" + CROP + "/automation").with(jwt().jwt(token -> token.subject(OWNER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.enabled").exists());
+    }
+}
