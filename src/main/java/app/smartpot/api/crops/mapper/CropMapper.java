@@ -1,28 +1,22 @@
 package app.smartpot.api.crops.mapper;
 
-import app.smartpot.api.crops.model.dto.CropDTO;
+import app.smartpot.api.crops.model.dto.CropResponse;
 import app.smartpot.api.crops.model.entity.Crop;
-import org.bson.types.ObjectId;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import app.smartpot.api.crops.model.entity.Device;
+import app.smartpot.api.readings.mapper.ReadingMapper;
+import app.smartpot.api.readings.model.entity.Reading;
 
-@Mapper(componentModel = "spring")
-public interface CropMapper {
-    @Mapping(source = "id", target = "id", qualifiedByName = "stringToObjectId")
-    @Mapping(source = "user", target = "user", qualifiedByName = "stringToObjectId")
-    Crop toEntity(CropDTO cropDTO);
+public final class CropMapper {
 
-    @Mapping(source = "id", target = "id", qualifiedByName = "objectIdToString")
-    @Mapping(source = "user", target = "user", qualifiedByName = "objectIdToString")
-    CropDTO toDTO(Crop crop);
-
-    @org.mapstruct.Named("objectIdToString")
-    default String objectIdToString(ObjectId objectId) {
-        return objectId != null ? objectId.toHexString() : null;
+    private CropMapper() {
     }
 
-    @org.mapstruct.Named("stringToObjectId")
-    default ObjectId stringToObjectId(String id) {
-        return id != null ? new ObjectId(id) : null;
+    public static CropResponse toResponse(Crop crop, Reading latestReading) {
+        Device device = crop.getDevice();
+        CropResponse.DeviceStatus deviceStatus = device == null
+                ? new CropResponse.DeviceStatus(false, null, null)
+                : new CropResponse.DeviceStatus(device.isOnline(), device.getLastSeenAt(), device.getKeyRotatedAt());
+        return new CropResponse(crop.getId(), crop.getName(), crop.getType().name(), crop.isAutomationEnabled(),
+                deviceStatus, crop.getHealth(), ReadingMapper.toResponse(latestReading), crop.getCreatedAt());
     }
 }
