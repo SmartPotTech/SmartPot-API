@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -27,6 +28,7 @@ public class InsightService {
     private final ActuatorService actuatorService;
     private final Clock clock;
     private final int historySize;
+    private final ZoneId timezone;
 
     public InsightService(AiClient aiClient, CropService cropService, ReadingService readingService,
                           ActuatorService actuatorService, Clock clock, AiProperties properties) {
@@ -36,6 +38,7 @@ public class InsightService {
         this.actuatorService = actuatorService;
         this.clock = clock;
         this.historySize = properties.historySize();
+        this.timezone = properties.timezone();
     }
 
     public InsightResponse forOwner(String ownerId, String cropId) {
@@ -54,8 +57,10 @@ public class InsightService {
                 .map(Actuator::getType)
                 .map(Enum::name)
                 .toList();
-        InsightRequest request = new InsightRequest(crop.getType().name(), latest.getMeasures(), history, actuators);
         Instant now = clock.instant();
+        Instant measuredAt = latest.getMeasuredAt() != null ? latest.getMeasuredAt() : now;
+        InsightRequest request = new InsightRequest(crop.getType().name(), latest.getMeasures(), history, actuators,
+                measuredAt.atZone(timezone).getHour());
         InsightResponse response = aiClient.insights(request).withEvaluatedAt(now);
         if (response.health() != null) {
             cropService.updateHealth(crop.getId(), new CropHealth(response.health().index(),
