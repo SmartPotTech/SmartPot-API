@@ -3,7 +3,7 @@ package app.smartpot.api.commands.model.dto;
 import java.util.List;
 
 /**
- * Resultado por cultivo: SENT (enviado a la maceta), FAILED (el broker no respondió)
+ * Resultado por cultivo: SENT (enviado al dispositivo), FAILED (el broker no respondió)
  * o SKIPPED (no tiene ese actuador o ya hay un comando en curso).
  */
 public record BulkCommandResponse(int sent, int skipped, int failed, List<Result> results) {

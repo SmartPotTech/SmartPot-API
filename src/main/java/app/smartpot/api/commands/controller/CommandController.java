@@ -23,7 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/crops/{cropId}/commands")
-@Tag(name = "Comandos", description = "Órdenes a los actuadores, enviadas por MQTT y confirmadas por la maceta")
+@Tag(name = "Comandos", description = "Órdenes a los actuadores, enviadas por MQTT y confirmadas por el dispositivo")
 public class CommandController {
 
     private final CommandService commandService;
@@ -42,7 +42,7 @@ public class CommandController {
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(summary = "Enviar un comando",
-            description = "Responde con el estado SENT; la confirmación de la maceta llega después (EXECUTED o FAILED)")
+            description = "Responde con el estado SENT; la confirmación del dispositivo llega después (EXECUTED o FAILED)")
     public CommandResponse send(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
                                 @Valid @RequestBody CommandRequest request) {
         return CommandMapper.toResponse(commandService.request(jwt.getSubject(), cropId, request));
