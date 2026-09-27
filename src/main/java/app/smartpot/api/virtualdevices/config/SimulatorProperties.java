@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * Simulador interno de macetas (SmartPot-DataGenerator). La API le pide macetas virtuales en nombre de cada
+ * Simulador interno de dispositivos (SmartPot-DataGenerator). La API le pide la simulación de los cultivos virtuales en nombre de cada
  * cultivo y cada {@code reconcileInterval} vuelve a crear las que falten (por ejemplo, tras un reinicio).
  */
 @ConfigurationProperties(prefix = "smartpot.simulator")

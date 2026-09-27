@@ -20,12 +20,12 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Optional;
 
-/** Cliente de la API interna del simulador de macetas. */
+/** Cliente de la API interna del simulador de dispositivos. */
 @Slf4j
 @Component
 public class SimulatorClient {
 
-    static final String UNAVAILABLE = "El simulador de macetas no está disponible en este momento";
+    static final String UNAVAILABLE = "El simulador de cultivos virtuales no está disponible en este momento";
 
     private final SimulatorProperties properties;
     private final RestClient restClient;
@@ -66,12 +66,12 @@ public class SimulatorClient {
         } catch (HttpClientErrorException ex) {
             throw ApiException.badRequest("El simulador rechazó la configuración: " + ex.getStatusText());
         } catch (RestClientException ex) {
-            log.warn("Falló la configuración de la maceta virtual {}: {}", cropId, ex.getMessage());
+            log.warn("Falló la simulación del cultivo virtual {}: {}", cropId, ex.getMessage());
             throw ApiException.unavailable(UNAVAILABLE);
         }
     }
 
-    /** Estado en vivo; vacío si la maceta no existe en el simulador o si este no responde. */
+    /** Estado en vivo; vacío si el cultivo no existe en el simulador o si este no responde. */
     public Optional<SimulatorPot> get(String cropId) {
         if (!isAvailable()) {
             return Optional.empty();
@@ -104,10 +104,10 @@ public class SimulatorClient {
             restClient.delete().uri("/v1/pots/{id}", cropId).retrieve().toBodilessEntity();
         } catch (HttpClientErrorException ex) {
             if (!ex.getStatusCode().isSameCodeAs(HttpStatus.NOT_FOUND)) {
-                log.warn("No se pudo retirar la maceta virtual {}: {}", cropId, ex.getStatusText());
+                log.warn("No se pudo retirar la simulación del cultivo {}: {}", cropId, ex.getStatusText());
             }
         } catch (RestClientException ex) {
-            log.warn("No se pudo retirar la maceta virtual {}: {}", cropId, ex.getMessage());
+            log.warn("No se pudo retirar la simulación del cultivo {}: {}", cropId, ex.getMessage());
         }
     }
 
@@ -139,7 +139,7 @@ public class SimulatorClient {
 
     private void requireAvailable() {
         if (!isAvailable()) {
-            throw ApiException.unavailable("Las macetas virtuales no están habilitadas en este servidor");
+            throw ApiException.unavailable("Los cultivos virtuales no están habilitados en este servidor");
         }
     }
 }
