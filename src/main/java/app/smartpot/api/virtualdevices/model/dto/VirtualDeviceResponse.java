@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Maceta virtual de un cultivo. available indica si el servidor tiene simulador; active, si el cultivo tiene
- * una configurada; running, si el simulador la ejecuta ahora (tras un reinicio vuelve en menos de un minuto).
+ * Simulación de un cultivo virtual. available indica si el servidor tiene simulador; active, si la simulación está
+ * encendida (false en pausa); running, si el simulador la ejecuta ahora (tras un reinicio vuelve en menos de un
+ * minuto).
  */
 public record VirtualDeviceResponse(String cropId, boolean available, boolean active, boolean running,
                                     VirtualMode mode, Measures manual, VirtualLocation location,
@@ -27,7 +28,7 @@ public record VirtualDeviceResponse(String cropId, boolean available, boolean ac
 
     public static VirtualDeviceResponse of(VirtualDevice config, SimulatorPot live, boolean available) {
         boolean running = live != null;
-        return new VirtualDeviceResponse(config.getCropId(), available, true, running, config.getMode(),
+        return new VirtualDeviceResponse(config.getCropId(), available, config.isActive(), running, config.getMode(),
                 config.getManual(), config.getLocation(), config.getIntervalSeconds(),
                 running && live.connected(), running ? live.lastReading() : null,
                 running ? live.lastPublishedAt() : null, running ? live.weather() : null,
