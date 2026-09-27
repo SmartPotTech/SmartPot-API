@@ -35,6 +35,16 @@ public class InsightController {
         return insightService.forOwner(jwt.getSubject(), cropId);
     }
 
+    @GetMapping(value = "/ai/learning", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Aprendizaje continuo de la IA",
+            description = "Lecturas reales por especie, calidad de los datos, comparación de modelos supervisados, "
+                    + "estados de operación y detector de atípicos. Solo datos agregados: sin cultivos ni personas.")
+    public ResponseEntity<String> learning() {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(1)).cachePrivate())
+                .body(aiClient.learningStatusJson());
+    }
+
     @GetMapping(value = "/crop-profiles", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Perfiles de cultivo", description = "Rangos óptimos por especie de la base de conocimiento (público)")
     public ResponseEntity<String> cropProfiles() {
