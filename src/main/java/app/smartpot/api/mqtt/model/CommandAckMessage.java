@@ -1,7 +1,7 @@
 package app.smartpot.api.mqtt.model;
 
 /**
- * Confirmación de la maceta en {prefijo}/{cropId}/commands/ack. status: EXECUTED o FAILED.
+ * Confirmación del dispositivo en {prefijo}/{cropId}/commands/ack. status: EXECUTED o FAILED.
  */
 public record CommandAckMessage(String id, String status, String message) {
 
