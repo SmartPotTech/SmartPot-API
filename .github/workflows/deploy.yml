@@ -1,8 +1,9 @@
 name: Deploy to Production
 
+# Pide el despliegue al workflow central de SmartPotTech/.github, que corre de a uno.
 on:
   workflow_run:
-    workflows: [ "Publish Package to GHCR" ]
+    workflows: [ "Publish Docker Images" ]
     types: [ completed ]
     branches: [ "main" ]
   workflow_dispatch:
@@ -12,7 +13,8 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy Full Stack
+    name: Request Deployment
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    uses: SmartPotTech/.github/.github/workflows/deploy.yml@main
-    secrets: inherit
+    uses: SmartPotTech/.github/.github/workflows/request-deploy.yml@main
+    secrets:
+      DEPLOY_DISPATCH_TOKEN: ${{ secrets.DEPLOY_DISPATCH_TOKEN }}
