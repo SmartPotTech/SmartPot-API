@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-/** Estado de una maceta virtual tal como lo informa el simulador. */
+/** Estado de un cultivo virtual tal como lo informa el simulador. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SimulatorPot(String cropId, String cropType, String mode, boolean managed, boolean connected,
                            double intervalSeconds, Map<String, Double> lastReading, Instant lastPublishedAt,
