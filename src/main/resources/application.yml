@@ -85,6 +85,22 @@ smartpot:
     automation-cooldown: ${AI_AUTOMATION_COOLDOWN:PT10M}
     history-size: ${AI_HISTORY_SIZE:48}
     timezone: ${AI_TIMEZONE:America/Bogota}
+    learning:
+      enabled: ${AI_LEARNING_ENABLED:true}
+      flush-interval: ${AI_LEARNING_FLUSH_INTERVAL:PT1M}
+  telegram:
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_BOT_USERNAME:}
+    mode: ${TELEGRAM_MODE:polling}
+    webhook-url: ${TELEGRAM_WEBHOOK_URL:${PUBLIC_API_URL:http://localhost:8091}/api/v1/channels/telegram/webhook}
+    webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
+    api-base-url: ${TELEGRAM_API_BASE_URL:https://api.telegram.org}
+  simulator:
+    enabled: ${SIMULATOR_ENABLED:true}
+    base-url: ${SIMULATOR_BASE_URL:http://localhost:8081}
+    token: ${SIMULATOR_TOKEN:}
+    timeout: ${SIMULATOR_TIMEOUT:PT10S}
+    reconcile-interval: ${SIMULATOR_RECONCILE_INTERVAL:PT1M}
 
 springdoc:
   api-docs:
