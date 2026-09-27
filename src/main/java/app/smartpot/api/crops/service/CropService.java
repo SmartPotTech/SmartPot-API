@@ -7,7 +7,9 @@ import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropForm;
 import app.smartpot.api.crops.model.entity.CropHealth;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.Device;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
@@ -45,6 +47,8 @@ public class CropService {
     private static final String NOT_FOUND = "El cultivo no existe";
     private static final List<ActuatorType> DEFAULT_ACTUATORS =
             List.of(ActuatorType.WATER_PUMP, ActuatorType.UV_LIGHT, ActuatorType.FAN);
+    private static final String VIRTUAL_HAS_NO_DEVICE =
+            "Un cultivo virtual no usa credenciales: SmartPot lo simula por ti";
 
     private final CropRepository cropRepository;
     private final ReadingRepository readingRepository;
@@ -88,20 +92,26 @@ public class CropService {
         }
         Instant now = clock.instant();
         String key = newDeviceKey();
+        CropKind kind = request.kind() != null ? request.kind() : CropKind.REAL;
         Crop crop = cropRepository.save(Crop.builder()
                 .ownerId(ownerId)
                 .name(request.name().trim())
                 .type(request.type())
+                .kind(kind)
+                .form(request.form() != null ? request.form() : CropForm.POT)
                 .automationEnabled(false)
                 .device(Device.builder().keyCiphertext(encryptionService.encrypt(key)).keyRotatedAt(now).build())
                 .createdAt(now)
                 .updatedAt(now)
                 .build());
-        DEFAULT_ACTUATORS.forEach(type -> actuatorRepository.save(Actuator.builder()
+        // El simulador maneja los seis actuadores; el firmware, tres (se pueden agregar más).
+        List<ActuatorType> actuators = crop.isVirtual() ? List.of(ActuatorType.values()) : DEFAULT_ACTUATORS;
+        actuators.forEach(type -> actuatorRepository.save(Actuator.builder()
                 .cropId(crop.getId()).type(type).active(false).createdAt(now).build()));
+        // Un cultivo virtual también tiene cuenta en el broker: el simulador publica con ella.
         deviceProvisioner.provision(crop.getId(), key, false);
-        log.info("Cultivo {} creado", crop.getId());
-        return new CreatedCrop(crop, credentials(crop, key));
+        log.info("Cultivo {} {} creado", kind == CropKind.VIRTUAL ? "virtual" : "real", crop.getId());
+        return new CreatedCrop(crop, crop.isVirtual() ? null : credentials(crop, key));
     }
 
     public List<Crop> list(String ownerId) {
@@ -119,8 +129,14 @@ public class CropService {
 
     public Crop update(String ownerId, String cropId, CropRequest request) {
         Crop crop = getOwned(ownerId, cropId);
+        if (request.kind() != null && request.kind() != kindOf(crop)) {
+            throw ApiException.badRequest("Un cultivo no puede pasar de real a virtual ni al revés: crea uno nuevo");
+        }
         crop.setName(request.name().trim());
         crop.setType(request.type());
+        if (request.form() != null) {
+            crop.setForm(request.form());
+        }
         crop.setHealth(null);
         crop.setUpdatedAt(clock.instant());
         return cropRepository.save(crop);
@@ -147,12 +163,12 @@ public class CropService {
     }
 
     public DeviceCredentialsResponse deviceInfo(String ownerId, String cropId) {
-        Crop crop = getOwned(ownerId, cropId);
+        Crop crop = requireReal(getOwned(ownerId, cropId));
         return credentials(crop, null);
     }
 
     public DeviceCredentialsResponse rotateDeviceKey(String ownerId, String cropId) {
-        Crop crop = getOwned(ownerId, cropId);
+        Crop crop = requireReal(getOwned(ownerId, cropId));
         String key = newDeviceKey();
         Device device = crop.getDevice() == null ? new Device() : crop.getDevice();
         device.setKeyCiphertext(encryptionService.encrypt(key));
@@ -165,7 +181,7 @@ public class CropService {
         return credentials(crop, key);
     }
 
-    /** Clave de la maceta en claro, solo para servicios internos que actúan como la maceta (simulador). */
+    /** Clave del dispositivo en claro, solo para servicios internos que actúan como él (simulador). */
     public Optional<String> deviceKey(Crop crop) {
         Device device = crop.getDevice();
         if (device == null || device.getKeyCiphertext() == null) {
@@ -196,7 +212,7 @@ public class CropService {
             markDeviceSeen(cropId, online);
             if (!online) {
                 notificationService.notifyOnce("offline:" + cropId, Duration.ofHours(1), crop.getOwnerId(), cropId,
-                        NotificationType.DEVICE, "Maceta desconectada",
+                        NotificationType.DEVICE, "Cultivo desconectado",
                         "«" + crop.getName() + "» perdió la conexión con SmartPot.");
             }
         });
@@ -205,6 +221,17 @@ public class CropService {
     public void updateHealth(String cropId, CropHealth health) {
         mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(cropId)),
                 new Update().set("health", health), Crop.class);
+    }
+
+    private static CropKind kindOf(Crop crop) {
+        return crop.getKind() == null ? CropKind.REAL : crop.getKind();
+    }
+
+    private static Crop requireReal(Crop crop) {
+        if (crop.isVirtual()) {
+            throw ApiException.badRequest(VIRTUAL_HAS_NO_DEVICE);
+        }
+        return crop;
     }
 
     private void deleteCascade(Crop crop) {

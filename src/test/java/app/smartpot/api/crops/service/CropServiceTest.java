@@ -1,10 +1,13 @@
 package app.smartpot.api.crops.service;
 
 import app.smartpot.api.actuators.model.entity.Actuator;
+import app.smartpot.api.actuators.model.entity.ActuatorType;
 import app.smartpot.api.actuators.repository.ActuatorRepository;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropForm;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
@@ -28,9 +31,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -134,5 +139,45 @@ class CropServiceTest {
 
         verify(notificationService).notifyOnce(eq("offline:" + CROP), any(), eq(OWNER), eq(CROP), any(), anyString(),
                 anyString());
+    }
+
+    @Test
+    void createsAVirtualCropWithEveryActuatorAndNoCredentials() {
+        CropService.CreatedCrop created = service.create(OWNER, new CropRequest("Fresas", CropType.STRAWBERRY,
+                CropKind.VIRTUAL, CropForm.NFT, null));
+
+        assertThat(created.crop().getKind()).isEqualTo(CropKind.VIRTUAL);
+        assertThat(created.crop().getForm()).isEqualTo(CropForm.NFT);
+        assertThat(created.credentials()).isNull();
+        verify(actuatorRepository, times(ActuatorType.values().length)).save(any(Actuator.class));
+        verify(provisioner).provision(eq(CROP), anyString(), eq(false));
+    }
+
+    @Test
+    void aCropCannotSwitchBetweenRealAndVirtual() {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Tomates").type(CropType.TOMATO)
+                .kind(CropKind.REAL).form(CropForm.POT).build();
+        when(cropRepository.findByIdAndOwnerId(CROP, OWNER)).thenReturn(Optional.of(crop));
+
+        assertThatThrownBy(() -> service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO,
+                CropKind.VIRTUAL, null, null)))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("real a virtual");
+
+        Crop updated = service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO, CropKind.REAL,
+                CropForm.TOWER, null));
+        assertThat(updated.getKind()).isEqualTo(CropKind.REAL);
+        assertThat(updated.getForm()).isEqualTo(CropForm.TOWER);
+    }
+
+    @Test
+    void virtualCropsExposeNoDeviceCredentials() {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Albahaca").type(CropType.BASIL)
+                .kind(CropKind.VIRTUAL).build();
+        when(cropRepository.findByIdAndOwnerId(CROP, OWNER)).thenReturn(Optional.of(crop));
+
+        assertThatThrownBy(() -> service.deviceInfo(OWNER, CROP)).hasMessageContaining("virtual");
+        assertThatThrownBy(() -> service.rotateDeviceKey(OWNER, CROP)).hasMessageContaining("virtual");
+        verify(provisioner, never()).provision(any(), any(), anyBoolean());
     }
 }
