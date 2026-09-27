@@ -1,6 +1,7 @@
 package app.smartpot.api.virtualdevices.service;
 
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
@@ -38,13 +39,17 @@ class VirtualDeviceServiceTest {
 
     private static final String OWNER = "6718f0a1b2c3d4e5f6a7b000";
     private static final String CROP = "6718f0a1b2c3d4e5f6a7b8c9";
+    private static final String REAL = "6718f0a1b2c3d4e5f6a7b8cb";
     private static final String ORPHAN = "6718f0a1b2c3d4e5f6a7b8ca";
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-09-27T12:00:00Z"), ZoneOffset.UTC);
 
     private final VirtualDeviceRepository repository = mock(VirtualDeviceRepository.class);
     private final CropService cropService = mock(CropService.class);
     private final SimulatorClient simulator = mock(SimulatorClient.class);
-    private final Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE).build();
+    private final Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE)
+            .kind(CropKind.VIRTUAL).build();
+    private final Crop realCrop = Crop.builder().id(REAL).ownerId(OWNER).name("Tomates").type(CropType.TOMATO)
+            .kind(CropKind.REAL).build();
     private VirtualDeviceService service;
 
     @BeforeEach
@@ -52,6 +57,7 @@ class VirtualDeviceServiceTest {
         service = new VirtualDeviceService(repository, cropService, simulator, CLOCK);
         when(simulator.isAvailable()).thenReturn(true);
         when(cropService.getOwned(OWNER, CROP)).thenReturn(crop);
+        when(cropService.getOwned(OWNER, REAL)).thenReturn(realCrop);
         when(cropService.find(CROP)).thenReturn(Optional.of(crop));
         when(cropService.deviceKey(crop)).thenReturn(Optional.of("clave-de-la-maceta-0001"));
         when(repository.findByCropId(CROP)).thenReturn(Optional.empty());
@@ -69,8 +75,25 @@ class VirtualDeviceServiceTest {
                 new VirtualDeviceRequest.LocationRequest("Medellín", 6.245, -75.5715), 20);
     }
 
+    private static VirtualDevice config(boolean active) {
+        return VirtualDevice.builder().cropId(CROP).ownerId(OWNER).mode(VirtualMode.AUTO).intervalSeconds(30)
+                .active(active).build();
+    }
+
     @Test
-    void startsTheVirtualPotWithTheRealDeviceKey() {
+    void newVirtualCropsStartSimulatingInAutoMode() {
+        service.startFor(crop, null);
+
+        ArgumentCaptor<VirtualDevice> saved = ArgumentCaptor.forClass(VirtualDevice.class);
+        verify(repository).save(saved.capture());
+        assertThat(saved.getValue().getMode()).isEqualTo(VirtualMode.AUTO);
+        assertThat(saved.getValue().isActive()).isTrue();
+        assertThat(saved.getValue().getIntervalSeconds()).isEqualTo(30);
+        verify(simulator).put(eq(CROP), any());
+    }
+
+    @Test
+    void simulatesWithTheCropDeviceKey() {
         VirtualDeviceResponse response = service.configure(OWNER, CROP, weather());
 
         ArgumentCaptor<SimulatorPotRequest> sent = ArgumentCaptor.forClass(SimulatorPotRequest.class);
@@ -85,10 +108,23 @@ class VirtualDeviceServiceTest {
     }
 
     @Test
+    void realCropsAreNeverSimulated() {
+        assertThatThrownBy(() -> service.configure(OWNER, REAL, weather()))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("real");
+        assertThatThrownBy(() -> service.get(OWNER, REAL)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.pause(OWNER, REAL)).isInstanceOf(ApiException.class);
+        verify(simulator, never()).put(any(), any());
+    }
+
+    @Test
     void weatherModeNeedsALocation() {
         assertThatThrownBy(() -> service.configure(OWNER, CROP,
                 new VirtualDeviceRequest(VirtualMode.WEATHER, null, null, null)))
                 .isInstanceOf(ApiException.class)
+                .hasMessageContaining("ubicación");
+        assertThatThrownBy(() -> service.checkCanCreate(OWNER,
+                new VirtualDeviceRequest(VirtualMode.WEATHER, null, null, null)))
                 .hasMessageContaining("ubicación");
         verify(simulator, never()).put(any(), any());
     }
@@ -109,11 +145,27 @@ class VirtualDeviceServiceTest {
     }
 
     @Test
-    void limitsVirtualPotsPerAccount() {
+    void limitsVirtualCropsPerAccount() {
         when(repository.countByOwnerId(OWNER)).thenReturn((long) VirtualDeviceService.MAX_PER_ACCOUNT);
-        assertThatThrownBy(() -> service.configure(OWNER, CROP, weather()))
+        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("hasta 5");
+    }
+
+    @Test
+    void pausingKeepsTheConfigurationAndResumingStartsAgain() {
+        VirtualDevice existing = config(true);
+        when(repository.findByCropId(CROP)).thenReturn(Optional.of(existing));
+
+        service.pause(OWNER, CROP);
+        assertThat(existing.isActive()).isFalse();
+        verify(repository).save(existing);
+        verify(simulator).delete(CROP);
+        assertThat(service.get(OWNER, CROP).active()).isFalse();
+
+        service.configure(OWNER, CROP, new VirtualDeviceRequest(VirtualMode.AUTO, null, null, null));
+        assertThat(existing.isActive()).isTrue();
+        verify(simulator).put(eq(CROP), any());
     }
 
     @Test
@@ -124,23 +176,26 @@ class VirtualDeviceServiceTest {
     }
 
     @Test
-    void reconcileRecreatesMissingPotsAndRemovesOrphans() {
-        VirtualDevice config = VirtualDevice.builder().cropId(CROP).ownerId(OWNER).mode(VirtualMode.AUTO)
-                .intervalSeconds(30).build();
-        when(repository.findAll()).thenReturn(List.of(config));
+    void reconcileRecreatesActiveCropsAndRemovesPausedOnesAndOrphans() {
+        when(repository.findAll()).thenReturn(List.of(config(true)));
         when(simulator.list()).thenReturn(List.of(pot(ORPHAN, true)));
 
         service.reconcile();
 
         verify(simulator).put(eq(CROP), any());
         verify(simulator).delete(ORPHAN);
+
+        when(repository.findAll()).thenReturn(List.of(config(false)));
+        when(simulator.list()).thenReturn(List.of(pot(CROP, true)));
+
+        service.reconcile();
+
+        verify(simulator).delete(CROP);
     }
 
     @Test
     void followsKeyRotationAndCropDeletion() {
-        VirtualDevice config = VirtualDevice.builder().cropId(CROP).ownerId(OWNER).mode(VirtualMode.AUTO)
-                .intervalSeconds(30).build();
-        when(repository.findByCropId(CROP)).thenReturn(Optional.of(config));
+        when(repository.findByCropId(CROP)).thenReturn(Optional.of(config(true)));
 
         service.onKeyRotated(new DeviceKeyRotatedEvent(CROP));
         verify(simulator).put(eq(CROP), any());
@@ -155,5 +210,6 @@ class VirtualDeviceServiceTest {
         when(simulator.isAvailable()).thenReturn(false);
         assertThat(service.get(OWNER, CROP).available()).isFalse();
         assertThatThrownBy(() -> service.configure(OWNER, CROP, weather())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null)).hasMessageContaining("no están habilitados");
     }
 }
