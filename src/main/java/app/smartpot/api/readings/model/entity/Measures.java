@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Valores de una lectura. Cada sensor es opcional: una maceta puede no tenerlos todos.
+ * Valores de una lectura. Cada sensor es opcional: un dispositivo puede no tenerlos todos.
  * Unidades: °C, % de humedad relativa, lux, pH, ppm, hPa y % de humedad del sustrato.
  */
 @Data
