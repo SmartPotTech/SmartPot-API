@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 
 /**
- * Datos para configurar la maceta. La clave solo viaja al crear el cultivo o al rotarla.
+ * Datos para configurar el dispositivo (ESP32 o Wokwi). La clave solo viaja al crear el cultivo o al rotarla.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DeviceCredentialsResponse(
