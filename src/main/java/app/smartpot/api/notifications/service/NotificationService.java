@@ -5,7 +5,9 @@ import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.exception.ObjectIds;
 import app.smartpot.api.notifications.model.entity.Notification;
 import app.smartpot.api.notifications.model.entity.NotificationType;
+import app.smartpot.api.notifications.model.event.NotificationCreatedEvent;
 import app.smartpot.api.notifications.repository.NotificationRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +22,19 @@ public class NotificationService {
 
     private final NotificationRepository repository;
     private final CacheStore cacheStore;
+    private final ApplicationEventPublisher publisher;
     private final Clock clock;
 
-    public NotificationService(NotificationRepository repository, CacheStore cacheStore, Clock clock) {
+    public NotificationService(NotificationRepository repository, CacheStore cacheStore,
+                               ApplicationEventPublisher publisher, Clock clock) {
         this.repository = repository;
         this.cacheStore = cacheStore;
+        this.publisher = publisher;
         this.clock = clock;
     }
 
     public Notification notify(String userId, String cropId, NotificationType type, String title, String message) {
-        return repository.save(Notification.builder()
+        Notification notification = repository.save(Notification.builder()
                 .userId(userId)
                 .cropId(cropId)
                 .type(type)
@@ -38,6 +43,8 @@ public class NotificationService {
                 .read(false)
                 .createdAt(clock.instant())
                 .build());
+        publisher.publishEvent(new NotificationCreatedEvent(notification));
+        return notification;
     }
 
     /**
