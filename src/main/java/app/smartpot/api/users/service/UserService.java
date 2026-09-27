@@ -1,5 +1,6 @@
 package app.smartpot.api.users.service;
 
+import app.smartpot.api.channels.service.ChannelService;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.notifications.service.NotificationService;
@@ -23,15 +24,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final CropService cropService;
     private final NotificationService notificationService;
+    private final ChannelService channelService;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     public UserService(UserRepository userRepository, CropService cropService, NotificationService notificationService,
-                       PasswordResetTokenRepository resetTokenRepository, PasswordEncoder passwordEncoder, Clock clock) {
+                       ChannelService channelService, PasswordResetTokenRepository resetTokenRepository,
+                       PasswordEncoder passwordEncoder, Clock clock) {
         this.userRepository = userRepository;
         this.cropService = cropService;
         this.notificationService = notificationService;
+        this.channelService = channelService;
         this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
@@ -69,6 +73,7 @@ public class UserService {
         User user = getById(userId);
         cropService.deleteAllOwnedBy(userId);
         notificationService.deleteAllForUser(userId);
+        channelService.deleteAllForUser(userId);
         resetTokenRepository.deleteByUserId(userId);
         userRepository.delete(user);
         log.info("Cuenta {} eliminada con todos sus datos", userId);
