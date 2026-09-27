@@ -5,6 +5,7 @@ import app.smartpot.api.ai.model.dto.FleetRequest;
 import app.smartpot.api.ai.model.dto.FleetResponse;
 import app.smartpot.api.ai.model.dto.InsightRequest;
 import app.smartpot.api.ai.model.dto.InsightResponse;
+import app.smartpot.api.ai.model.dto.LearningBatch;
 import app.smartpot.api.cache.CacheStore;
 import app.smartpot.api.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class AiClient {
 
     private static final String UNAVAILABLE = "El asistente de IA no está disponible en este momento";
     private static final Duration PROFILES_TTL = Duration.ofHours(1);
+    private static final Duration LEARNING_TTL = Duration.ofMinutes(1);
     private static final Duration HEALTH_TTL = Duration.ofSeconds(30);
 
     private final AiProperties properties;
@@ -94,6 +96,51 @@ public class AiClient {
             log.warn("Falló el análisis de flota del servicio de IA: {}", ex.getMessage());
             throw ApiException.unavailable(UNAVAILABLE);
         }
+    }
+
+    /** Envía un lote de lecturas reales para el aprendizaje continuo. */
+    public void learn(LearningBatch batch) {
+        requireEnabled();
+        try {
+            restClient.post()
+                    .uri("/v1/learning/readings")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(batch)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            throw ApiException.unavailable(UNAVAILABLE);
+        }
+    }
+
+    /** Borra del aprendizaje las lecturas de un cultivo eliminado. */
+    public void forget(String cropId) {
+        if (!properties.enabled()) {
+            return;
+        }
+        try {
+            restClient.delete().uri("/v1/learning/crops/{id}", cropId).retrieve().toBodilessEntity();
+        } catch (RestClientException ex) {
+            log.warn("No se pudieron olvidar las lecturas del cultivo {}: {}", cropId, ex.getMessage());
+        }
+    }
+
+    /** Qué ha aprendido el asistente: datos agregados por especie, sin información de personas ni cultivos. */
+    public String learningStatusJson() {
+        requireEnabled();
+        return cacheStore.get("ai:learning-status").orElseGet(() -> {
+            try {
+                String body = restClient.get().uri("/v1/learning/status").retrieve().body(String.class);
+                if (body == null) {
+                    throw ApiException.unavailable(UNAVAILABLE);
+                }
+                cacheStore.put("ai:learning-status", body, LEARNING_TTL);
+                return body;
+            } catch (RestClientException ex) {
+                log.warn("No se pudo leer el estado del aprendizaje: {}", ex.getMessage());
+                throw ApiException.unavailable(UNAVAILABLE);
+            }
+        });
     }
 
     /** Perfiles de cultivo (rangos óptimos). Se guardan una hora en caché porque casi nunca cambian. */
