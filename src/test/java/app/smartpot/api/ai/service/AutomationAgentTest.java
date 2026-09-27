@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -42,12 +43,12 @@ class AutomationAgentTest {
     private AutomationAgent agent;
 
     private final InsightResponse insight = new InsightResponse("LETTUCE",
-            new InsightResponse.Health(38.0, "POOR", "En riesgo"),
+            new InsightResponse.Health(38.0, "POOR", "En riesgo", Map.of("soilMoisture", 10.0)),
             List.of(new InsightResponse.Diagnosis("soilMoisture", 18.0, "LOW", "CRITICAL",
                     "El sustrato está muy seco.", "Riega de inmediato.")),
             List.of(), List.of(),
             List.of(new InsightResponse.Action("WATER_PUMP", "ACTIVATE", 30, "Sustrato seco")),
-            "Riega tu lechuga", null);
+            List.of(), "Riega tu lechuga", null);
 
     @BeforeEach
     void setUp() {
