@@ -3,13 +3,13 @@ package app.smartpot.api.ai.service;
 import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.actuators.service.ActuatorService;
 import app.smartpot.api.ai.config.AiProperties;
+import app.smartpot.api.ai.model.dto.HistoryPoint;
 import app.smartpot.api.ai.model.dto.InsightRequest;
 import app.smartpot.api.ai.model.dto.InsightResponse;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropHealth;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
-import app.smartpot.api.readings.model.entity.Measures;
 import app.smartpot.api.readings.model.entity.Reading;
 import app.smartpot.api.readings.service.ReadingService;
 import org.springframework.stereotype.Service;
@@ -50,8 +50,8 @@ public class InsightService {
 
     /** Consulta al servicio de IA y guarda el índice de salud en el cultivo. */
     public InsightResponse evaluate(Crop crop, Reading latest) {
-        List<Measures> history = readingService.recent(crop.getId(), historySize).reversed().stream()
-                .map(Reading::getMeasures)
+        List<HistoryPoint> history = readingService.recent(crop.getId(), historySize).reversed().stream()
+                .map(HistoryPoint::of)
                 .toList();
         List<String> actuators = actuatorService.listForCrop(crop.getId()).stream()
                 .map(Actuator::getType)

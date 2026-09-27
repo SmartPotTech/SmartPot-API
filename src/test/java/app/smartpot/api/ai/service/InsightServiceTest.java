@@ -2,6 +2,7 @@ package app.smartpot.api.ai.service;
 
 import app.smartpot.api.actuators.service.ActuatorService;
 import app.smartpot.api.ai.config.AiProperties;
+import app.smartpot.api.ai.model.dto.HistoryPoint;
 import app.smartpot.api.ai.model.dto.InsightRequest;
 import app.smartpot.api.ai.model.dto.InsightResponse;
 import app.smartpot.api.crops.model.entity.Crop;
@@ -42,10 +43,12 @@ class InsightServiceTest {
 
     @Test
     void sendsTheLocalHourOfTheReading() {
-        when(readingService.recent(anyString(), anyInt())).thenReturn(List.of());
+        Reading previous = Reading.builder().cropId(CROP).measuredAt(Instant.parse("2026-09-26T03:30:00Z"))
+                .measures(Measures.builder().soilMoisture(62.0).build()).build();
+        when(readingService.recent(anyString(), anyInt())).thenReturn(List.of(previous));
         when(actuatorService.listForCrop(anyString())).thenReturn(List.of());
         when(aiClient.insights(any())).thenReturn(new InsightResponse("TOMATO", null, List.of(), List.of(),
-                List.of(), List.of(), "", null));
+                List.of(), List.of(), List.of(), "", null));
         Crop crop = Crop.builder().id(CROP).type(CropType.TOMATO).build();
         Reading reading = Reading.builder().cropId(CROP).measuredAt(Instant.parse("2026-09-26T03:30:00Z"))
                 .measures(Measures.builder().brightness(20.0).build()).build();
@@ -56,5 +59,7 @@ class InsightServiceTest {
         verify(aiClient).insights(request.capture());
         assertThat(request.getValue().localHour()).isEqualTo(22);
         assertThat(request.getValue().cropType()).isEqualTo("TOMATO");
+        assertThat(request.getValue().history()).extracting(HistoryPoint::measuredAt)
+                .containsExactly(Instant.parse("2026-09-26T03:30:00Z"));
     }
 }
