@@ -2,11 +2,14 @@ package app.smartpot.api.crops.controller;
 
 import app.smartpot.api.cache.CacheStore;
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropForm;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.service.ReadingService;
 import app.smartpot.api.support.WebTestConfig;
+import app.smartpot.api.virtualdevices.service.VirtualDeviceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -19,7 +22,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -46,6 +53,9 @@ class CropControllerTest {
 
     @MockitoBean
     private CacheStore cacheStore;
+
+    @MockitoBean
+    private VirtualDeviceService virtualDeviceService;
 
     @Test
     void requiresAToken() throws Exception {
@@ -112,5 +122,47 @@ class CropControllerTest {
                         .content("{\"cropIds\":[\"" + CROP + "\"],\"enabled\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].automationEnabled").value(true));
+    }
+
+    @Test
+    void createsAVirtualCropAndStartsItsSimulationWithoutCredentials() throws Exception {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Fresas").type(CropType.STRAWBERRY)
+                .kind(CropKind.VIRTUAL).form(CropForm.NFT).createdAt(Instant.now()).build();
+        when(cropService.create(eq(OWNER), any())).thenReturn(new CropService.CreatedCrop(crop, null));
+
+        mvc.perform(post("/api/v1/crops").with(jwt().jwt(token -> token.subject(OWNER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Fresas\",\"type\":\"STRAWBERRY\",\"kind\":\"VIRTUAL\",\"form\":\"NFT\","
+                                + "\"virtual\":{\"mode\":\"AUTO\"}}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.crop.kind").value("VIRTUAL"))
+                .andExpect(jsonPath("$.crop.form").value("NFT"))
+                .andExpect(jsonPath("$.device").doesNotExist());
+        verify(virtualDeviceService).checkCanCreate(eq(OWNER), any());
+        verify(virtualDeviceService).startFor(eq(crop), any());
+    }
+
+    @Test
+    void realCropsRejectASimulationSetup() throws Exception {
+        mvc.perform(post("/api/v1/crops").with(jwt().jwt(token -> token.subject(OWNER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Tomates\",\"type\":\"TOMATO\",\"kind\":\"REAL\","
+                                + "\"virtual\":{\"mode\":\"AUTO\"}}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Solo los cultivos virtuales tienen simulación"));
+        verify(cropService, never()).create(anyString(), any());
+    }
+
+    @Test
+    void cropsReportTheirKindAndForm() throws Exception {
+        Crop legacy = Crop.builder().id(CROP).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE)
+                .createdAt(Instant.now()).build();
+        when(cropService.getOwned(OWNER, CROP)).thenReturn(legacy);
+        when(readingService.latest(CROP)).thenReturn(Optional.empty());
+
+        mvc.perform(get("/api/v1/crops/" + CROP).with(jwt().jwt(token -> token.subject(OWNER))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("REAL"))
+                .andExpect(jsonPath("$.form").value("POT"));
     }
 }

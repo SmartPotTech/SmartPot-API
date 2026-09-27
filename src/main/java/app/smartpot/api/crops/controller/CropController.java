@@ -8,8 +8,11 @@ import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.dto.CropResponse;
 import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.service.ReadingService;
+import app.smartpot.api.virtualdevices.service.VirtualDeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,15 +34,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/crops")
-@Tag(name = "Cultivos", description = "Macetas del usuario, su automatización y las credenciales del dispositivo")
+@Tag(name = "Cultivos", description = "Cultivos reales y virtuales del usuario, su automatización y las credenciales del dispositivo")
 public class CropController {
 
     private final CropService cropService;
     private final ReadingService readingService;
+    private final VirtualDeviceService virtualDevices;
 
-    public CropController(CropService cropService, ReadingService readingService) {
+    public CropController(CropService cropService, ReadingService readingService, VirtualDeviceService virtualDevices) {
         this.cropService = cropService;
         this.readingService = readingService;
+        this.virtualDevices = virtualDevices;
     }
 
     @GetMapping
@@ -50,10 +55,20 @@ public class CropController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Crear un cultivo",
-            description = "Crea la bomba de agua, la luz UV y el ventilador, y devuelve una única vez la clave del dispositivo")
+    @Operation(summary = "Crear un cultivo real o virtual",
+            description = "El tipo (REAL o VIRTUAL) no se puede cambiar después. Un cultivo real devuelve una única vez "
+                    + "la clave de su dispositivo; uno virtual arranca su simulación y no expone credenciales")
     public CropCreatedResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CropRequest request) {
+        boolean virtual = request.kind() == CropKind.VIRTUAL;
+        if (virtual) {
+            virtualDevices.checkCanCreate(jwt.getSubject(), request.virtual());
+        } else if (request.virtual() != null) {
+            throw ApiException.badRequest("Solo los cultivos virtuales tienen simulación");
+        }
         CropService.CreatedCrop created = cropService.create(jwt.getSubject(), request);
+        if (virtual) {
+            virtualDevices.startFor(created.crop(), request.virtual());
+        }
         return new CropCreatedResponse(CropMapper.toResponse(created.crop(), null), created.credentials());
     }
 
@@ -64,7 +79,7 @@ public class CropController {
     }
 
     @PutMapping("/{cropId}")
-    @Operation(summary = "Cambiar nombre o tipo")
+    @Operation(summary = "Cambiar nombre, especie o forma", description = "Real o virtual no se puede cambiar")
     public CropResponse update(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
                                @Valid @RequestBody CropRequest request) {
         return toResponse(cropService.update(jwt.getSubject(), cropId, request));
@@ -95,14 +110,15 @@ public class CropController {
     }
 
     @GetMapping("/{cropId}/device")
-    @Operation(summary = "Datos de conexión del dispositivo", description = "Broker, puerto, usuario y tópicos, sin la clave")
+    @Operation(summary = "Datos de conexión del dispositivo",
+            description = "Broker, puerto, usuario y tópicos, sin la clave. Solo cultivos reales")
     public DeviceCredentialsResponse device(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId) {
         return cropService.deviceInfo(jwt.getSubject(), cropId);
     }
 
     @PostMapping("/{cropId}/device/key")
     @Operation(summary = "Generar una nueva clave del dispositivo",
-            description = "La clave anterior deja de funcionar y la maceta conectada se desconecta")
+            description = "La clave anterior deja de funcionar y el dispositivo conectado se desconecta")
     public DeviceCredentialsResponse rotateKey(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId) {
         return cropService.rotateDeviceKey(jwt.getSubject(), cropId);
     }
