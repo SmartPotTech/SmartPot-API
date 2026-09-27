@@ -24,7 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/crops/{cropId}/actuators")
-@Tag(name = "Actuadores", description = "Bomba, luz UV, ventilador y demás salidas de la maceta")
+@Tag(name = "Actuadores", description = "Bomba, luz UV, ventilador y demás salidas de cada cultivo")
 public class ActuatorController {
 
     private final ActuatorService actuatorService;

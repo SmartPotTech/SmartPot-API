@@ -28,7 +28,7 @@ public class Actuator {
 
     private ActuatorType type;
 
-    /** Último estado confirmado por la maceta. */
+    /** Último estado confirmado por el dispositivo. */
     private boolean active;
 
     private Instant lastChangedAt;
