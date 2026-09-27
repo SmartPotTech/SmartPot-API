@@ -61,7 +61,7 @@ public class ReadingService {
         this.maxPageSize = properties.readings().maxPageSize();
     }
 
-    /** Telemetría de la maceta. Se descarta si el cultivo no existe o si llega más rápido que el intervalo mínimo. */
+    /** Telemetría del dispositivo. Se descarta si el cultivo no existe o si llega más rápido que el intervalo mínimo. */
     public Optional<Reading> recordFromDevice(String cropId, Measures measures) {
         Optional<Crop> crop = cropService.find(cropId);
         if (crop.isEmpty()) {

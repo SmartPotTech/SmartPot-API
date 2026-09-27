@@ -81,7 +81,7 @@ public class ReadingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Registrar una lectura manual", description = "Para macetas sin MQTT o pruebas; se prefiere MQTT")
+    @Operation(summary = "Registrar una lectura manual", description = "Para dispositivos sin MQTT o pruebas; se prefiere MQTT")
     public ReadingResponse create(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
                                   @RequestBody MeasuresRequest request) {
         return ReadingMapper.toResponse(readingService.recordManual(jwt.getSubject(), cropId, request.toMeasures()));
