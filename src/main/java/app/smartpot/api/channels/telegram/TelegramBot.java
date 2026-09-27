@@ -22,7 +22,7 @@ public class TelegramBot {
 
     static final String HELP = """
             Soy el asistente de <b>SmartPot</b> 🌱
-            Te aviso aquí cuando un cultivo necesita atención, cuando una maceta se desconecta o cuando el \
+            Te aviso aquí cuando un cultivo necesita atención, cuando un cultivo se desconecta o cuando el \
             asistente actúa por su cuenta.
 
             /estado — cómo están tus cultivos
@@ -94,7 +94,8 @@ public class TelegramBot {
         StringBuilder text = new StringBuilder("🌱 <b>Tus cultivos</b>\n");
         for (Crop crop : crops) {
             boolean online = crop.getDevice() != null && crop.getDevice().isOnline();
-            text.append("\n• <b>").append(TelegramChannel.escape(crop.getName())).append("</b> — ")
+            text.append("\n• <b>").append(TelegramChannel.escape(crop.getName())).append("</b>")
+                    .append(crop.isVirtual() ? " (virtual)" : "").append(" — ")
                     .append(online ? "🟢 en línea" : "⚪ sin conexión");
             if (crop.getHealth() != null) {
                 text.append(" · ").append(TelegramChannel.escape(crop.getHealth().label()))
