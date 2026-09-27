@@ -22,5 +22,9 @@ public interface CommandRepository extends MongoRepository<Command, String> {
 
     boolean existsByActuatorIdAndStatusIn(String actuatorId, Collection<CommandStatus> statuses);
 
+    List<Command> findByCropIdInOrderByCreatedAtDesc(Collection<String> cropIds, Pageable pageable);
+
+    long countByCropIdInAndCreatedAtAfter(Collection<String> cropIds, Instant since);
+
     void deleteByCropId(String cropId);
 }
