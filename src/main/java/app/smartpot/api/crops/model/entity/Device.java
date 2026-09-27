@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * Credenciales MQTT de la maceta. La clave se guarda cifrada para poder reaprovisionar el broker.
+ * Credenciales MQTT del dispositivo. La clave se guarda cifrada para poder reaprovisionar el broker.
  */
 @Data
 @Builder
