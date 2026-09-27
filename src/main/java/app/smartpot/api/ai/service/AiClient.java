@@ -1,6 +1,8 @@
 package app.smartpot.api.ai.service;
 
 import app.smartpot.api.ai.config.AiProperties;
+import app.smartpot.api.ai.model.dto.FleetRequest;
+import app.smartpot.api.ai.model.dto.FleetResponse;
 import app.smartpot.api.ai.model.dto.InsightRequest;
 import app.smartpot.api.ai.model.dto.InsightResponse;
 import app.smartpot.api.cache.CacheStore;
@@ -70,6 +72,26 @@ public class AiClient {
             return response;
         } catch (RestClientException ex) {
             log.warn("Falló la consulta al servicio de IA: {}", ex.getMessage());
+            throw ApiException.unavailable(UNAVAILABLE);
+        }
+    }
+
+    /** Análisis de todos los cultivos de una cuenta: ranking, problemas compartidos, grupos y acciones en bloque. */
+    public FleetResponse fleet(FleetRequest request) {
+        requireEnabled();
+        try {
+            FleetResponse response = restClient.post()
+                    .uri("/v1/fleet")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(FleetResponse.class);
+            if (response == null) {
+                throw ApiException.unavailable(UNAVAILABLE);
+            }
+            return response;
+        } catch (RestClientException ex) {
+            log.warn("Falló el análisis de flota del servicio de IA: {}", ex.getMessage());
             throw ApiException.unavailable(UNAVAILABLE);
         }
     }
