@@ -23,8 +23,8 @@ final class MailTemplates {
     static Content welcome(String name, String loginUrl) {
         String safeName = HtmlUtils.htmlEscape(name);
         String body = paragraph("Hola " + safeName + ",")
-                + paragraph("Tu cuenta de SmartPot está lista. Crea tu primer cultivo, conecta tu maceta y recibe "
-                + "recomendaciones del asistente de IA para mantenerla en su rango ideal.")
+                + paragraph("Tu cuenta de SmartPot está lista. Crea tu primer cultivo, real o virtual, y recibe "
+                + "recomendaciones del asistente de IA para mantenerlo en su rango ideal.")
                 + button("Ir a SmartPot", loginUrl);
         String text = "Hola " + name + ",\n\nTu cuenta de SmartPot está lista. Ingresa en: " + loginUrl;
         return new Content(layout("Bienvenido a SmartPot", body), text);

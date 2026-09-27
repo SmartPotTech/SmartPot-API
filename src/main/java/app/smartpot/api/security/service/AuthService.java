@@ -85,7 +85,7 @@ public class AuthService {
             throw ApiException.conflict("Ya existe una cuenta con ese correo");
         }
         notificationService.notify(user.getId(), null, NotificationType.INFO, "¡Bienvenido a SmartPot!",
-                "Crea tu primer cultivo y conecta tu maceta para empezar a monitorearla.");
+                "Crea tu primer cultivo, real o virtual, para empezar a monitorearlo.");
         mailService.sendWelcome(user);
         log.info("Cuenta registrada: {}", user.getId());
         return toAuthResponse(user);
