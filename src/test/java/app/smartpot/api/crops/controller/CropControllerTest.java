@@ -99,4 +99,18 @@ class CropControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fields.enabled").exists());
     }
+
+    @Test
+    void bulkAutomationAppliesToTheSelectedCrops() throws Exception {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE)
+                .automationEnabled(true).createdAt(Instant.now()).build();
+        when(cropService.setAutomation(OWNER, List.of(CROP), true)).thenReturn(List.of(crop));
+        when(readingService.latest(CROP)).thenReturn(Optional.empty());
+
+        mvc.perform(put("/api/v1/crops/automation").with(jwt().jwt(token -> token.subject(OWNER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cropIds\":[\"" + CROP + "\"],\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].automationEnabled").value(true));
+    }
 }

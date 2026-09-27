@@ -2,6 +2,7 @@ package app.smartpot.api.crops.controller;
 
 import app.smartpot.api.crops.mapper.CropMapper;
 import app.smartpot.api.crops.model.dto.AutomationRequest;
+import app.smartpot.api.crops.model.dto.BulkAutomationRequest;
 import app.smartpot.api.crops.model.dto.CropCreatedResponse;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.dto.CropResponse;
@@ -74,6 +75,15 @@ public class CropController {
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId) {
         cropService.delete(jwt.getSubject(), cropId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/automation")
+    @Operation(summary = "Modo automático en varios cultivos",
+            description = "Sin cropIds se aplica a todos los cultivos de la cuenta")
+    public List<CropResponse> bulkAutomation(@AuthenticationPrincipal Jwt jwt,
+                                             @Valid @RequestBody BulkAutomationRequest request) {
+        return cropService.setAutomation(jwt.getSubject(), request.cropIds(), request.enabled()).stream()
+                .map(this::toResponse).toList();
     }
 
     @PutMapping("/{cropId}/automation")
