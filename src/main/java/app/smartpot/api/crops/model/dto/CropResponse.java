@@ -9,6 +9,8 @@ public record CropResponse(
         String id,
         String name,
         String type,
+        String kind,
+        String form,
         boolean automationEnabled,
         DeviceStatus device,
         CropHealth health,
