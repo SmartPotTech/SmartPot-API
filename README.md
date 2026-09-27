@@ -110,7 +110,7 @@ La telemetría fuera de rango físico se descarta y cada cultivo guarda como má
 
 ## Asistente de IA
 
-Cada lectura dispara al agente de automatización: la envía a [SmartPot-AI](https://github.com/SmartPotTech/SmartPot-AI) junto con el historial reciente y los actuadores del cultivo. El servicio responde con un índice difuso de salud, el diagnóstico del sistema experto, las predicciones de los modelos y las acciones sugeridas. La API guarda el índice en el cultivo, avisa de los hallazgos críticos y, con el **modo automático** activo, ejecuta las acciones con un enfriamiento de 10 minutos por actuador. El historial viaja con la hora de cada lectura, así el asistente calcula tendencias y actúa antes de que una variable salga de su rango.
+Cada lectura nueva activa al agente de automatización, que evalúa el cultivo como máximo cada 30 segundos si tiene el modo automático y cada 5 minutos si no: envía la lectura a [SmartPot-AI](https://github.com/SmartPotTech/SmartPot-AI) junto con el historial reciente y los actuadores del cultivo. El servicio responde con un índice difuso de salud, el diagnóstico del sistema experto, las predicciones de los modelos y las acciones sugeridas. La API guarda el índice en el cultivo, avisa de los hallazgos críticos y, con el **modo automático** activo, ejecuta las acciones con un enfriamiento de 10 minutos por actuador. El historial viaja con la hora de cada lectura, así el asistente calcula tendencias y actúa antes de que una variable salga de su rango.
 
 Cada lectura que llega también se encola para el **aprendizaje continuo**: cada minuto la API envía el lote a la IA (`/v1/learning/readings`) con la hora local; si la IA no responde, el lote espera al siguiente ciclo (la cola guarda hasta 20 000 lecturas). Al borrar un cultivo la IA olvida sus lecturas. La evaluación incluye `learning`: el estado de operación, si la lectura es atípica para la especie, la probabilidad de necesitar riego o ventilación en la próxima hora y la humedad esperada del sustrato.
 
@@ -178,6 +178,18 @@ docker pull ghcr.io/smartpottech/smartpot-api:latest
 ```
 
 La imagen compila con Maven en una etapa aparte, corre como el usuario `1000`, admite sistema de archivos de solo lectura con `tmpfs` en `/tmp` y trae un `HEALTHCHECK` sobre `/health`.
+
+Cada cambio en `main` pasa por el CI, publica la imagen en GHCR (y en Docker Hub como réplica cuando el repositorio tiene credenciales) y pide el despliegue al workflow central de [SmartPotTech/.github](https://github.com/SmartPotTech/.github), que actualiza producción de a uno y verifica `/health`.
+
+## Documentación
+
+La API es el centro de la plataforma: casi todo pasa por aquí. La [documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md) detalla los contratos MQTT y REST, las reglas del agente, los canales, las macetas virtuales y la seguridad. Los superdiagramas muestran la plataforma completa en una sola imagen ampliable:
+
+- [Arquitectura completa](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_01_Architecture.svg): los dominios de la API y cómo se conectan con el broker, la IA, el simulador, MongoDB, Redis y Telegram
+- [Operación completa](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_02_Operation_Sequence.svg): cada escena de la operación paso a paso, desde el arranque hasta el borrado de una cuenta
+- [Máquinas de estado](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_05_State_Machines.svg): los estados de un comando, de la maceta y su cuenta MQTT, del vínculo de Telegram y de la maceta virtual
+- [Modelo de dominio](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_06_Domain_Model.svg): las entidades, enumeraciones e interfaces con sus relaciones
+- [Recorrido de la PWA](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_07_User_Journey.svg): qué rutas llama cada pantalla de la PWA y qué servicio responde
 
 ## Licencia
 
