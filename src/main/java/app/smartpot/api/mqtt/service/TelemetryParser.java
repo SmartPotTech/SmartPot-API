@@ -20,7 +20,7 @@ public class TelemetryParser {
     }
 
     /**
-     * Lee la telemetría de la maceta. Acepta números o textos numéricos e ignora campos desconocidos.
+     * Lee la telemetría del dispositivo. Acepta números o textos numéricos e ignora campos desconocidos.
      */
     public Measures parseTelemetry(String payload) {
         JsonNode root = readObject(payload);

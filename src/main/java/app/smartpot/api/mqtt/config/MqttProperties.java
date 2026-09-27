@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * Conexión interna al broker y datos públicos que se le entregan al usuario para configurar su maceta.
+ * Conexión interna al broker y datos públicos que se le entregan al usuario para configurar su dispositivo.
  */
 @ConfigurationProperties(prefix = "smartpot.mqtt")
 public record MqttProperties(
