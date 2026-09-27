@@ -72,7 +72,7 @@ public class CommandService {
         Crop crop = cropService.getOwned(ownerId, cropId);
         Actuator actuator = actuatorService.getForCrop(crop.getId(), request.actuatorId());
         if (!gateway.isEnabled()) {
-            throw ApiException.unavailable("La comunicación con las macetas no está habilitada en este servidor");
+            throw ApiException.unavailable("La comunicación con los dispositivos no está habilitada en este servidor");
         }
         return dispatch(create(crop, actuator, request.action(), request.durationSeconds(), CommandSource.USER, null));
     }
@@ -91,7 +91,7 @@ public class CommandService {
     /** Misma orden para varios cultivos; cada uno se informa por separado y ninguno detiene a los demás. */
     public BulkCommandResponse requestBulk(String ownerId, BulkCommandRequest request) {
         if (!gateway.isEnabled()) {
-            throw ApiException.unavailable("La comunicación con las macetas no está habilitada en este servidor");
+            throw ApiException.unavailable("La comunicación con los dispositivos no está habilitada en este servidor");
         }
         List<Crop> crops = request.cropIds() == null || request.cropIds().isEmpty()
                 ? cropService.list(ownerId)
@@ -148,7 +148,7 @@ public class CommandService {
                 boolean active = command.getAction() == CommandAction.ACTIVATE && command.getDurationSeconds() == null;
                 actuatorService.updateState(command.getActuatorId(), active);
             } else {
-                notifyFailure(command, "La maceta no pudo ejecutar el comando: " + orDefault(ack.message()));
+                notifyFailure(command, "El dispositivo no pudo ejecutar el comando: " + orDefault(ack.message()));
             }
         });
     }
@@ -158,10 +158,10 @@ public class CommandService {
         Instant limit = clock.instant().minus(timeout);
         for (Command command : repository.findByStatusAndSentAtBefore(CommandStatus.SENT, limit)) {
             command.setStatus(CommandStatus.EXPIRED);
-            command.setMessage("La maceta no confirmó el comando a tiempo");
+            command.setMessage("El dispositivo no confirmó el comando a tiempo");
             command.setCompletedAt(clock.instant());
             repository.save(command);
-            notifyFailure(command, "La maceta no respondió al comando. Revisa que esté conectada.");
+            notifyFailure(command, "El dispositivo no respondió al comando. Revisa que esté conectado.");
         }
     }
 
