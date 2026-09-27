@@ -3,6 +3,7 @@ package app.smartpot.api.health;
 import app.smartpot.api.ai.service.AiClient;
 import app.smartpot.api.cache.CacheStore;
 import app.smartpot.api.mqtt.service.MqttGateway;
+import app.smartpot.api.virtualdevices.service.SimulatorClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.bson.Document;
@@ -27,12 +28,15 @@ public class HealthController {
     private final MqttGateway mqttGateway;
     private final CacheStore cacheStore;
     private final AiClient aiClient;
+    private final SimulatorClient simulatorClient;
 
-    public HealthController(MongoTemplate mongoTemplate, MqttGateway mqttGateway, CacheStore cacheStore, AiClient aiClient) {
+    public HealthController(MongoTemplate mongoTemplate, MqttGateway mqttGateway, CacheStore cacheStore, AiClient aiClient,
+                            SimulatorClient simulatorClient) {
         this.mongoTemplate = mongoTemplate;
         this.mqttGateway = mqttGateway;
         this.cacheStore = cacheStore;
         this.aiClient = aiClient;
+        this.simulatorClient = simulatorClient;
     }
 
     @GetMapping("/health")
@@ -45,6 +49,7 @@ public class HealthController {
         body.put("broker", !mqttGateway.isEnabled() ? "DISABLED" : mqttGateway.isConnected() ? "UP" : "DOWN");
         body.put("cache", cacheStore.isRedisAvailable() ? "UP" : "DOWN");
         body.put("ai", !aiClient.isEnabled() ? "DISABLED" : aiClient.isHealthy() ? "UP" : "DOWN");
+        body.put("simulator", !simulatorClient.isAvailable() ? "DISABLED" : simulatorClient.isHealthy() ? "UP" : "DOWN");
         return ResponseEntity.status(database ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE).body(body);
     }
 
