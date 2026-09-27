@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,6 +28,9 @@ public class InsightService {
     private final ReadingService readingService;
     private final ActuatorService actuatorService;
     private final Clock clock;
+    /** Cuántas lecturas se revisan por cada punto enviado: el historial abarca más tiempo sin crecer. */
+    static final int HISTORY_WINDOW_FACTOR = 8;
+
     private final int historySize;
     private final ZoneId timezone;
 
@@ -50,9 +54,8 @@ public class InsightService {
 
     /** Consulta al servicio de IA y guarda el índice de salud en el cultivo. */
     public InsightResponse evaluate(Crop crop, Reading latest) {
-        List<HistoryPoint> history = readingService.recent(crop.getId(), historySize).reversed().stream()
-                .map(HistoryPoint::of)
-                .toList();
+        List<Reading> window = readingService.recent(crop.getId(), historySize * HISTORY_WINDOW_FACTOR).reversed();
+        List<HistoryPoint> history = sample(window, historySize).stream().map(HistoryPoint::of).toList();
         List<String> actuators = actuatorService.listForCrop(crop.getId()).stream()
                 .map(Actuator::getType)
                 .map(Enum::name)
@@ -67,5 +70,20 @@ public class InsightService {
                     response.health().level(), response.health().label(), now));
         }
         return response;
+    }
+
+    /**
+     * Toma hasta {@code size} lecturas repartidas en todo el periodo, incluidas la primera y la última,
+     * para que el pronóstico vea la tendencia de varias horas y no solo los últimos minutos.
+     */
+    static <T> List<T> sample(List<T> items, int size) {
+        if (items.size() <= size || size < 2) {
+            return items;
+        }
+        List<T> sampled = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            sampled.add(items.get((int) Math.round(i * (items.size() - 1) / (double) (size - 1))));
+        }
+        return sampled;
     }
 }

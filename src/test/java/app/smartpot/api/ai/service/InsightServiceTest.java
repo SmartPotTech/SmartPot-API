@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,5 +62,15 @@ class InsightServiceTest {
         assertThat(request.getValue().cropType()).isEqualTo("TOMATO");
         assertThat(request.getValue().history()).extracting(HistoryPoint::measuredAt)
                 .containsExactly(Instant.parse("2026-09-26T03:30:00Z"));
+    }
+
+    @Test
+    void historyIsSampledAcrossTheWholeWindow() {
+        List<Integer> readings = IntStream.range(0, 384).boxed().toList();
+
+        List<Integer> sampled = InsightService.sample(readings, 48);
+
+        assertThat(sampled).hasSize(48).startsWith(0).endsWith(383);
+        assertThat(InsightService.sample(List.of(1, 2, 3), 48)).containsExactly(1, 2, 3);
     }
 }
