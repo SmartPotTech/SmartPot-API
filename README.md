@@ -183,13 +183,13 @@ Cada cambio en `main` pasa por el CI, publica la imagen en GHCR (y en Docker Hub
 
 ## Documentación
 
-La API es el centro de la plataforma: casi todo pasa por aquí. La [documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md) detalla los contratos MQTT y REST, las reglas del agente, los canales, las macetas virtuales y la seguridad. Los superdiagramas muestran la plataforma completa en una sola imagen ampliable:
+La API es el centro de la plataforma: casi todo pasa por aquí. La [documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md) detalla los contratos MQTT y REST, las reglas del agente, los canales, las macetas virtuales y la seguridad. Los diagramas generales muestran la plataforma completa en una sola imagen ampliable:
 
-- [Arquitectura completa](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_01_Architecture.svg): los dominios de la API y cómo se conectan con el broker, la IA, el simulador, MongoDB, Redis y Telegram
-- [Operación completa](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_02_Operation_Sequence.svg): cada escena de la operación paso a paso, desde el arranque hasta el borrado de una cuenta
-- [Máquinas de estado](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_05_State_Machines.svg): los estados de un comando, de la maceta y su cuenta MQTT, del vínculo de Telegram y de la maceta virtual
-- [Modelo de dominio](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_06_Domain_Model.svg): las entidades, enumeraciones e interfaces con sus relaciones
-- [Recorrido de la PWA](https://github.com/SmartPotTech/.github/blob/main/docs/images/superdiagrams/SmartPot_Super_07_User_Journey.svg): qué rutas llama cada pantalla de la PWA y qué servicio responde
+- [Arquitectura completa](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_01_Architecture.svg): los dominios de la API y cómo se conectan con el broker, la IA, el simulador, MongoDB, Redis y Telegram
+- [Operación completa](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_02_Operation_Sequence.svg): cada escena de la operación paso a paso, desde el arranque hasta el borrado de una cuenta
+- [Máquinas de estado](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_05_State_Machines.svg): los estados de un comando, de la maceta y su cuenta MQTT, del vínculo de Telegram y de la maceta virtual
+- [Modelo de dominio](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_06_Domain_Model.svg): las entidades, enumeraciones e interfaces con sus relaciones
+- [Recorrido de la PWA](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_07_User_Journey.svg): qué rutas llama cada pantalla de la PWA y qué servicio responde
 
 ## Licencia
 
