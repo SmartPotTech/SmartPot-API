@@ -9,6 +9,6 @@ import java.util.List;
  * los actuadores disponibles para que el agente solo proponga acciones ejecutables
  * y la hora local de la lectura (0–23) para respetar el fotoperiodo.
  */
-public record InsightRequest(String cropType, Measures measures, List<Measures> history, List<String> actuators,
+public record InsightRequest(String cropType, Measures measures, List<HistoryPoint> history, List<String> actuators,
                              Integer localHour) {
 }
