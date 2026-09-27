@@ -10,9 +10,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** Cómo debe comportarse la maceta virtual; manual y location son opcionales según el modo. */
+/** Cómo se simula un cultivo virtual; manual y location son opcionales según el modo. */
 public record VirtualDeviceRequest(
-        @NotNull(message = "Elige el modo de la maceta virtual")
+        @NotNull(message = "Elige el modo de la simulación")
         VirtualMode mode,
         @Valid ManualValues manual,
         @Valid LocationRequest location,
@@ -21,7 +21,7 @@ public record VirtualDeviceRequest(
         Integer intervalSeconds
 ) {
 
-    /** Medidores del modo manual, en la escala de los sensores de la maceta. */
+    /** Medidores del modo manual, en la escala de los sensores del dispositivo. */
     public record ManualValues(
             @DecimalMin("-20") @DecimalMax("60") Double temperature,
             @DecimalMin("0") @DecimalMax("100") Double humidity,
