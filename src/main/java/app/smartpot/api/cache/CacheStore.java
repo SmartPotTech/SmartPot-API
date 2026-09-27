@@ -75,6 +75,15 @@ public class CacheStore {
         });
     }
 
+    /** Lee y borra en una sola operación: sirve para códigos de un solo uso. */
+    public Optional<String> take(String key) {
+        String fullKey = PREFIX + key;
+        return withRedis(() -> Optional.ofNullable(redis.opsForValue().getAndDelete(fullKey)), () -> {
+            LocalEntry entry = local.remove(fullKey);
+            return entry == null || entry.isExpired(now()) ? Optional.empty() : Optional.of(entry.value());
+        });
+    }
+
     public boolean isRedisAvailable() {
         try {
             return "PONG".equalsIgnoreCase(redis.execute(connection -> connection.ping(), true));
