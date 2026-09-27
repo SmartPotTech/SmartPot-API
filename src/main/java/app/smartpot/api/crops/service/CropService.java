@@ -128,6 +128,19 @@ public class CropService {
         return cropRepository.save(crop);
     }
 
+    /** Modo automático para varios cultivos a la vez; sin ids, para todos los de la cuenta. */
+    public List<Crop> setAutomation(String ownerId, List<String> cropIds, boolean enabled) {
+        List<Crop> crops = cropIds == null || cropIds.isEmpty()
+                ? list(ownerId)
+                : cropIds.stream().distinct().map(id -> getOwned(ownerId, id)).toList();
+        Instant now = clock.instant();
+        crops.forEach(crop -> {
+            crop.setAutomationEnabled(enabled);
+            crop.setUpdatedAt(now);
+        });
+        return cropRepository.saveAll(crops);
+    }
+
     public DeviceCredentialsResponse deviceInfo(String ownerId, String cropId) {
         Crop crop = getOwned(ownerId, cropId);
         return credentials(crop, null);
