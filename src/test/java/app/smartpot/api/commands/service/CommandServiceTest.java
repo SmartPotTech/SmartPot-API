@@ -3,6 +3,8 @@ package app.smartpot.api.commands.service;
 import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.actuators.model.entity.ActuatorType;
 import app.smartpot.api.actuators.service.ActuatorService;
+import app.smartpot.api.commands.model.dto.BulkCommandRequest;
+import app.smartpot.api.commands.model.dto.BulkCommandResponse;
 import app.smartpot.api.commands.model.dto.CommandRequest;
 import app.smartpot.api.commands.model.entity.Command;
 import app.smartpot.api.commands.model.entity.CommandAction;
@@ -11,6 +13,7 @@ import app.smartpot.api.commands.model.entity.CommandStatus;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.mqtt.model.CommandAckMessage;
 import app.smartpot.api.mqtt.service.MqttGateway;
 import app.smartpot.api.mqtt.service.MqttTopicResolver;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -139,5 +143,45 @@ class CommandServiceTest {
 
         assertThat(stale.getStatus()).isEqualTo(CommandStatus.EXPIRED);
         verify(notificationService).notifyOnce(anyString(), any(), eq(OWNER), eq(CROP), any(), anyString(), anyString());
+    }
+
+    @Test
+    void bulkCommandsReportEachCropSeparately() {
+        Crop tomato = Crop.builder().id("6718f0a1b2c3d4e5f6a7b8ca").ownerId(OWNER).name("Tomates").build();
+        Crop basil = Crop.builder().id("6718f0a1b2c3d4e5f6a7b8cb").ownerId(OWNER).name("Albahaca").build();
+        Actuator busyPump = Actuator.builder().id("6718f0a1b2c3d4e5f6a7b8d1").cropId(basil.getId())
+                .type(ActuatorType.WATER_PUMP).build();
+        when(cropService.list(OWNER)).thenReturn(List.of(crop, tomato, basil));
+        when(actuatorService.findByType(CROP, ActuatorType.WATER_PUMP)).thenReturn(Optional.of(pump));
+        when(actuatorService.findByType(tomato.getId(), ActuatorType.WATER_PUMP)).thenReturn(Optional.empty());
+        when(actuatorService.findByType(basil.getId(), ActuatorType.WATER_PUMP)).thenReturn(Optional.of(busyPump));
+        when(repository.existsByActuatorIdAndStatusIn(eq(busyPump.getId()), any())).thenReturn(true);
+        when(gateway.publish(anyString(), anyString(), anyInt(), anyBoolean())).thenReturn(true);
+
+        BulkCommandResponse response = service.requestBulk(OWNER,
+                new BulkCommandRequest(null, ActuatorType.WATER_PUMP, CommandAction.ACTIVATE, 15));
+
+        assertThat(response.sent()).isEqualTo(1);
+        assertThat(response.skipped()).isEqualTo(2);
+        assertThat(response.results()).extracting(BulkCommandResponse.Result::status)
+                .containsExactly("SENT", "SKIPPED", "SKIPPED");
+        assertThat(response.results().get(1).message()).isEqualTo("El cultivo no tiene este actuador");
+    }
+
+    @Test
+    void bulkCommandsOnlyTouchTheCallersCrops() {
+        when(cropService.getOwned(OWNER, "6718f0a1b2c3d4e5f6a7b999"))
+                .thenThrow(ApiException.notFound("El cultivo no existe"));
+
+        assertThatThrownBy(() -> service.requestBulk(OWNER, new BulkCommandRequest(
+                        List.of("6718f0a1b2c3d4e5f6a7b999"), ActuatorType.FAN, CommandAction.DEACTIVATE, null)))
+                .hasMessage("El cultivo no existe");
+        verify(gateway, never()).publish(anyString(), anyString(), anyInt(), anyBoolean());
+    }
+
+    @Test
+    void ownerHistoryIsEmptyWithoutCrops() {
+        when(cropService.list(OWNER)).thenReturn(List.of());
+        assertThat(service.listForOwner(OWNER, 50)).isEmpty();
     }
 }

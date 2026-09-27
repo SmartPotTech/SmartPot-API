@@ -3,6 +3,8 @@ package app.smartpot.api.commands.service;
 import app.smartpot.api.actuators.model.entity.Actuator;
 import app.smartpot.api.actuators.model.entity.ActuatorType;
 import app.smartpot.api.actuators.service.ActuatorService;
+import app.smartpot.api.commands.model.dto.BulkCommandRequest;
+import app.smartpot.api.commands.model.dto.BulkCommandResponse;
 import app.smartpot.api.commands.model.dto.CommandRequest;
 import app.smartpot.api.commands.model.entity.Command;
 import app.smartpot.api.commands.model.entity.CommandAction;
@@ -29,6 +31,8 @@ import tools.jackson.databind.json.JsonMapper;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -82,6 +86,45 @@ public class CommandService {
             return Optional.empty();
         }
         return Optional.of(dispatch(create(crop, actuator.get(), action, durationSeconds, CommandSource.AGENT, reason)));
+    }
+
+    /** Misma orden para varios cultivos; cada uno se informa por separado y ninguno detiene a los demás. */
+    public BulkCommandResponse requestBulk(String ownerId, BulkCommandRequest request) {
+        if (!gateway.isEnabled()) {
+            throw ApiException.unavailable("La comunicación con las macetas no está habilitada en este servidor");
+        }
+        List<Crop> crops = request.cropIds() == null || request.cropIds().isEmpty()
+                ? cropService.list(ownerId)
+                : request.cropIds().stream().distinct().map(id -> cropService.getOwned(ownerId, id)).toList();
+        List<BulkCommandResponse.Result> results = new ArrayList<>();
+        for (Crop crop : crops) {
+            Optional<Actuator> actuator = actuatorService.findByType(crop.getId(), request.actuatorType());
+            if (actuator.isEmpty()) {
+                results.add(skipped(crop, "El cultivo no tiene este actuador"));
+            } else if (repository.existsByActuatorIdAndStatusIn(actuator.get().getId(), IN_FLIGHT)) {
+                results.add(skipped(crop, "Ya hay un comando en curso para este actuador"));
+            } else {
+                Command command = dispatch(create(crop, actuator.get(), request.action(), request.durationSeconds(),
+                        CommandSource.USER, "Acción en bloque"));
+                results.add(new BulkCommandResponse.Result(crop.getId(), crop.getName(),
+                        command.getStatus() == CommandStatus.SENT ? "SENT" : "FAILED", command.getId(),
+                        command.getMessage()));
+            }
+        }
+        return BulkCommandResponse.of(results);
+    }
+
+    /** Comandos de todos los cultivos de la cuenta, más recientes primero. */
+    public List<Command> listForOwner(String ownerId, int limit) {
+        List<String> cropIds = cropService.list(ownerId).stream().map(Crop::getId).toList();
+        if (cropIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findByCropIdInOrderByCreatedAtDesc(cropIds, PageRequest.of(0, Math.clamp(limit, 1, 200)));
+    }
+
+    public long countSince(Collection<String> cropIds, Instant since) {
+        return cropIds.isEmpty() ? 0 : repository.countByCropIdInAndCreatedAtAfter(cropIds, since);
     }
 
     public List<Command> list(String ownerId, String cropId, int limit) {
@@ -158,6 +201,10 @@ public class CommandService {
         cropService.find(command.getCropId()).ifPresent(crop -> notificationService.notifyOnce(
                 "command-failure:" + crop.getId(), FAILURE_NOTICE_COOLDOWN, crop.getOwnerId(), crop.getId(),
                 NotificationType.COMMAND, "Comando sin ejecutar en " + crop.getName(), message));
+    }
+
+    private static BulkCommandResponse.Result skipped(Crop crop, String reason) {
+        return new BulkCommandResponse.Result(crop.getId(), crop.getName(), "SKIPPED", null, reason);
     }
 
     private static String truncate(String value) {
