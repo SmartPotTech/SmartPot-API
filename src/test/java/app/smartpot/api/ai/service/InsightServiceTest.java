@@ -49,7 +49,7 @@ class InsightServiceTest {
         when(readingService.recent(anyString(), anyInt())).thenReturn(List.of(previous));
         when(actuatorService.listForCrop(anyString())).thenReturn(List.of());
         when(aiClient.insights(any())).thenReturn(new InsightResponse("TOMATO", null, List.of(), List.of(),
-                List.of(), List.of(), List.of(), "", null));
+                List.of(), List.of(), List.of(), null, "", null));
         Crop crop = Crop.builder().id(CROP).type(CropType.TOMATO).build();
         Reading reading = Reading.builder().cropId(CROP).measuredAt(Instant.parse("2026-09-26T03:30:00Z"))
                 .measures(Measures.builder().brightness(20.0).build()).build();
