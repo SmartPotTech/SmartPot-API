@@ -6,6 +6,8 @@ import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropType;
+import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.repository.CropRepository;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.mqtt.service.DeviceProvisioner;
@@ -16,6 +18,7 @@ import app.smartpot.api.security.service.EncryptionService;
 import app.smartpot.api.support.TestProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 
@@ -44,13 +47,14 @@ class CropServiceTest {
     private final NotificationService notificationService = mock(NotificationService.class);
     private final DeviceProvisioner provisioner = mock(DeviceProvisioner.class);
     private final EncryptionService encryptionService = new EncryptionService(TestProperties.smartPot());
+    private final ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
     private CropService service;
 
     @BeforeEach
     void setUp() {
         service = new CropService(cropRepository, readingRepository, actuatorRepository, commandRepository,
                 notificationService, provisioner, encryptionService, new MqttTopicResolver(TestProperties.mqtt()),
-                TestProperties.mqtt(), mock(MongoTemplate.class), Clock.systemUTC());
+                TestProperties.mqtt(), mock(MongoTemplate.class), publisher, Clock.systemUTC());
         when(cropRepository.save(any(Crop.class))).thenAnswer(invocation -> {
             Crop crop = invocation.getArgument(0);
             if (crop.getId() == null) {
@@ -102,6 +106,8 @@ class CropServiceTest {
 
         verify(provisioner).provision(CROP, key, true);
         assertThat(encryptionService.decrypt(crop.getDevice().getKeyCiphertext())).isEqualTo(key);
+        assertThat(service.deviceKey(crop)).contains(key);
+        verify(publisher).publishEvent(new DeviceKeyRotatedEvent(CROP));
     }
 
     @Test
@@ -116,6 +122,7 @@ class CropServiceTest {
         verify(actuatorRepository).deleteByCropId(CROP);
         verify(notificationService).deleteAllForCrop(CROP);
         verify(provisioner).deprovision(CROP);
+        verify(publisher).publishEvent(new CropDeletedEvent(CROP, OWNER));
     }
 
     @Test

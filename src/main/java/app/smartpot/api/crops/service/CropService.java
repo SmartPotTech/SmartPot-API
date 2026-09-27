@@ -9,6 +9,8 @@ import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropHealth;
 import app.smartpot.api.crops.model.entity.Device;
+import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.repository.CropRepository;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.exception.ObjectIds;
@@ -20,6 +22,7 @@ import app.smartpot.api.notifications.service.NotificationService;
 import app.smartpot.api.readings.repository.ReadingRepository;
 import app.smartpot.api.security.service.EncryptionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -53,6 +56,7 @@ public class CropService {
     private final MqttTopicResolver topics;
     private final MqttProperties mqttProperties;
     private final MongoTemplate mongoTemplate;
+    private final ApplicationEventPublisher publisher;
     private final Clock clock;
     private final SecureRandom random = new SecureRandom();
 
@@ -60,7 +64,7 @@ public class CropService {
                        ActuatorRepository actuatorRepository, CommandRepository commandRepository,
                        NotificationService notificationService, DeviceProvisioner deviceProvisioner,
                        EncryptionService encryptionService, MqttTopicResolver topics, MqttProperties mqttProperties,
-                       MongoTemplate mongoTemplate, Clock clock) {
+                       MongoTemplate mongoTemplate, ApplicationEventPublisher publisher, Clock clock) {
         this.cropRepository = cropRepository;
         this.readingRepository = readingRepository;
         this.actuatorRepository = actuatorRepository;
@@ -71,6 +75,7 @@ public class CropService {
         this.topics = topics;
         this.mqttProperties = mqttProperties;
         this.mongoTemplate = mongoTemplate;
+        this.publisher = publisher;
         this.clock = clock;
     }
 
@@ -156,7 +161,17 @@ public class CropService {
         crop.setUpdatedAt(clock.instant());
         cropRepository.save(crop);
         deviceProvisioner.provision(crop.getId(), key, true);
+        publisher.publishEvent(new DeviceKeyRotatedEvent(crop.getId()));
         return credentials(crop, key);
+    }
+
+    /** Clave de la maceta en claro, solo para servicios internos que actúan como la maceta (simulador). */
+    public Optional<String> deviceKey(Crop crop) {
+        Device device = crop.getDevice();
+        if (device == null || device.getKeyCiphertext() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(encryptionService.decrypt(device.getKeyCiphertext()));
     }
 
     public void delete(String ownerId, String cropId) {
@@ -200,6 +215,7 @@ public class CropService {
         notificationService.deleteAllForCrop(cropId);
         cropRepository.delete(crop);
         deviceProvisioner.deprovision(cropId);
+        publisher.publishEvent(new CropDeletedEvent(cropId, crop.getOwnerId()));
         log.info("Cultivo {} eliminado con sus lecturas, comandos y actuadores", cropId);
     }
 
