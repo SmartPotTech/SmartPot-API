@@ -22,8 +22,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Lleva las lecturas reales al servicio de IA para el aprendizaje continuo. Se acumulan en memoria y se
- * envían por lotes; si la IA no responde, el lote vuelve a la cola y se intenta en el próximo ciclo.
+ * Lleva las lecturas reales al servicio de IA para el aprendizaje continuo; las de los cultivos virtuales son
+ * sintéticas y no se envían. Se acumulan en memoria y se envían por lotes; si la IA no responde, el lote vuelve a la cola y se intenta en el próximo ciclo.
  * La cola tiene tope: ante una caída larga se descartan primero las lecturas más antiguas.
  */
 @Slf4j
@@ -47,10 +47,10 @@ public class LearningFeed {
 
     @EventListener
     public void onReading(ReadingRecordedEvent event) {
-        if (!enabled) {
+        Crop crop = event.crop();
+        if (!enabled || crop.isVirtual()) {
             return;
         }
-        Crop crop = event.crop();
         Reading reading = event.reading();
         pending.addLast(new LearningReading(crop.getId(), crop.getType().name(), reading.getMeasuredAt(),
                 reading.getMeasuredAt().atZone(timezone).getHour(), reading.getMeasures()));

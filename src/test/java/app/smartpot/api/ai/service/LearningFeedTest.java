@@ -4,6 +4,7 @@ import app.smartpot.api.ai.config.AiLearningProperties;
 import app.smartpot.api.ai.config.AiProperties;
 import app.smartpot.api.ai.model.dto.LearningBatch;
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.exception.ApiException;
@@ -44,7 +45,11 @@ class LearningFeedTest {
     }
 
     private static ReadingRecordedEvent reading(String cropId, int minute) {
-        Crop crop = Crop.builder().id(cropId).type(CropType.LETTUCE).build();
+        return reading(cropId, minute, CropKind.REAL);
+    }
+
+    private static ReadingRecordedEvent reading(String cropId, int minute, CropKind kind) {
+        Crop crop = Crop.builder().id(cropId).type(CropType.LETTUCE).kind(kind).build();
         return new ReadingRecordedEvent(crop, Reading.builder().cropId(cropId)
                 .measuredAt(Instant.parse("2026-09-27T17:00:00Z").plusSeconds(minute * 60L))
                 .measures(Measures.builder().soilMoisture(64.0).build()).build());
@@ -95,6 +100,17 @@ class LearningFeedTest {
 
         assertThat(feed.pendingCount()).isEqualTo(1);
         verify(aiClient).forget(CROP);
+    }
+
+    @Test
+    void virtualCropsDoNotTeachTheModels() {
+        feed.onReading(reading(OTHER, 0, CropKind.VIRTUAL));
+        feed.onReading(reading(CROP, 0));
+        feed.flush();
+
+        ArgumentCaptor<LearningBatch> sent = ArgumentCaptor.forClass(LearningBatch.class);
+        verify(aiClient).learn(sent.capture());
+        assertThat(sent.getValue().readings()).extracting("cropId").containsExactly(CROP);
     }
 
     @Test
