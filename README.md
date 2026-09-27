@@ -4,7 +4,7 @@
 
 [![Java CI with Maven](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/maven.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/maven.yml)
 [![CodeQL Advanced](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml)
-[![Publish Package to GHCR](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml)
+[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml)
 
 ## Descripción
 
@@ -38,6 +38,7 @@ src/main/java/app/smartpot/api/
 ├── mail/            # Correos de bienvenida y de recuperación de contraseña
 ├── mqtt/            # Cliente Paho, tópicos v1, parser de telemetría y aprovisionamiento en Mosquitto
 ├── notifications/   # Alertas del cultivo, del dispositivo y del asistente
+├── overview/        # Panel general: totales, series comparativas y análisis de flota de la IA
 ├── readings/        # Lecturas, resumen estadístico y exportación CSV
 ├── security/        # JWT, CORS, límite de peticiones, AES-GCM y autenticación
 └── users/           # Perfil, cambio de contraseña y borrado de cuenta
@@ -58,6 +59,7 @@ Base local `http://localhost:8091`, producción `https://api.smartpot.app`. Las 
 | GET PUT DELETE | `/api/v1/users/me` (PUT `{name,lastName}`) | JWT |
 | PUT | `/api/v1/users/me/password` `{currentPassword,newPassword}` | JWT |
 | GET POST | `/api/v1/crops` (POST `{name,type}` devuelve la clave del dispositivo una sola vez) | JWT |
+| PUT | `/api/v1/crops/automation` `{cropIds?,enabled}` (modo automático en varios cultivos; sin ids, en todos) | JWT |
 | GET PUT DELETE | `/api/v1/crops/{id}` | JWT, solo el dueño |
 | PUT | `/api/v1/crops/{id}/automation` `{enabled}` | JWT, solo el dueño |
 | GET | `/api/v1/crops/{id}/device` (broker, usuario y tópicos) | JWT, solo el dueño |
@@ -66,7 +68,12 @@ Base local `http://localhost:8091`, producción `https://api.smartpot.app`. Las 
 | GET | `/api/v1/crops/{id}/readings/latest`, `/summary?hours=24`, `/export` (CSV) | JWT, solo el dueño |
 | GET POST DELETE | `/api/v1/crops/{id}/actuators`, `/actuators/{actuatorId}` | JWT, solo el dueño |
 | GET POST | `/api/v1/crops/{id}/commands` (POST `{actuatorId,action,durationSeconds}` → 202) | JWT, solo el dueño |
-| GET | `/api/v1/crops/{id}/insights` (diagnóstico del asistente de IA) | JWT, solo el dueño |
+| GET | `/api/v1/crops/{id}/insights` (diagnóstico del asistente de IA con pronósticos) | JWT, solo el dueño |
+| GET | `/api/v1/overview` (totales de la cuenta y cada cultivo con su última lectura) | JWT |
+| GET | `/api/v1/overview/series?metric=temperature&hours=24` (promedios por intervalo para comparar cultivos) | JWT |
+| GET | `/api/v1/overview/fleet` (ranking, problemas compartidos, grupos y acciones en bloque de la IA) | JWT |
+| GET | `/api/v1/commands?limit=50` (comandos de todos los cultivos) | JWT |
+| POST | `/api/v1/commands/bulk` `{cropIds?,actuatorType,action,durationSeconds}` → 202 con el resultado por cultivo | JWT |
 | GET | `/api/v1/notifications` (`unreadOnly`, `limit`), `/unread-count` | JWT |
 | PUT DELETE | `/api/v1/notifications/{id}/read`, `/read-all`, `/{id}` | JWT |
 
@@ -91,7 +98,9 @@ La telemetría fuera de rango físico se descarta y cada cultivo guarda como má
 
 ## Asistente de IA
 
-Cada lectura dispara al agente de automatización: la envía a [SmartPot-AI](https://github.com/SmartPotTech/SmartPot-AI) junto con el historial reciente y los actuadores del cultivo. El servicio responde con un índice difuso de salud, el diagnóstico del sistema experto, las predicciones de los modelos y las acciones sugeridas. La API guarda el índice en el cultivo, avisa de los hallazgos críticos y, con el **modo automático** activo, ejecuta las acciones con un enfriamiento de 10 minutos por actuador.
+Cada lectura dispara al agente de automatización: la envía a [SmartPot-AI](https://github.com/SmartPotTech/SmartPot-AI) junto con el historial reciente y los actuadores del cultivo. El servicio responde con un índice difuso de salud, el diagnóstico del sistema experto, las predicciones de los modelos y las acciones sugeridas. La API guarda el índice en el cultivo, avisa de los hallazgos críticos y, con el **modo automático** activo, ejecuta las acciones con un enfriamiento de 10 minutos por actuador. El historial viaja con la hora de cada lectura, así el asistente calcula tendencias y actúa antes de que una variable salga de su rango.
+
+El **panel general** (`/api/v1/overview`) mira la cuenta completa: las series comparativas se agregan en MongoDB con `$dateTrunc` (unos 48 puntos por cultivo) y el análisis de flota pide a la IA el ranking, los problemas que comparten varios cultivos y las acciones sugeridas en bloque, que se aplican con `/api/v1/commands/bulk`.
 
 ## Guía de Instalación
 
