@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 
-/** Campos opcionales: solo cambia lo que llega. */
+/**
+ * Campos opcionales: solo cambia lo que llega.
+ */
 public record ChannelLinkUpdateRequest(Boolean enabled, @Size(max = 5) Set<NotificationType> events) {
 }
