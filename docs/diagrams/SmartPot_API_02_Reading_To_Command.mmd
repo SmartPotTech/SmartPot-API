@@ -1,0 +1,33 @@
+%%{init: {"theme": "base", "fontFamily": "Segoe UI, Arial, sans-serif", "themeVariables": {"fontFamily": "Segoe UI, Arial, sans-serif", "fontSize": "15px", "primaryColor": "#DDF5EA", "primaryTextColor": "#17261F", "primaryBorderColor": "#067A52", "secondaryColor": "#E3F2FB", "secondaryTextColor": "#17261F", "secondaryBorderColor": "#1F6FA0", "tertiaryColor": "#F2F7F4", "tertiaryTextColor": "#17261F", "tertiaryBorderColor": "#D5E3DC", "lineColor": "#5B6B63", "textColor": "#17261F", "mainBkg": "#DDF5EA", "nodeBorder": "#067A52", "clusterBkg": "#F7FAF8", "clusterBorder": "#D5E3DC", "edgeLabelBackground": "#FFFFFF", "actorBkg": "#067A52", "actorBorder": "#0B3D2B", "actorTextColor": "#FFFFFF", "actorLineColor": "#5B6B63", "signalColor": "#17261F", "signalTextColor": "#17261F", "labelBoxBkgColor": "#0B3D2B", "labelBoxBorderColor": "#0B3D2B", "labelTextColor": "#FFFFFF", "loopTextColor": "#0B3D2B", "noteBkgColor": "#FDF4DD", "noteBorderColor": "#C98D12", "noteTextColor": "#17261F", "activationBkgColor": "#DDF5EA", "activationBorderColor": "#067A52", "attributeBackgroundColorOdd": "#FFFFFF", "attributeBackgroundColorEven": "#F2F7F4"}}}%%
+sequenceDiagram
+  autonumber
+  participant B as Broker
+  participant H as MqttMessageHandler
+  participant R as ReadingService
+  participant K as Redis
+  participant D as MongoDB
+  participant L as LearningFeed
+  participant G as AutomationAgent
+  participant I as SmartPot-AI
+  participant M as CommandService
+  B->>H: smartpot/v1/{cropId}/telemetry
+  H->>R: TelemetryParser → recordFromDevice
+  R->>K: SET NX reading:cropId (5 s)
+  R->>R: MeasureRanges: fuera del rango físico se descarta
+  R->>D: readings
+  R-)L: ReadingRecordedEvent
+  L->>L: encola solo si el cultivo es real
+  R-)G: ReadingRecordedEvent
+  G->>K: SET NX ai-eval:cropId (30 s con automático, 5 min sin él)
+  G->>I: POST /v1/insights · lectura, historial, actuadores y hora
+  I-->>G: salud, diagnóstico, predicciones y acciones
+  G->>D: crops.health
+  opt Modo automático
+    G->>K: SET NX agent:cropId:actuador (10 min)
+    G->>M: dispatch (origen AGENT)
+    M->>D: commands PENDING → SENT
+    M->>B: smartpot/v1/{cropId}/commands (QoS 1)
+    B->>H: commands/ack EXECUTED o FAILED
+    H->>M: confirma y actualiza el actuador
+  end
+  Note over L,I: Cada minuto LearningFeed envía el lote<br/>a POST /v1/learning/readings
