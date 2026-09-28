@@ -99,7 +99,7 @@ class CropServiceTest {
         service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO));
 
         assertThat(updated.getPlacement().location().name()).isEqualTo("Medellín");
-        assertThat(updated.getPlacement().isOutdoor()).isTrue();
+        assertThat(updated.getPlacement().setting()).isEqualTo(Placement.Setting.OUTDOOR);
         verify(publisher, times(1)).publishEvent(new CropPlacementChangedEvent(CROP));
     }
 

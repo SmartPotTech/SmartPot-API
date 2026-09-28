@@ -22,8 +22,4 @@ public record Placement(Setting setting, Exposure exposure, Location location) {
     public Placement withLocation(Location newLocation) {
         return new Placement(setting, exposure, newLocation);
     }
-
-    public boolean isOutdoor() {
-        return setting == Setting.OUTDOOR;
-    }
 }
