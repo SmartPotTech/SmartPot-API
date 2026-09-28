@@ -26,7 +26,9 @@ public record VirtualDeviceResponse(String cropId, boolean available, boolean ac
                 null, null, List.of(), null, null);
     }
 
-    /** location: la del cultivo, que la simulación comparte. */
+    /**
+     * location: la del cultivo, que la simulación comparte.
+     */
     public static VirtualDeviceResponse of(VirtualDevice config, VirtualLocation location, SimulatorPot live,
                                            boolean available) {
         boolean running = live != null;
