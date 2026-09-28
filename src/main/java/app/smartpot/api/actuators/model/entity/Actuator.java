@@ -28,17 +28,23 @@ public class Actuator {
 
     private ActuatorType type;
 
-    /** Encendido sin límite de tiempo, según la última confirmación del dispositivo. */
+    /**
+     * Encendido sin límite de tiempo, según la última confirmación del dispositivo.
+     */
     private boolean active;
 
-    /** Hasta cuándo sigue encendido por una orden con duración; null si no corre ninguna. */
+    /**
+     * Hasta cuándo sigue encendido por una orden con duración; null si no corre ninguna.
+     */
     private Instant runningUntil;
 
     private Instant lastChangedAt;
 
     private Instant createdAt;
 
-    /** Encendido ahora: sin límite o por una orden con duración que aún no termina. */
+    /**
+     * Encendido ahora: sin límite o por una orden con duración que aún no termina.
+     */
     public boolean isRunning(Instant now) {
         return active || (runningUntil != null && runningUntil.isAfter(now));
     }
