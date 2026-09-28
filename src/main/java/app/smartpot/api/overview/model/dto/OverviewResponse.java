@@ -9,7 +9,9 @@ import java.util.List;
  */
 public record OverviewResponse(Totals totals, List<CropResponse> crops) {
 
-    /** needsAttention: cultivos desconectados o con salud por debajo de 70. */
+    /**
+     * needsAttention: cultivos desconectados o con salud por debajo de 70.
+     */
     public record Totals(int crops, int online, int automated, Double averageHealth, int needsAttention,
                          long unreadAlerts, long commandsLast24h) {
     }
