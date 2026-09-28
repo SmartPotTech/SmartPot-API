@@ -38,7 +38,9 @@ public class ChannelLink {
 
     private ChannelType type;
 
-    /** Identificador del destino en el canal: en Telegram, el id del chat. */
+    /**
+     * Identificador del destino en el canal: en Telegram, el id del chat.
+     */
     private String address;
 
     private String displayName;
