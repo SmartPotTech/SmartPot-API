@@ -11,11 +11,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +45,27 @@ public class DeviceProvisioner {
         this.jsonMapper = jsonMapper;
     }
 
+    static boolean isIgnorable(String error) {
+        String normalized = error.toLowerCase();
+        return normalized.contains("already") || normalized.contains("not found");
+    }
+
+    private static Map<String, Object> acl(String role, String type, String topic) {
+        Map<String, Object> acl = command("addRoleACL", "rolename", role);
+        acl.put("acltype", type);
+        acl.put("topic", topic);
+        acl.put("priority", 5);
+        acl.put("allow", true);
+        return acl;
+    }
+
+    private static Map<String, Object> command(String name, String keyField, String keyValue) {
+        Map<String, Object> command = new LinkedHashMap<>();
+        command.put("command", name);
+        command.put(keyField, keyValue);
+        return command;
+    }
+
     @Async
     @EventListener
     public void onConnected(MqttConnectedEvent event) {
@@ -80,7 +97,9 @@ public class DeviceProvisioner {
         send(commands);
     }
 
-    /** Crea o actualiza la cuenta del dispositivo. Con kick=true desconecta la sesión anterior. */
+    /**
+     * Crea o actualiza la cuenta del dispositivo. Con kick=true desconecta la sesión anterior.
+     */
     public boolean provision(String cropId, String key, boolean kick) {
         if (!gateway.isEnabled()) {
             return false;
@@ -120,11 +139,6 @@ public class DeviceProvisioner {
         });
     }
 
-    static boolean isIgnorable(String error) {
-        String normalized = error.toLowerCase();
-        return normalized.contains("already") || normalized.contains("not found");
-    }
-
     private List<Map<String, Object>> upsertClient(String cropId, String key) {
         Map<String, Object> create = command("createClient", "username", cropId);
         create.put("password", key);
@@ -133,22 +147,6 @@ public class DeviceProvisioner {
         Map<String, Object> password = command("setClientPassword", "username", cropId);
         password.put("password", key);
         return List.of(create, password);
-    }
-
-    private static Map<String, Object> acl(String role, String type, String topic) {
-        Map<String, Object> acl = command("addRoleACL", "rolename", role);
-        acl.put("acltype", type);
-        acl.put("topic", topic);
-        acl.put("priority", 5);
-        acl.put("allow", true);
-        return acl;
-    }
-
-    private static Map<String, Object> command(String name, String keyField, String keyValue) {
-        Map<String, Object> command = new LinkedHashMap<>();
-        command.put("command", name);
-        command.put(keyField, keyValue);
-        return command;
     }
 
     private boolean send(List<Map<String, Object>> commands) {
