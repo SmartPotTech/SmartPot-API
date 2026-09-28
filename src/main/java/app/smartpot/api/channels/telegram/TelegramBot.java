@@ -26,11 +26,11 @@ public class TelegramBot {
             Soy el asistente de <b>SmartPot</b> 🌱
             Te aviso aquí cuando un cultivo necesita atención, cuando un cultivo se desconecta o cuando el \
             asistente actúa por su cuenta.
-
+            
             /estado — cómo están tus cultivos y los que te compartieron
             /desvincular — dejar de recibir avisos en este chat
             /ayuda — este mensaje
-
+            
             Para vincular este chat entra a SmartPot › Perfil › Aplicaciones y toca «Vincular Telegram». Si alguien \
             te comparte un cultivo, abre el enlace que te envíe.""";
     static final String NOT_LINKED = "Este chat aún no está vinculado. Entra a SmartPot › Perfil › Aplicaciones "
@@ -47,6 +47,22 @@ public class TelegramBot {
         this.cropChannelService = cropChannelService;
         this.cropService = cropService;
         this.client = client;
+    }
+
+    private static void describe(StringBuilder text, List<Crop> crops) {
+        for (Crop crop : crops) {
+            boolean online = crop.getDevice() != null && crop.getDevice().isOnline();
+            text.append("\n• <b>").append(TelegramChannel.escape(crop.getName())).append("</b>")
+                    .append(crop.isVirtual() ? " (virtual)" : "").append(" — ")
+                    .append(online ? "🟢 en línea" : "⚪ sin conexión");
+            if (crop.getHealth() != null) {
+                text.append(" · ").append(TelegramChannel.escape(crop.getHealth().label()))
+                        .append(" (").append(Math.round(crop.getHealth().index())).append("/100)");
+            }
+            if (crop.isAutomationEnabled()) {
+                text.append(" · 🤖 automático");
+            }
+        }
     }
 
     public void handle(TelegramUpdate update) {
@@ -82,16 +98,16 @@ public class TelegramBot {
             Optional<Crop> crop = cropChannelService.acceptShare(ChannelType.TELEGRAM, code, chatId, display);
             reply(chatId, crop.isPresent()
                     ? "¡Listo" + (name == null ? "" : ", " + TelegramChannel.escape(name)) + "! Desde ahora recibirás "
-                    + "aquí los avisos de «" + TelegramChannel.escape(crop.get().getName()) + "». Escribe /estado para "
-                    + "verlo y /desvincular para dejar de recibirlos."
+                      + "aquí los avisos de «" + TelegramChannel.escape(crop.get().getName()) + "». Escribe /estado para "
+                      + "verlo y /desvincular para dejar de recibirlos."
                     : "El enlace expiró, ya se usó o el cultivo ya se comparte con demasiados chats. Pide uno nuevo.");
             return;
         }
         Optional<ChannelLink> link = channelService.completeLink(ChannelType.TELEGRAM, code, chatId, display);
         reply(chatId, link.isPresent()
                 ? "¡Listo" + (name == null ? "" : ", " + TelegramChannel.escape(name)) + "! Este chat quedó vinculado "
-                + "a tu cuenta de SmartPot. Te avisaré de alertas, desconexiones y acciones del asistente; puedes "
-                + "elegir cuáles en tu perfil.\n\nEscribe /estado para ver tus cultivos."
+                  + "a tu cuenta de SmartPot. Te avisaré de alertas, desconexiones y acciones del asistente; puedes "
+                  + "elegir cuáles en tu perfil.\n\nEscribe /estado para ver tus cultivos."
                 : "El enlace expiró o ya se usó. Genera uno nuevo desde SmartPot › Perfil › Notificaciones.");
     }
 
@@ -124,22 +140,6 @@ public class TelegramBot {
             describe(text, shared);
         }
         return text.toString();
-    }
-
-    private static void describe(StringBuilder text, List<Crop> crops) {
-        for (Crop crop : crops) {
-            boolean online = crop.getDevice() != null && crop.getDevice().isOnline();
-            text.append("\n• <b>").append(TelegramChannel.escape(crop.getName())).append("</b>")
-                    .append(crop.isVirtual() ? " (virtual)" : "").append(" — ")
-                    .append(online ? "🟢 en línea" : "⚪ sin conexión");
-            if (crop.getHealth() != null) {
-                text.append(" · ").append(TelegramChannel.escape(crop.getHealth().label()))
-                        .append(" (").append(Math.round(crop.getHealth().index())).append("/100)");
-            }
-            if (crop.isAutomationEnabled()) {
-                text.append(" · 🤖 automático");
-            }
-        }
     }
 
     private void reply(String chatId, String html) {
