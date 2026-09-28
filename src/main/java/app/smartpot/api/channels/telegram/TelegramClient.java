@@ -17,12 +17,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Cliente mínimo del Bot API de Telegram (https://core.telegram.org/bots/api). */
+/**
+ * Cliente mínimo del Bot API de Telegram (https://core.telegram.org/bots/api).
+ */
 @Slf4j
 @Component
 public class TelegramClient {
 
-    /** Espera del sondeo largo: Telegram responde apenas llega un mensaje o al cumplirse este tiempo. */
+    /**
+     * Espera del sondeo largo: Telegram responde apenas llega un mensaje o al cumplirse este tiempo.
+     */
     static final int POLL_SECONDS = 25;
 
     private final RestClient client;
@@ -42,7 +46,18 @@ public class TelegramClient {
         return factory;
     }
 
-    /** Envía un mensaje con formato HTML; con url agrega el botón para abrir SmartPot. */
+    private static void call(RestClient restClient, String method, Map<String, ?> body) {
+        restClient.post()
+                .uri("/" + method)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    /**
+     * Envía un mensaje con formato HTML; con url agrega el botón para abrir SmartPot.
+     */
     public void sendMessage(String chatId, String html, String buttonText, String url) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("chat_id", chatId);
@@ -83,20 +98,13 @@ public class TelegramClient {
         call(client, "deleteWebhook", Map.of("drop_pending_updates", false));
     }
 
-    /** Menú de comandos que muestra la app de Telegram. */
+    /**
+     * Menú de comandos que muestra la app de Telegram.
+     */
     public void setCommands() {
         call(client, "setMyCommands", Map.of("commands", List.of(
                 Map.of("command", "estado", "description", "Estado de tus cultivos"),
                 Map.of("command", "desvincular", "description", "Dejar de recibir alertas aquí"),
                 Map.of("command", "ayuda", "description", "Qué puedo hacer"))));
-    }
-
-    private static void call(RestClient restClient, String method, Map<String, ?> body) {
-        restClient.post()
-                .uri("/" + method)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
-                .retrieve()
-                .toBodilessEntity();
     }
 }
