@@ -19,12 +19,16 @@ public record InsightRequest(String cropType, Measures measures, List<HistoryPoi
         this(cropType, measures, history, actuators, localHour, null, null);
     }
 
-    /** setting: INDOOR u OUTDOOR; exposure: FULL_SUN, PARTIAL_SUN o SHADE. Cualquiera puede faltar. */
+    /**
+     * setting: INDOOR u OUTDOOR; exposure: FULL_SUN, PARTIAL_SUN o SHADE. Cualquiera puede faltar.
+     */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Place(String setting, String exposure) {
     }
 
-    /** Clima actual del lugar del cultivo. */
+    /**
+     * Clima actual del lugar del cultivo.
+     */
     public record Outside(double temperature, double humidity, double precipitation, double radiation, boolean isDay,
                           String condition) {
     }
