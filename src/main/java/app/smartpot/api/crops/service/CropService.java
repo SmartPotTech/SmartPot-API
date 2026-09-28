@@ -11,7 +11,9 @@ import app.smartpot.api.crops.model.entity.CropForm;
 import app.smartpot.api.crops.model.entity.CropHealth;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.Device;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.repository.CropRepository;
 import app.smartpot.api.exception.ApiException;
@@ -37,6 +39,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -99,6 +102,7 @@ public class CropService {
                 .type(request.type())
                 .kind(kind)
                 .form(request.form() != null ? request.form() : CropForm.POT)
+                .placement(request.placement() == null ? null : request.placement().toPlacement())
                 .automationEnabled(false)
                 .device(Device.builder().keyCiphertext(encryptionService.encrypt(key)).keyRotatedAt(now).build())
                 .createdAt(now)
@@ -137,9 +141,34 @@ public class CropService {
         if (request.form() != null) {
             crop.setForm(request.form());
         }
+        Placement placement = request.placement() == null ? crop.getPlacement() : request.placement().toPlacement();
+        boolean moved = !Objects.equals(placement, crop.getPlacement());
+        crop.setPlacement(placement);
         crop.setHealth(null);
         crop.setUpdatedAt(clock.instant());
-        return cropRepository.save(crop);
+        Crop saved = cropRepository.save(crop);
+        if (moved) {
+            publisher.publishEvent(new CropPlacementChangedEvent(saved.getId()));
+        }
+        return saved;
+    }
+
+    /**
+     * Cambia solo el lugar (la simulación de un cultivo virtual lo elige al seguir un clima). Sin lugar previo, el
+     * cultivo queda al aire libre a pleno sol, que es como se simulaba antes de existir el lugar.
+     */
+    public Crop setLocation(Crop crop, Placement.Location location) {
+        Placement current = crop.getPlacement();
+        Placement placement = current == null
+                ? new Placement(Placement.Setting.OUTDOOR, Placement.Exposure.FULL_SUN, location)
+                : current.withLocation(location);
+        if (placement.equals(current)) {
+            return crop;
+        }
+        crop.setPlacement(placement);
+        mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(crop.getId())),
+                new Update().set("placement", placement).set("updatedAt", clock.instant()), Crop.class);
+        return crop;
     }
 
     public Crop setAutomation(String ownerId, String cropId, boolean enabled) {
