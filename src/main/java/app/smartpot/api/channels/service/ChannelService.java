@@ -62,8 +62,10 @@ public class ChannelService {
             NotificationChannel channel = channels.get(type);
             boolean available = channel != null && channel.isAvailable();
             ChannelLink link = links.get(type);
-            return new ChannelOptionResponse(type, NAMES.getOrDefault(type, type.name()), available,
-                    available ? channel.handle() : null, link == null ? null : ChannelLinkResponse.of(link));
+            return new ChannelOptionResponse(type, NAMES.getOrDefault(type, type.name()),
+                    channel == null ? null : channel.description(), available, available ? channel.handle() : null,
+                    available || channel == null ? List.of() : channel.requirements(),
+                    link == null ? null : ChannelLinkResponse.of(link));
         }).toList();
     }
 
@@ -128,7 +130,7 @@ public class ChannelService {
         ChannelLink link = find(userId, linkId);
         NotificationChannel channel = available(link.getType());
         try {
-            channel.send(link, new ChannelMessage(NotificationType.INFO, "Prueba de SmartPot",
+            channel.send(link.getAddress(), new ChannelMessage(NotificationType.INFO, "Prueba de SmartPot",
                     "Así te llegarán las alertas de tus cultivos. Puedes elegir cuáles recibir en tu perfil.", null));
             delivered(link);
         } catch (ChannelDeliveryException ex) {
@@ -154,18 +156,38 @@ public class ChannelService {
         return repository.findByUserIdAndEnabledTrue(userId);
     }
 
-    NotificationChannel channel(ChannelType type) {
+    public Optional<ChannelLink> link(String userId, ChannelType type) {
+        return repository.findByUserIdAndType(userId, type);
+    }
+
+    public NotificationChannel channel(ChannelType type) {
         return channels.get(type);
     }
 
-    void delivered(ChannelLink link) {
+    /** El canal existe y el servidor lo tiene configurado. */
+    public Optional<NotificationChannel> available(ChannelType type, boolean required) {
+        NotificationChannel channel = channels.get(type);
+        if (channel != null && channel.isAvailable()) {
+            return Optional.of(channel);
+        }
+        if (required) {
+            throw ApiException.unavailable("El canal " + nameOf(type) + " no está configurado en este servidor");
+        }
+        return Optional.empty();
+    }
+
+    public static String nameOf(ChannelType type) {
+        return NAMES.getOrDefault(type, type.name());
+    }
+
+    public void delivered(ChannelLink link) {
         link.setLastDeliveredAt(clock.instant());
         link.setFailures(0);
         repository.save(link);
     }
 
     /** Tras varios fallos seguidos, o si el canal dice que el destino ya no existe, el vínculo se pausa. */
-    void failed(ChannelLink link, boolean permanent) {
+    public void failed(ChannelLink link, boolean permanent) {
         link.setFailures(link.getFailures() + 1);
         if (permanent || link.getFailures() >= 5) {
             link.setEnabled(false);
@@ -176,12 +198,7 @@ public class ChannelService {
     }
 
     private NotificationChannel available(ChannelType type) {
-        NotificationChannel channel = channels.get(type);
-        if (channel == null || !channel.isAvailable()) {
-            throw ApiException.unavailable("El canal " + NAMES.getOrDefault(type, type.name())
-                    + " no está configurado en este servidor");
-        }
-        return channel;
+        return available(type, true).orElseThrow();
     }
 
     private ChannelLink find(String userId, String linkId) {

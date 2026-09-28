@@ -2,6 +2,7 @@ package app.smartpot.api.channels.service;
 
 import app.smartpot.api.cache.CacheStore;
 import app.smartpot.api.channels.model.dto.ChannelLinkUpdateRequest;
+import app.smartpot.api.channels.model.dto.ChannelOptionResponse;
 import app.smartpot.api.channels.model.dto.LinkCodeResponse;
 import app.smartpot.api.channels.model.entity.ChannelLink;
 import app.smartpot.api.channels.model.entity.ChannelType;
@@ -130,9 +131,12 @@ class ChannelServiceTest {
     @Test
     void unconfiguredChannelsCannotBeLinked() {
         when(telegram.isAvailable()).thenReturn(false);
+        when(telegram.requirements()).thenReturn(List.of("TELEGRAM_BOT_TOKEN", "TELEGRAM_BOT_USERNAME"));
         assertThatThrownBy(() -> service.createLinkCode(USER, ChannelType.TELEGRAM))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("no está configurado");
-        assertThat(service.overview(USER).getFirst().available()).isFalse();
+        ChannelOptionResponse option = service.overview(USER).getFirst();
+        assertThat(option.available()).isFalse();
+        assertThat(option.requirements()).containsExactly("TELEGRAM_BOT_TOKEN", "TELEGRAM_BOT_USERNAME");
     }
 }
