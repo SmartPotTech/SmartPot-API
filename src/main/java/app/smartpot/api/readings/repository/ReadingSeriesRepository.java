@@ -24,9 +24,6 @@ public class ReadingSeriesRepository {
         this.mongoTemplate = mongoTemplate;
     }
 
-    public record Bucket(String cropId, Instant time, double value) {
-    }
-
     public List<Bucket> averages(Collection<String> cropIds, String metric, Instant from, int bucketMinutes) {
         if (cropIds.isEmpty()) {
             return List.of();
@@ -52,5 +49,8 @@ public class ReadingSeriesRepository {
                     value.doubleValue()));
         }
         return buckets;
+    }
+
+    public record Bucket(String cropId, Instant time, double value) {
     }
 }
