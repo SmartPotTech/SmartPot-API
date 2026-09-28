@@ -4,6 +4,7 @@ import app.smartpot.api.channels.model.entity.ChannelLink;
 import app.smartpot.api.channels.model.entity.ChannelType;
 import app.smartpot.api.channels.service.ChannelDeliveryException;
 import app.smartpot.api.channels.service.ChannelService;
+import app.smartpot.api.channels.service.CropChannelService;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.service.CropService;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Conversación con el bot: /start con el código vincula el chat, /estado resume los cultivos,
- * /desvincular deja de enviar alertas y /ayuda explica lo demás. Solo atiende chats privados.
+ * Conversación con el bot: /start con el código vincula el chat a la cuenta (o, con un código para compartir, a los
+ * avisos de un cultivo ajeno), /estado resume los cultivos, /desvincular deja de enviar avisos y /ayuda explica lo
+ * demás. Solo atiende chats privados.
  */
 @Slf4j
 @Component
@@ -25,20 +27,24 @@ public class TelegramBot {
             Te aviso aquí cuando un cultivo necesita atención, cuando un cultivo se desconecta o cuando el \
             asistente actúa por su cuenta.
 
-            /estado — cómo están tus cultivos
-            /desvincular — dejar de recibir alertas en este chat
+            /estado — cómo están tus cultivos y los que te compartieron
+            /desvincular — dejar de recibir avisos en este chat
             /ayuda — este mensaje
 
-            Para vincular este chat entra a SmartPot › Perfil › Notificaciones y toca «Vincular Telegram».""";
-    static final String NOT_LINKED = "Este chat aún no está vinculado. Entra a SmartPot › Perfil › Notificaciones "
+            Para vincular este chat entra a SmartPot › Perfil › Aplicaciones y toca «Vincular Telegram». Si alguien \
+            te comparte un cultivo, abre el enlace que te envíe.""";
+    static final String NOT_LINKED = "Este chat aún no está vinculado. Entra a SmartPot › Perfil › Aplicaciones "
             + "y toca «Vincular Telegram».";
 
     private final ChannelService channelService;
+    private final CropChannelService cropChannelService;
     private final CropService cropService;
     private final TelegramClient client;
 
-    public TelegramBot(ChannelService channelService, CropService cropService, TelegramClient client) {
+    public TelegramBot(ChannelService channelService, CropChannelService cropChannelService, CropService cropService,
+                       TelegramClient client) {
         this.channelService = channelService;
+        this.cropChannelService = cropChannelService;
         this.cropService = cropService;
         this.client = client;
     }
@@ -59,9 +65,7 @@ public class TelegramBot {
         switch (command) {
             case "/start" -> start(chatId, argument, message);
             case "/estado" -> reply(chatId, status(chatId));
-            case "/desvincular" -> reply(chatId, channelService.unlinkAddress(ChannelType.TELEGRAM, chatId)
-                    ? "Listo: ya no recibirás alertas en este chat. Puedes volver a vincularlo desde tu perfil."
-                    : "Este chat no estaba vinculado a ninguna cuenta.");
+            case "/desvincular" -> reply(chatId, unlink(chatId));
             default -> reply(chatId, HELP);
         }
     }
@@ -74,6 +78,15 @@ public class TelegramBot {
         String name = message.from() != null && message.from().firstName() != null ? message.from().firstName()
                 : message.chat().firstName();
         String display = message.chat().username() != null ? "@" + message.chat().username() : name;
+        if (CropChannelService.isShareCode(code)) {
+            Optional<Crop> crop = cropChannelService.acceptShare(ChannelType.TELEGRAM, code, chatId, display);
+            reply(chatId, crop.isPresent()
+                    ? "¡Listo" + (name == null ? "" : ", " + TelegramChannel.escape(name)) + "! Desde ahora recibirás "
+                    + "aquí los avisos de «" + TelegramChannel.escape(crop.get().getName()) + "». Escribe /estado para "
+                    + "verlo y /desvincular para dejar de recibirlos."
+                    : "El enlace expiró, ya se usó o el cultivo ya se comparte con demasiados chats. Pide uno nuevo.");
+            return;
+        }
         Optional<ChannelLink> link = channelService.completeLink(ChannelType.TELEGRAM, code, chatId, display);
         reply(chatId, link.isPresent()
                 ? "¡Listo" + (name == null ? "" : ", " + TelegramChannel.escape(name)) + "! Este chat quedó vinculado "
@@ -82,16 +95,38 @@ public class TelegramBot {
                 : "El enlace expiró o ya se usó. Genera uno nuevo desde SmartPot › Perfil › Notificaciones.");
     }
 
+    private String unlink(String chatId) {
+        boolean linked = channelService.unlinkAddress(ChannelType.TELEGRAM, chatId);
+        int shared = cropChannelService.leave(ChannelType.TELEGRAM, chatId);
+        if (!linked && shared == 0) {
+            return "Este chat no estaba vinculado a ninguna cuenta ni recibía avisos compartidos.";
+        }
+        return "Listo: ya no recibirás avisos en este chat. Puedes volver a vincularlo desde tu perfil.";
+    }
+
     String status(String chatId) {
         Optional<ChannelLink> link = channelService.findByAddress(ChannelType.TELEGRAM, chatId);
-        if (link.isEmpty()) {
+        List<Crop> shared = cropChannelService.sharedWith(ChannelType.TELEGRAM, chatId);
+        if (link.isEmpty() && shared.isEmpty()) {
             return NOT_LINKED;
         }
-        List<Crop> crops = cropService.list(link.get().getUserId());
-        if (crops.isEmpty()) {
+        List<Crop> crops = link.map(value -> cropService.list(value.getUserId())).orElse(List.of());
+        if (crops.isEmpty() && shared.isEmpty()) {
             return "Todavía no tienes cultivos. Crea el primero desde la app.";
         }
-        StringBuilder text = new StringBuilder("🌱 <b>Tus cultivos</b>\n");
+        StringBuilder text = new StringBuilder();
+        if (!crops.isEmpty()) {
+            text.append("🌱 <b>Tus cultivos</b>\n");
+            describe(text, crops);
+        }
+        if (!shared.isEmpty()) {
+            text.append(text.isEmpty() ? "" : "\n\n").append("🤝 <b>Te compartieron</b>\n");
+            describe(text, shared);
+        }
+        return text.toString();
+    }
+
+    private static void describe(StringBuilder text, List<Crop> crops) {
         for (Crop crop : crops) {
             boolean online = crop.getDevice() != null && crop.getDevice().isOnline();
             text.append("\n• <b>").append(TelegramChannel.escape(crop.getName())).append("</b>")
@@ -105,7 +140,6 @@ public class TelegramBot {
                 text.append(" · 🤖 automático");
             }
         }
-        return text.toString();
     }
 
     private void reply(String chatId, String html) {

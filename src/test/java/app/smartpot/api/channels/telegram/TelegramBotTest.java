@@ -4,6 +4,7 @@ import app.smartpot.api.channels.model.entity.ChannelLink;
 import app.smartpot.api.channels.model.entity.ChannelType;
 import app.smartpot.api.channels.service.ChannelMessage;
 import app.smartpot.api.channels.service.ChannelService;
+import app.smartpot.api.channels.service.CropChannelService;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropHealth;
 import app.smartpot.api.crops.model.entity.Device;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -29,9 +31,10 @@ class TelegramBotTest {
     private static final String USER = "6718f0a1b2c3d4e5f6a7b000";
 
     private final ChannelService channelService = mock(ChannelService.class);
+    private final CropChannelService cropChannelService = mock(CropChannelService.class);
     private final CropService cropService = mock(CropService.class);
     private final TelegramClient client = mock(TelegramClient.class);
-    private final TelegramBot bot = new TelegramBot(channelService, cropService, client);
+    private final TelegramBot bot = new TelegramBot(channelService, cropChannelService, cropService, client);
 
     private static TelegramUpdate message(String text, String chatType) {
         return new TelegramUpdate(1, new TelegramUpdate.Message(10, new TelegramUpdate.Chat(555, chatType, "sebas",
@@ -81,6 +84,38 @@ class TelegramBotTest {
         bot.handle(message("/estado", "private"));
         assertThat(reply()).isEqualTo(TelegramBot.NOT_LINKED);
         verify(cropService, never()).list(USER);
+    }
+
+    @Test
+    void aShareCodeSubscribesTheChatToThatCrop() {
+        when(cropChannelService.acceptShare(ChannelType.TELEGRAM, "c_compartido", "555", "@sebas"))
+                .thenReturn(Optional.of(Crop.builder().name("Tomates de Ana").build()));
+
+        bot.handle(message("/start c_compartido", "private"));
+
+        assertThat(reply()).contains("avisos de «Tomates de Ana»");
+        verify(channelService, never()).completeLink(any(), any(), any(), any());
+    }
+
+    @Test
+    void statusListsTheCropsSharedWithTheChat() {
+        when(channelService.findByAddress(ChannelType.TELEGRAM, "555")).thenReturn(Optional.empty());
+        when(cropChannelService.sharedWith(ChannelType.TELEGRAM, "555"))
+                .thenReturn(List.of(Crop.builder().name("Tomates de Ana").build()));
+
+        bot.handle(message("/estado", "private"));
+
+        assertThat(reply()).contains("Te compartieron", "Tomates de Ana");
+    }
+
+    @Test
+    void unlinkingAlsoLeavesTheSharedCrops() {
+        when(channelService.unlinkAddress(ChannelType.TELEGRAM, "555")).thenReturn(false);
+        when(cropChannelService.leave(ChannelType.TELEGRAM, "555")).thenReturn(2);
+
+        bot.handle(message("/desvincular", "private"));
+
+        assertThat(reply()).startsWith("Listo");
     }
 
     @Test
