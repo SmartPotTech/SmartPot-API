@@ -32,15 +32,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class CommandServiceTest {
 
@@ -235,7 +228,7 @@ class CommandServiceTest {
                 .thenThrow(ApiException.notFound("El cultivo no existe"));
 
         assertThatThrownBy(() -> service.requestBulk(OWNER, new BulkCommandRequest(
-                        List.of("6718f0a1b2c3d4e5f6a7b999"), ActuatorType.FAN, CommandAction.DEACTIVATE, null)))
+                List.of("6718f0a1b2c3d4e5f6a7b999"), ActuatorType.FAN, CommandAction.DEACTIVATE, null)))
                 .hasMessage("El cultivo no existe");
         verify(gateway, never()).publish(anyString(), anyString(), anyInt(), anyBoolean());
     }
