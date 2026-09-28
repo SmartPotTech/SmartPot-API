@@ -8,7 +8,9 @@ import app.smartpot.api.ai.model.dto.InsightRequest;
 import app.smartpot.api.ai.model.dto.InsightResponse;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropHealth;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.crops.service.CropWeatherService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.model.entity.Reading;
 import app.smartpot.api.readings.service.ReadingService;
@@ -27,6 +29,7 @@ public class InsightService {
     private final CropService cropService;
     private final ReadingService readingService;
     private final ActuatorService actuatorService;
+    private final CropWeatherService weatherService;
     private final Clock clock;
     /** Cuántas lecturas se revisan por cada punto enviado: el historial abarca más tiempo sin crecer. */
     static final int HISTORY_WINDOW_FACTOR = 8;
@@ -35,11 +38,13 @@ public class InsightService {
     private final ZoneId timezone;
 
     public InsightService(AiClient aiClient, CropService cropService, ReadingService readingService,
-                          ActuatorService actuatorService, Clock clock, AiProperties properties) {
+                          ActuatorService actuatorService, CropWeatherService weatherService, Clock clock,
+                          AiProperties properties) {
         this.aiClient = aiClient;
         this.cropService = cropService;
         this.readingService = readingService;
         this.actuatorService = actuatorService;
+        this.weatherService = weatherService;
         this.clock = clock;
         this.historySize = properties.historySize();
         this.timezone = properties.timezone();
@@ -63,13 +68,28 @@ public class InsightService {
         Instant now = clock.instant();
         Instant measuredAt = latest.getMeasuredAt() != null ? latest.getMeasuredAt() : now;
         InsightRequest request = new InsightRequest(crop.getType().name(), latest.getMeasures(), history, actuators,
-                measuredAt.atZone(timezone).getHour());
+                measuredAt.atZone(timezone).getHour(), place(crop.getPlacement()), outside(crop));
         InsightResponse response = aiClient.insights(request).withEvaluatedAt(now);
         if (response.health() != null) {
             cropService.updateHealth(crop.getId(), new CropHealth(response.health().index(),
                     response.health().level(), response.health().label(), now));
         }
         return response;
+    }
+
+    private static InsightRequest.Place place(Placement placement) {
+        if (placement == null || (placement.setting() == null && placement.exposure() == null)) {
+            return null;
+        }
+        return new InsightRequest.Place(placement.setting() == null ? null : placement.setting().name(),
+                placement.exposure() == null ? null : placement.exposure().name());
+    }
+
+    private InsightRequest.Outside outside(Crop crop) {
+        return weatherService.current(crop)
+                .map(w -> new InsightRequest.Outside(w.temperature(), w.humidity(), w.precipitation(), w.radiation(),
+                        w.isDay(), w.condition()))
+                .orElse(null);
     }
 
     /**
