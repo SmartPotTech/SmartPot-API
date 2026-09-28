@@ -6,12 +6,7 @@ import app.smartpot.api.actuators.repository.ActuatorRepository;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
-import app.smartpot.api.crops.model.entity.Crop;
-import app.smartpot.api.crops.model.entity.CropForm;
-import app.smartpot.api.crops.model.entity.CropHealth;
-import app.smartpot.api.crops.model.entity.CropKind;
-import app.smartpot.api.crops.model.entity.Device;
-import app.smartpot.api.crops.model.entity.Placement;
+import app.smartpot.api.crops.model.entity.*;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
@@ -86,7 +81,15 @@ public class CropService {
         this.clock = clock;
     }
 
-    public record CreatedCrop(Crop crop, DeviceCredentialsResponse credentials) {
+    private static CropKind kindOf(Crop crop) {
+        return crop.getKind() == null ? CropKind.REAL : crop.getKind();
+    }
+
+    private static Crop requireReal(Crop crop) {
+        if (crop.isVirtual()) {
+            throw ApiException.badRequest(VIRTUAL_HAS_NO_DEVICE);
+        }
+        return crop;
     }
 
     public CreatedCrop create(String ownerId, CropRequest request) {
@@ -178,7 +181,9 @@ public class CropService {
         return cropRepository.save(crop);
     }
 
-    /** Modo automático para varios cultivos a la vez; sin ids, para todos los de la cuenta. */
+    /**
+     * Modo automático para varios cultivos a la vez; sin ids, para todos los de la cuenta.
+     */
     public List<Crop> setAutomation(String ownerId, List<String> cropIds, boolean enabled) {
         List<Crop> crops = cropIds == null || cropIds.isEmpty()
                 ? list(ownerId)
@@ -210,7 +215,9 @@ public class CropService {
         return credentials(crop, key);
     }
 
-    /** Clave del dispositivo en claro, solo para servicios internos que actúan como él (simulador). */
+    /**
+     * Clave del dispositivo en claro, solo para servicios internos que actúan como él (simulador).
+     */
     public Optional<String> deviceKey(Crop crop) {
         Device device = crop.getDevice();
         if (device == null || device.getKeyCiphertext() == null) {
@@ -227,7 +234,9 @@ public class CropService {
         cropRepository.findByOwnerIdOrderByCreatedAtAsc(ownerId).forEach(this::deleteCascade);
     }
 
-    /** Actualiza solo el estado del dispositivo para no pisar cambios hechos en paralelo desde la web. */
+    /**
+     * Actualiza solo el estado del dispositivo para no pisar cambios hechos en paralelo desde la web.
+     */
     public void markDeviceSeen(String cropId, Boolean online) {
         Update update = new Update().set("device.lastSeenAt", clock.instant());
         if (online != null) {
@@ -250,17 +259,6 @@ public class CropService {
     public void updateHealth(String cropId, CropHealth health) {
         mongoTemplate.updateFirst(Query.query(Criteria.where("_id").is(cropId)),
                 new Update().set("health", health), Crop.class);
-    }
-
-    private static CropKind kindOf(Crop crop) {
-        return crop.getKind() == null ? CropKind.REAL : crop.getKind();
-    }
-
-    private static Crop requireReal(Crop crop) {
-        if (crop.isVirtual()) {
-            throw ApiException.badRequest(VIRTUAL_HAS_NO_DEVICE);
-        }
-        return crop;
     }
 
     private void deleteCascade(Crop crop) {
@@ -293,5 +291,8 @@ public class CropService {
         byte[] bytes = new byte[24];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    public record CreatedCrop(Crop crop, DeviceCredentialsResponse credentials) {
     }
 }
