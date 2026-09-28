@@ -1,6 +1,8 @@
 package app.smartpot.api.actuators.model.entity;
 
-/** Cada actuador con su nombre en español para los mensajes («La bomba de agua ya está apagada»). */
+/**
+ * Cada actuador con su nombre en español para los mensajes («La bomba de agua ya está apagada»).
+ */
 public enum ActuatorType {
     WATER_PUMP("La bomba de agua", true),
     UV_LIGHT("La luz ultravioleta", true),
@@ -17,7 +19,9 @@ public enum ActuatorType {
         this.feminine = feminine;
     }
 
-    /** «La bomba de agua ya está encendida», «El ventilador ya está apagado». */
+    /**
+     * «La bomba de agua ya está encendida», «El ventilador ya está apagado».
+     */
     public String alreadyIn(boolean on) {
         return subject + " ya está " + (on ? "encendid" : "apagad") + (feminine ? "a" : "o");
     }
