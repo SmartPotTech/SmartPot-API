@@ -1,9 +1,13 @@
 package app.smartpot.api.virtualdevices.service;
 
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.virtualdevices.model.entity.VirtualDevice;
+import app.smartpot.api.virtualdevices.model.entity.VirtualLocation;
+import app.smartpot.api.virtualdevices.model.entity.VirtualMode;
 import app.smartpot.api.virtualdevices.repository.VirtualDeviceRepository;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.Document;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -43,6 +47,26 @@ class CropKindBackfillTest {
         assertThat(updates.getAllValues().get(0).getUpdateObject().toJson()).contains("VIRTUAL");
         assertThat(updates.getAllValues().get(1).getUpdateObject().toJson()).contains("REAL");
         assertThat(updates.getAllValues().get(2).getUpdateObject().toJson()).contains("POT");
+    }
+
+    @Test
+    void theSimulationLocationBecomesThePlaceOfTheCrop() {
+        when(repository.findAll()).thenReturn(List.of(
+                VirtualDevice.builder().cropId(CROP).mode(VirtualMode.WEATHER)
+                        .location(new VirtualLocation("Medellín", 6.25, -75.56)).build(),
+                VirtualDevice.builder().cropId("6718f0a1b2c3d4e5f6a7b8ca").mode(VirtualMode.AUTO).build()));
+        when(mongoTemplate.updateMulti(any(Query.class), any(Update.class), eq(Crop.class)))
+                .thenReturn(UpdateResult.acknowledged(0, 0L, null));
+        when(mongoTemplate.updateFirst(any(Query.class), any(Update.class), eq(Crop.class)))
+                .thenReturn(UpdateResult.acknowledged(1, 1L, null));
+
+        backfill.backfill();
+
+        ArgumentCaptor<Update> update = ArgumentCaptor.forClass(Update.class);
+        verify(mongoTemplate, times(1)).updateFirst(any(Query.class), update.capture(), eq(Crop.class));
+        assertThat(update.getValue().getUpdateObject().get("$set", Document.class).get("placement"))
+                .isEqualTo(new Placement(Placement.Setting.OUTDOOR, Placement.Exposure.FULL_SUN,
+                        new Placement.Location("Medellín", 6.25, -75.56)));
     }
 
     @Test
