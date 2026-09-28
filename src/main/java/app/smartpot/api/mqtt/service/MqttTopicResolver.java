@@ -22,11 +22,6 @@ public class MqttTopicResolver {
         this.prefix = properties.topicPrefix();
     }
 
-    public enum Kind { TELEMETRY, COMMAND_ACK, STATUS }
-
-    public record ParsedTopic(String cropId, Kind kind) {
-    }
-
     public String telemetry(String cropId) {
         return prefix + "/" + cropId + "/telemetry";
     }
@@ -47,7 +42,9 @@ public class MqttTopicResolver {
         return List.of(telemetry("+"), commandAck("+"), status("+"));
     }
 
-    /** Patrones para las ACL del rol de dispositivo: %u es el usuario MQTT, que es el id del cultivo. */
+    /**
+     * Patrones para las ACL del rol de dispositivo: %u es el usuario MQTT, que es el id del cultivo.
+     */
     public List<String> devicePublishPatterns() {
         return List.of(telemetry("%u"), commandAck("%u"), status("%u"));
     }
@@ -79,5 +76,10 @@ public class MqttTopicResolver {
             return Optional.of(new ParsedTopic(cropId, Kind.COMMAND_ACK));
         }
         return Optional.empty();
+    }
+
+    public enum Kind {TELEMETRY, COMMAND_ACK, STATUS}
+
+    public record ParsedTopic(String cropId, Kind kind) {
     }
 }
