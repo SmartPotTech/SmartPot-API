@@ -75,7 +75,9 @@ public class CacheStore {
         });
     }
 
-    /** Lee y borra en una sola operación: sirve para códigos de un solo uso. */
+    /**
+     * Lee y borra en una sola operación: sirve para códigos de un solo uso.
+     */
     public Optional<String> take(String key) {
         String fullKey = PREFIX + key;
         return withRedis(() -> Optional.ofNullable(redis.opsForValue().getAndDelete(fullKey)), () -> {
