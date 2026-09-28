@@ -8,7 +8,9 @@ import jakarta.validation.constraints.Pattern;
 
 import java.util.Set;
 
-/** Cambios en los avisos de un cultivo; lo que falta se conserva. dailySummaryAt vacío apaga el resumen diario. */
+/**
+ * Cambios en los avisos de un cultivo; lo que falta se conserva. dailySummaryAt vacío apaga el resumen diario.
+ */
 public record CropChannelUpdateRequest(
         Boolean enabled,
         Set<NotificationType> events,
