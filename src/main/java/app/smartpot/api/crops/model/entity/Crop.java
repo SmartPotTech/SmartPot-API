@@ -30,7 +30,9 @@ public class Crop {
 
     private CropType type;
 
-    /** Real o virtual; se fija al crear el cultivo y no cambia. */
+    /**
+     * Real o virtual; se fija al crear el cultivo y no cambia.
+     */
     private CropKind kind;
 
     private CropForm form;
@@ -47,7 +49,9 @@ public class Crop {
 
     private Instant updatedAt;
 
-    /** Los cultivos anteriores a este campo son reales. */
+    /**
+     * Los cultivos anteriores a este campo son reales.
+     */
     public boolean isVirtual() {
         return kind == CropKind.VIRTUAL;
     }
