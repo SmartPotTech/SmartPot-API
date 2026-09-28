@@ -8,7 +8,9 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** address: el identificador del destino en el canal (en Telegram, el id del chat). */
+/**
+ * address: el identificador del destino en el canal (en Telegram, el id del chat).
+ */
 public record ChannelLinkResponse(String id, ChannelType type, String address, String displayName, boolean enabled,
                                   Set<NotificationType> events, Instant linkedAt, Instant lastDeliveredAt) {
 
