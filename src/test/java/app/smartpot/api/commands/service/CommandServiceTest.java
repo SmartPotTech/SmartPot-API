@@ -109,7 +109,55 @@ class CommandServiceTest {
         service.acknowledge(CROP, new CommandAckMessage(sent.getId(), "EXECUTED", "ok"));
 
         assertThat(sent.getStatus()).isEqualTo(CommandStatus.EXECUTED);
-        verify(actuatorService).updateState(ACTUATOR, true);
+        verify(actuatorService).updateState(ACTUATOR, true, null);
+    }
+
+    @Test
+    void aTimedCommandKeepsTheActuatorRunningUntilItEnds() {
+        Command sent = Command.builder().id("6718f0a1b2c3d4e5f6a7b8e1").cropId(CROP).actuatorId(ACTUATOR)
+                .actuatorType(ActuatorType.WATER_PUMP).action(CommandAction.ACTIVATE).durationSeconds(15)
+                .status(CommandStatus.SENT).source(CommandSource.USER).build();
+        when(repository.findByIdAndCropId(sent.getId(), CROP)).thenReturn(Optional.of(sent));
+
+        service.acknowledge(CROP, new CommandAckMessage(sent.getId(), "EXECUTED", "ok"));
+
+        verify(actuatorService).updateState(ACTUATOR, false, clock.instant().plusSeconds(15));
+    }
+
+    @Test
+    void anActuatorThatIsAlreadyOffCannotBeTurnedOff() {
+        assertThatThrownBy(() -> service.request(OWNER, CROP, new CommandRequest(ACTUATOR, CommandAction.DEACTIVATE,
+                null))).isInstanceOf(ApiException.class).hasMessage("La bomba de agua ya está apagada");
+
+        pump.setActive(true);
+        assertThatThrownBy(() -> service.request(OWNER, CROP, new CommandRequest(ACTUATOR, CommandAction.ACTIVATE,
+                null))).hasMessage("La bomba de agua ya está encendida");
+        verify(gateway, never()).publish(anyString(), anyString(), anyInt(), anyBoolean());
+    }
+
+    @Test
+    void aTimedRunCanBeTurnedOffAndACommandInFlightBlocksAnother() {
+        when(gateway.publish(anyString(), anyString(), anyInt(), anyBoolean())).thenReturn(true);
+        pump.setRunningUntil(clock.instant().plusSeconds(10));
+
+        assertThat(service.request(OWNER, CROP, new CommandRequest(ACTUATOR, CommandAction.DEACTIVATE, null))
+                .getStatus()).isEqualTo(CommandStatus.SENT);
+
+        when(repository.existsByActuatorIdAndStatusIn(eq(ACTUATOR), any())).thenReturn(true);
+        assertThatThrownBy(() -> service.request(OWNER, CROP, new CommandRequest(ACTUATOR, CommandAction.DEACTIVATE,
+                null))).hasMessageContaining("orden en curso");
+    }
+
+    @Test
+    void theAgentDoesNotRepeatWhatIsAlreadyTrue() {
+        when(actuatorService.findByType(CROP, ActuatorType.WATER_PUMP)).thenReturn(Optional.of(pump));
+
+        assertThat(service.requestFromAgent(crop, ActuatorType.WATER_PUMP, CommandAction.DEACTIVATE, null, "Noche"))
+                .isEmpty();
+        pump.setRunningUntil(clock.instant().plusSeconds(30));
+        assertThat(service.requestFromAgent(crop, ActuatorType.WATER_PUMP, CommandAction.ACTIVATE, 30, "Seco"))
+                .isEmpty();
+        verify(gateway, never()).publish(anyString(), anyString(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -166,6 +214,19 @@ class CommandServiceTest {
         assertThat(response.results()).extracting(BulkCommandResponse.Result::status)
                 .containsExactly("SENT", "SKIPPED", "SKIPPED");
         assertThat(response.results().get(1).message()).isEqualTo("El cultivo no tiene este actuador");
+    }
+
+    @Test
+    void bulkSkipsCropsWhereTheOrderChangesNothing() {
+        when(cropService.list(OWNER)).thenReturn(List.of(crop));
+        when(actuatorService.findByType(CROP, ActuatorType.WATER_PUMP)).thenReturn(Optional.of(pump));
+
+        BulkCommandResponse response = service.requestBulk(OWNER,
+                new BulkCommandRequest(null, ActuatorType.WATER_PUMP, CommandAction.DEACTIVATE, null));
+
+        assertThat(response.results()).extracting(BulkCommandResponse.Result::message)
+                .containsExactly("La bomba de agua ya está apagada");
+        verify(gateway, never()).publish(anyString(), anyString(), anyInt(), anyBoolean());
     }
 
     @Test

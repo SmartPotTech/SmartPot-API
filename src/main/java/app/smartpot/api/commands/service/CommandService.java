@@ -74,15 +74,44 @@ public class CommandService {
         if (!gateway.isEnabled()) {
             throw ApiException.unavailable("La comunicación con los dispositivos no está habilitada en este servidor");
         }
+        if (repository.existsByActuatorIdAndStatusIn(actuator.getId(), IN_FLIGHT)) {
+            throw ApiException.conflict("Ya hay una orden en curso para este actuador: espera su confirmación");
+        }
+        String unchanged = unchanged(actuator, request.action(), request.durationSeconds());
+        if (unchanged != null) {
+            throw ApiException.conflict(unchanged);
+        }
         return dispatch(create(crop, actuator, request.action(), request.durationSeconds(), CommandSource.USER, null));
     }
 
-    /** Comando decidido por el agente. Se omite si el cultivo no tiene ese actuador o ya hay uno en curso. */
+    /**
+     * La orden no cambiaría nada: apagar lo que ya está apagado o encender sin límite lo que ya está encendido así.
+     * Encender por un tiempo algo que ya corre sí vale: reinicia su duración.
+     */
+    String unchanged(Actuator actuator, CommandAction action, Integer durationSeconds) {
+        Instant now = clock.instant();
+        if (action == CommandAction.DEACTIVATE && !actuator.isRunning(now)) {
+            return actuator.getType().alreadyIn(false);
+        }
+        if (action == CommandAction.ACTIVATE && durationSeconds == null && actuator.isActive()) {
+            return actuator.getType().alreadyIn(true);
+        }
+        return null;
+    }
+
+    /**
+     * Comando decidido por el agente. Se omite si el cultivo no tiene ese actuador, si ya hay uno en curso o si no
+     * cambiaría nada: apagar lo apagado o encender lo que ya está encendido.
+     */
     public Optional<Command> requestFromAgent(Crop crop, ActuatorType type, CommandAction action,
                                               Integer durationSeconds, String reason) {
         Optional<Actuator> actuator = actuatorService.findByType(crop.getId(), type);
         if (actuator.isEmpty() || !gateway.isEnabled()
                 || repository.existsByActuatorIdAndStatusIn(actuator.get().getId(), IN_FLIGHT)) {
+            return Optional.empty();
+        }
+        boolean running = actuator.get().isRunning(clock.instant());
+        if (action == CommandAction.DEACTIVATE ? !running : running) {
             return Optional.empty();
         }
         return Optional.of(dispatch(create(crop, actuator.get(), action, durationSeconds, CommandSource.AGENT, reason)));
@@ -103,6 +132,8 @@ public class CommandService {
                 results.add(skipped(crop, "El cultivo no tiene este actuador"));
             } else if (repository.existsByActuatorIdAndStatusIn(actuator.get().getId(), IN_FLIGHT)) {
                 results.add(skipped(crop, "Ya hay un comando en curso para este actuador"));
+            } else if (unchanged(actuator.get(), request.action(), request.durationSeconds()) != null) {
+                results.add(skipped(crop, unchanged(actuator.get(), request.action(), request.durationSeconds())));
             } else {
                 Command command = dispatch(create(crop, actuator.get(), request.action(), request.durationSeconds(),
                         CommandSource.USER, "Acción en bloque"));
@@ -145,8 +176,10 @@ public class CommandService {
             command.setCompletedAt(clock.instant());
             repository.save(command);
             if (ack.executed()) {
-                boolean active = command.getAction() == CommandAction.ACTIVATE && command.getDurationSeconds() == null;
-                actuatorService.updateState(command.getActuatorId(), active);
+                boolean on = command.getAction() == CommandAction.ACTIVATE;
+                Integer seconds = command.getDurationSeconds();
+                actuatorService.updateState(command.getActuatorId(), on && seconds == null,
+                        on && seconds != null ? command.getCompletedAt().plusSeconds(seconds) : null);
             } else {
                 notifyFailure(command, "El dispositivo no pudo ejecutar el comando: " + orDefault(ack.message()));
             }
