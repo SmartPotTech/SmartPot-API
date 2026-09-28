@@ -125,6 +125,23 @@ public class SimulatorClient {
         }
     }
 
+    /** Clima actual de un lugar; vacío si el simulador no está o no pudo consultarlo. */
+    public Optional<SimulatorPot.Weather> weather(double latitude, double longitude) {
+        if (!isAvailable()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> uri.path("/v1/weather").queryParam("latitude", latitude)
+                            .queryParam("longitude", longitude).build())
+                    .retrieve()
+                    .body(SimulatorPot.Weather.class));
+        } catch (RestClientException ex) {
+            log.debug("Clima no disponible para {}, {}: {}", latitude, longitude, ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
     public boolean isHealthy() {
         if (!isAvailable()) {
             return false;
