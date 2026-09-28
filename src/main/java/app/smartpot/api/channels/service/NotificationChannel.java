@@ -1,7 +1,8 @@
 package app.smartpot.api.channels.service;
 
-import app.smartpot.api.channels.model.entity.ChannelLink;
 import app.smartpot.api.channels.model.entity.ChannelType;
+
+import java.util.List;
 
 /**
  * Contrato de un canal externo de notificación. Para sumar un canal (WhatsApp, correo, Slack…) basta con
@@ -22,6 +23,13 @@ public interface NotificationChannel {
     /** Enlace que abre el canal con el código de vinculación. */
     String linkUrl(String code);
 
-    /** Envía el mensaje; lanza {@link ChannelDeliveryException} si el destino lo rechaza. */
-    void send(ChannelLink link, ChannelMessage message);
+    /** Qué ofrece el canal, en una frase para la PWA. */
+    String description();
+
+    /** Variables que el servidor necesita para ofrecer el canal; la PWA las muestra si falta configurarlo. */
+    List<String> requirements();
+
+    /** Envía el mensaje a una dirección del canal (en Telegram, un chat); lanza {@link ChannelDeliveryException} si
+     * el destino lo rechaza. */
+    void send(String address, ChannelMessage message);
 }

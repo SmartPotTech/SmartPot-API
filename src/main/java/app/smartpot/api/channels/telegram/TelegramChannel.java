@@ -1,13 +1,13 @@
 package app.smartpot.api.channels.telegram;
 
 import app.smartpot.api.channels.config.TelegramProperties;
-import app.smartpot.api.channels.model.entity.ChannelLink;
 import app.smartpot.api.channels.model.entity.ChannelType;
 import app.smartpot.api.channels.service.ChannelMessage;
 import app.smartpot.api.channels.service.NotificationChannel;
 import app.smartpot.api.notifications.model.entity.NotificationType;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -54,8 +54,18 @@ public class TelegramChannel implements NotificationChannel {
     }
 
     @Override
-    public void send(ChannelLink link, ChannelMessage message) {
-        client.sendMessage(link.getAddress(), format(message), "Abrir en SmartPot", message.url());
+    public String description() {
+        return "Recibe las alertas, los resúmenes y las acciones del asistente en un chat con el bot de SmartPot.";
+    }
+
+    @Override
+    public List<String> requirements() {
+        return List.of("TELEGRAM_BOT_TOKEN", "TELEGRAM_BOT_USERNAME");
+    }
+
+    @Override
+    public void send(String address, ChannelMessage message) {
+        client.sendMessage(address, format(message), "Abrir en SmartPot", message.url());
     }
 
     static String format(ChannelMessage message) {
