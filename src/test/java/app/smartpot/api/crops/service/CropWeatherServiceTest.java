@@ -14,11 +14,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class CropWeatherServiceTest {
 
@@ -29,13 +25,13 @@ class CropWeatherServiceTest {
     private final CacheStore cacheStore = new CacheStore(null, Clock.systemUTC());
     private final CropWeatherService service = new CropWeatherService(simulator, cacheStore, JsonMapper.builder().build());
 
+    private static Crop at(Placement.Location location) {
+        return Crop.builder().id("c1").placement(new Placement(Placement.Setting.OUTDOOR, null, location)).build();
+    }
+
     @BeforeEach
     void setUp() {
         when(simulator.isAvailable()).thenReturn(true);
-    }
-
-    private static Crop at(Placement.Location location) {
-        return Crop.builder().id("c1").placement(new Placement(Placement.Setting.OUTDOOR, null, location)).build();
     }
 
     @Test
