@@ -1,0 +1,32 @@
+%%{init: {"theme": "base", "fontFamily": "Segoe UI, Arial, sans-serif", "themeVariables": {"fontFamily": "Segoe UI, Arial, sans-serif", "fontSize": "15px", "primaryColor": "#DDF5EA", "primaryTextColor": "#17261F", "primaryBorderColor": "#067A52", "secondaryColor": "#E3F2FB", "secondaryTextColor": "#17261F", "secondaryBorderColor": "#1F6FA0", "tertiaryColor": "#F2F7F4", "tertiaryTextColor": "#17261F", "tertiaryBorderColor": "#D5E3DC", "lineColor": "#5B6B63", "textColor": "#17261F", "mainBkg": "#DDF5EA", "nodeBorder": "#067A52", "clusterBkg": "#F7FAF8", "clusterBorder": "#D5E3DC", "edgeLabelBackground": "#FFFFFF", "actorBkg": "#067A52", "actorBorder": "#0B3D2B", "actorTextColor": "#FFFFFF", "actorLineColor": "#5B6B63", "signalColor": "#17261F", "signalTextColor": "#17261F", "labelBoxBkgColor": "#0B3D2B", "labelBoxBorderColor": "#0B3D2B", "labelTextColor": "#FFFFFF", "loopTextColor": "#0B3D2B", "noteBkgColor": "#FDF4DD", "noteBorderColor": "#C98D12", "noteTextColor": "#17261F", "activationBkgColor": "#DDF5EA", "activationBorderColor": "#067A52", "attributeBackgroundColorOdd": "#FFFFFF", "attributeBackgroundColorEven": "#F2F7F4"}}}%%
+sequenceDiagram
+  autonumber
+  participant W as PWA
+  participant C as CropController
+  participant V as VirtualDeviceService
+  participant S as CropService
+  participant P as DeviceProvisioner
+  participant D as MongoDB
+  participant SIM as Simulador
+  W->>C: POST /api/v1/crops {name, type, kind, form, virtual?}
+  alt kind VIRTUAL
+    C->>V: checkCanCreate (simulador disponible, máximo 5, lugar si es clima)
+  else kind REAL con virtual
+    C-->>W: 400 Solo los cultivos virtuales tienen simulación
+  end
+  C->>S: create(owner, request)
+  S->>D: cuenta los cultivos (máximo 20)
+  S->>S: clave de 24 bytes · AES-256-GCM
+  S->>D: crops (kind, form POT si falta)
+  S->>D: actuators · reales: bomba, luz y ventilador · virtuales: los seis
+  S->>P: provision(cropId, clave)
+  S-)S: DeviceKeyRotatedEvent
+  alt Virtual
+    C->>V: startFor(crop, virtual o AUTO)
+    V->>D: virtual_devices activo
+    V->>SIM: PUT /v1/pots/{cropId} con la clave
+    C-->>W: 201 cultivo sin credenciales
+  else Real
+    C-->>W: 201 cultivo y credenciales (la clave, una sola vez)
+  end
+  Note over W,S: PUT /crops/{id} con otro kind responde 400<br/>y /device o /device/key de un virtual, también
