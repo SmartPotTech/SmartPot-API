@@ -64,7 +64,9 @@ public class ActuatorService {
         return repository.findByCropIdAndType(cropId, type);
     }
 
-    /** Estado confirmado: encendido sin límite (active), encendido hasta una hora (runningUntil) o apagado. */
+    /**
+     * Estado confirmado: encendido sin límite (active), encendido hasta una hora (runningUntil) o apagado.
+     */
     public void updateState(String actuatorId, boolean active, Instant runningUntil) {
         repository.findById(actuatorId).ifPresent(actuator -> {
             actuator.setActive(active);
