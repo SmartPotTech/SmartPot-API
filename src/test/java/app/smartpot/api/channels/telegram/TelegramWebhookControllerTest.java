@@ -5,10 +5,10 @@ import app.smartpot.api.channels.config.TelegramProperties;
 import app.smartpot.api.support.WebTestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,22 +27,10 @@ class TelegramWebhookControllerTest {
     private static final String UPDATE = """
             {"update_id": 7, "message": {"message_id": 1, "text": "/estado",
              "chat": {"id": 555, "type": "private"}, "from": {"id": 555, "first_name": "Ana"}}}""";
-
-    @TestConfiguration
-    static class Config {
-        @Bean
-        TelegramProperties telegramProperties() {
-            return new TelegramProperties("123:token", "SmartPotBot", "webhook",
-                    "https://api.smartpot.test/api/v1/channels/telegram/webhook", SECRET, null);
-        }
-    }
-
     @Autowired
     private MockMvc mvc;
-
     @MockitoBean
     private TelegramUpdatesListener listener;
-
     @MockitoBean
     private CacheStore cacheStore;
 
@@ -62,5 +50,14 @@ class TelegramWebhookControllerTest {
         mvc.perform(post("/api/v1/channels/telegram/webhook").contentType(MediaType.APPLICATION_JSON).content(UPDATE))
                 .andExpect(status().isNotFound());
         verify(listener, never()).handleSafely(any());
+    }
+
+    @TestConfiguration
+    static class Config {
+        @Bean
+        TelegramProperties telegramProperties() {
+            return new TelegramProperties("123:token", "SmartPotBot", "webhook",
+                    "https://api.smartpot.test/api/v1/channels/telegram/webhook", SECRET, null);
+        }
     }
 }
