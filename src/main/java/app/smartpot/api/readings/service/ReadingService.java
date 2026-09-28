@@ -61,7 +61,21 @@ public class ReadingService {
         this.maxPageSize = properties.readings().maxPageSize();
     }
 
-    /** Telemetría del dispositivo. Se descarta si el cultivo no existe o si llega más rápido que el intervalo mínimo. */
+    private static Double number(Object value) {
+        return value instanceof Number n ? n.doubleValue() : null;
+    }
+
+    private static double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
+    private static String cell(Double value) {
+        return value == null ? "" : value.toString();
+    }
+
+    /**
+     * Telemetría del dispositivo. Se descarta si el cultivo no existe o si llega más rápido que el intervalo mínimo.
+     */
     public Optional<Reading> recordFromDevice(String cropId, Measures measures) {
         Optional<Crop> crop = cropService.find(cropId);
         if (crop.isEmpty()) {
@@ -99,7 +113,9 @@ public class ReadingService {
         return readingRepository.findByCropIdOrderByMeasuredAtDesc(cropId, PageRequest.of(0, count));
     }
 
-    /** Lecturas en orden cronológico para graficar. Por defecto, las últimas 24 horas. */
+    /**
+     * Lecturas en orden cronológico para graficar. Por defecto, las últimas 24 horas.
+     */
     public List<Reading> list(String ownerId, String cropId, Instant from, Instant to, Integer limit) {
         cropService.getOwned(ownerId, cropId);
         Window window = window(from, to);
@@ -176,17 +192,5 @@ public class ReadingService {
     }
 
     private record Window(Instant from, Instant to) {
-    }
-
-    private static Double number(Object value) {
-        return value instanceof Number n ? n.doubleValue() : null;
-    }
-
-    private static double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
-    }
-
-    private static String cell(Double value) {
-        return value == null ? "" : value.toString();
     }
 }
