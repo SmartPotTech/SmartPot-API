@@ -13,7 +13,9 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import java.time.Instant;
 
-/** Simulación de un cultivo virtual; el simulador la ejecuta y la API la vuelve a crear si falta. */
+/**
+ * Simulación de un cultivo virtual; el simulador la ejecuta y la API la vuelve a crear si falta.
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -40,7 +42,9 @@ public class VirtualDevice {
 
     private int intervalSeconds;
 
-    /** false mientras la simulación está en pausa; las configuraciones anteriores a este campo están activas. */
+    /**
+     * false mientras la simulación está en pausa; las configuraciones anteriores a este campo están activas.
+     */
     private Boolean active;
 
     private Instant createdAt;
