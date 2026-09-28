@@ -21,14 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.startsWith;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class AutomationAgentTest {
 
@@ -40,8 +34,6 @@ class AutomationAgentTest {
     private final CacheStore cacheStore = mock(CacheStore.class);
     private final AiClient aiClient = mock(AiClient.class);
     private final Reading reading = Reading.builder().id("r1").cropId(CROP).build();
-    private AutomationAgent agent;
-
     private final InsightResponse insight = new InsightResponse("LETTUCE",
             new InsightResponse.Health(38.0, "POOR", "En riesgo", Map.of("soilMoisture", 10.0)),
             List.of(new InsightResponse.Diagnosis("soilMoisture", 18.0, "LOW", "CRITICAL",
@@ -49,6 +41,11 @@ class AutomationAgentTest {
             List.of(), List.of(),
             List.of(new InsightResponse.Action("WATER_PUMP", "ACTIVATE", 30, "Sustrato seco")),
             List.of(), null, null, "Riega tu lechuga", null);
+    private AutomationAgent agent;
+
+    private static Crop crop(boolean automation) {
+        return Crop.builder().id(CROP).ownerId("owner").name("Lechugas").automationEnabled(automation).build();
+    }
 
     @BeforeEach
     void setUp() {
@@ -95,9 +92,5 @@ class AutomationAgentTest {
         agent.onReading(new ReadingRecordedEvent(crop(true), reading));
 
         verify(insightService, never()).evaluate(any(), any());
-    }
-
-    private static Crop crop(boolean automation) {
-        return Crop.builder().id(CROP).ownerId("owner").name("Lechugas").automationEnabled(automation).build();
     }
 }
