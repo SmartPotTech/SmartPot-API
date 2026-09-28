@@ -21,14 +21,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Avisos de cada cultivo por los canales externos: qué avisar, si al instante o en un resumen cada tantas horas, un
@@ -41,7 +34,9 @@ import java.util.UUID;
 public class CropChannelService {
 
     public static final int DEFAULT_DIGEST_HOURS = 6;
-    /** Los códigos para compartir se distinguen de los de vinculación por este prefijo. */
+    /**
+     * Los códigos para compartir se distinguen de los de vinculación por este prefijo.
+     */
     static final String SHARE_PREFIX = "c_";
     private static final String RECIPIENT_NOT_FOUND = "Ese chat no recibe los avisos de este cultivo";
 
@@ -59,6 +54,14 @@ public class CropChannelService {
         this.cropService = cropService;
         this.cacheStore = cacheStore;
         this.clock = clock;
+    }
+
+    public static boolean isShareCode(String code) {
+        return code != null && code.startsWith(SHARE_PREFIX);
+    }
+
+    private static String codeKey(ChannelType type, String code) {
+        return "crop-share:" + type.name().toLowerCase() + ":" + code;
     }
 
     public List<CropChannelResponse> list(String ownerId, String cropId) {
@@ -113,11 +116,9 @@ public class CropChannelService {
         return new LinkCodeResponse(type, code, channel.linkUrl(code), clock.instant().plus(ChannelService.CODE_TTL));
     }
 
-    public static boolean isShareCode(String code) {
-        return code != null && code.startsWith(SHARE_PREFIX);
-    }
-
-    /** Completa la invitación desde el canal: el chat queda recibiendo los avisos del cultivo. */
+    /**
+     * Completa la invitación desde el canal: el chat queda recibiendo los avisos del cultivo.
+     */
     public Optional<Crop> acceptShare(ChannelType type, String code, String address, String displayName) {
         if (!isShareCode(code) || code.length() > 64) {
             return Optional.empty();
@@ -151,7 +152,9 @@ public class CropChannelService {
         repository.save(settings);
     }
 
-    /** Cultivos que se comparten con un chat. */
+    /**
+     * Cultivos que se comparten con un chat.
+     */
     public List<Crop> sharedWith(ChannelType type, String address) {
         return repository.findByTypeAndRecipientsAddress(type, address).stream()
                 .map(settings -> cropService.find(settings.getCropId()))
@@ -159,7 +162,9 @@ public class CropChannelService {
                 .toList();
     }
 
-    /** El chat deja de recibir los avisos de todos los cultivos compartidos con él. */
+    /**
+     * El chat deja de recibir los avisos de todos los cultivos compartidos con él.
+     */
     public int leave(ChannelType type, String address) {
         List<CropChannel> shared = repository.findByTypeAndRecipientsAddress(type, address);
         shared.forEach(settings -> removeAddress(settings, address));
@@ -187,7 +192,9 @@ public class CropChannelService {
         repository.deleteByCropId(event.cropId());
     }
 
-    /** Lo guardado o, si no hay nada, lo que el dueño eligió en su perfil, al instante. */
+    /**
+     * Lo guardado o, si no hay nada, lo que el dueño eligió en su perfil, al instante.
+     */
     CropChannel settings(Crop crop, ChannelType type) {
         return repository.findByCropIdAndType(crop.getId(), type).orElseGet(() -> CropChannel.builder()
                 .cropId(crop.getId())
@@ -215,9 +222,5 @@ public class CropChannelService {
                         .map(recipient -> new CropChannelResponse.RecipientResponse(recipient.id(),
                                 recipient.displayName(), recipient.addedAt()))
                         .toList());
-    }
-
-    private static String codeKey(ChannelType type, String code) {
-        return "crop-share:" + type.name().toLowerCase() + ":" + code;
     }
 }
