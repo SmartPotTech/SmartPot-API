@@ -21,10 +21,12 @@ public record CropRequest(
         /** Forma del sistema hidropónico: POT si falta al crear; al editar, si falta se conserva. */
         CropForm form,
         /** Solo para cultivos virtuales al crearlos: cómo arranca la simulación (AUTO si falta). */
-        @Valid VirtualDeviceRequest virtual
+        @Valid VirtualDeviceRequest virtual,
+        /** Dónde está: al editar, si falta se conserva el lugar anterior. */
+        @Valid PlacementRequest placement
 ) {
 
     public CropRequest(String name, CropType type) {
-        this(name, type, null, null, null);
+        this(name, type, null, null, null, null);
     }
 }
