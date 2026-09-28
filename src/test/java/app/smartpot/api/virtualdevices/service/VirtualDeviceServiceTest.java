@@ -32,10 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class VirtualDeviceServiceTest {
 
@@ -54,6 +51,21 @@ class VirtualDeviceServiceTest {
             .kind(CropKind.REAL).build();
     private VirtualDeviceService service;
 
+    private static SimulatorPot pot(String cropId, boolean connected) {
+        return new SimulatorPot(cropId, "LETTUCE", "WEATHER", true, connected, 30, Map.of("soilMoisture", 64.0),
+                CLOCK.instant(), Map.of(), null, null, null, List.of(), null);
+    }
+
+    private static VirtualDeviceRequest weather() {
+        return new VirtualDeviceRequest(VirtualMode.WEATHER, null,
+                new VirtualDeviceRequest.LocationRequest("Medellín", 6.245, -75.5715), 20);
+    }
+
+    private static VirtualDevice config(boolean active) {
+        return VirtualDevice.builder().cropId(CROP).ownerId(OWNER).mode(VirtualMode.AUTO).intervalSeconds(30)
+                .active(active).build();
+    }
+
     @BeforeEach
     void setUp() {
         service = new VirtualDeviceService(repository, cropService, simulator, CLOCK);
@@ -71,21 +83,6 @@ class VirtualDeviceServiceTest {
                     call.getArgument(1)));
             return target;
         });
-    }
-
-    private static SimulatorPot pot(String cropId, boolean connected) {
-        return new SimulatorPot(cropId, "LETTUCE", "WEATHER", true, connected, 30, Map.of("soilMoisture", 64.0),
-                CLOCK.instant(), Map.of(), null, null, null, List.of(), null);
-    }
-
-    private static VirtualDeviceRequest weather() {
-        return new VirtualDeviceRequest(VirtualMode.WEATHER, null,
-                new VirtualDeviceRequest.LocationRequest("Medellín", 6.245, -75.5715), 20);
-    }
-
-    private static VirtualDevice config(boolean active) {
-        return VirtualDevice.builder().cropId(CROP).ownerId(OWNER).mode(VirtualMode.AUTO).intervalSeconds(30)
-                .active(active).build();
     }
 
     @Test
