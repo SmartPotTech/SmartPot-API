@@ -36,7 +36,9 @@ public record InsightResponse(
                                   String idealExposure) {
     }
 
-    /** byParameter: salud de 0 a 100 de cada variable; explica de dónde sale el índice. */
+    /**
+     * byParameter: salud de 0 a 100 de cada variable; explica de dónde sale el índice.
+     */
     public record Health(double index, String level, String label, Map<String, Double> byParameter) {
     }
 
@@ -53,7 +55,9 @@ public record InsightResponse(
     public record Action(String actuator, String action, Integer durationSeconds, String reason) {
     }
 
-    /** Tendencia de una variable: trend RISING, FALLING o STABLE; limit MIN o MAX si saldrá de su rango. */
+    /**
+     * Tendencia de una variable: trend RISING, FALLING o STABLE; limit MIN o MAX si saldrá de su rango.
+     */
     public record Forecast(String parameter, double current, double slopePerHour, double expectedIn3h,
                            String trend, Double hoursToLimit, String limit, double confidence, String message) {
     }
