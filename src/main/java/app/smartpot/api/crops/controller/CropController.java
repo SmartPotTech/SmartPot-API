@@ -10,8 +10,10 @@ import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.crops.service.CropWeatherService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.service.ReadingService;
+import app.smartpot.api.virtualdevices.model.dto.SimulatorPot;
 import app.smartpot.api.virtualdevices.service.VirtualDeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,11 +42,14 @@ public class CropController {
     private final CropService cropService;
     private final ReadingService readingService;
     private final VirtualDeviceService virtualDevices;
+    private final CropWeatherService weatherService;
 
-    public CropController(CropService cropService, ReadingService readingService, VirtualDeviceService virtualDevices) {
+    public CropController(CropService cropService, ReadingService readingService, VirtualDeviceService virtualDevices,
+                          CropWeatherService weatherService) {
         this.cropService = cropService;
         this.readingService = readingService;
         this.virtualDevices = virtualDevices;
+        this.weatherService = weatherService;
     }
 
     @GetMapping
@@ -61,7 +66,8 @@ public class CropController {
     public CropCreatedResponse create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CropRequest request) {
         boolean virtual = request.kind() == CropKind.VIRTUAL;
         if (virtual) {
-            virtualDevices.checkCanCreate(jwt.getSubject(), request.virtual());
+            virtualDevices.checkCanCreate(jwt.getSubject(), request.virtual(),
+                    request.placement() == null ? null : request.placement().toPlacement());
         } else if (request.virtual() != null) {
             throw ApiException.badRequest("Solo los cultivos virtuales tienen simulación");
         }
@@ -107,6 +113,15 @@ public class CropController {
     public CropResponse automation(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
                                    @Valid @RequestBody AutomationRequest request) {
         return toResponse(cropService.setAutomation(jwt.getSubject(), cropId, request.enabled()));
+    }
+
+    @GetMapping("/{cropId}/weather")
+    @Operation(summary = "Clima actual del lugar del cultivo",
+            description = "204 si el cultivo no tiene lugar o si el clima no está disponible en este momento")
+    public ResponseEntity<SimulatorPot.Weather> weather(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId) {
+        return weatherService.current(cropService.getOwned(jwt.getSubject(), cropId))
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{cropId}/device")

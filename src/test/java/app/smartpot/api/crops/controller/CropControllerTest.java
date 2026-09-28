@@ -6,6 +6,7 @@ import app.smartpot.api.crops.model.entity.CropForm;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
 import app.smartpot.api.crops.service.CropService;
+import app.smartpot.api.crops.service.CropWeatherService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.service.ReadingService;
 import app.smartpot.api.support.WebTestConfig;
@@ -56,6 +57,9 @@ class CropControllerTest {
 
     @MockitoBean
     private VirtualDeviceService virtualDeviceService;
+
+    @MockitoBean
+    private CropWeatherService weatherService;
 
     @Test
     void requiresAToken() throws Exception {
@@ -138,7 +142,7 @@ class CropControllerTest {
                 .andExpect(jsonPath("$.crop.kind").value("VIRTUAL"))
                 .andExpect(jsonPath("$.crop.form").value("NFT"))
                 .andExpect(jsonPath("$.device").doesNotExist());
-        verify(virtualDeviceService).checkCanCreate(eq(OWNER), any());
+        verify(virtualDeviceService).checkCanCreate(eq(OWNER), any(), any());
         verify(virtualDeviceService).startFor(eq(crop), any());
     }
 
