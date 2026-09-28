@@ -5,11 +5,14 @@ import app.smartpot.api.actuators.model.entity.ActuatorType;
 import app.smartpot.api.actuators.repository.ActuatorRepository;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
+import app.smartpot.api.crops.model.dto.PlacementRequest;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropForm;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.repository.CropRepository;
 import app.smartpot.api.exception.ApiException;
@@ -84,6 +87,23 @@ class CropServiceTest {
     }
 
     @Test
+    void savesThePlacementAndAnnouncesAMove() {
+        Crop crop = Crop.builder().id(CROP).ownerId(OWNER).name("Tomates").type(CropType.TOMATO).build();
+        when(cropRepository.findByIdAndOwnerId(CROP, OWNER)).thenReturn(Optional.of(crop));
+        when(cropRepository.save(any(Crop.class))).thenAnswer(call -> call.getArgument(0));
+        PlacementRequest outside = new PlacementRequest(Placement.Setting.OUTDOOR, Placement.Exposure.FULL_SUN,
+                new PlacementRequest.LocationRequest(" Medellín ", 6.25, -75.56));
+
+        Crop updated = service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO, null, null, null,
+                outside));
+        service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO));
+
+        assertThat(updated.getPlacement().location().name()).isEqualTo("Medellín");
+        assertThat(updated.getPlacement().isOutdoor()).isTrue();
+        verify(publisher, times(1)).publishEvent(new CropPlacementChangedEvent(CROP));
+    }
+
+    @Test
     void limitsTheNumberOfCropsPerAccount() {
         when(cropRepository.countByOwnerId(OWNER)).thenReturn((long) CropService.MAX_CROPS_PER_USER);
 
@@ -144,7 +164,7 @@ class CropServiceTest {
     @Test
     void createsAVirtualCropWithEveryActuatorAndNoCredentials() {
         CropService.CreatedCrop created = service.create(OWNER, new CropRequest("Fresas", CropType.STRAWBERRY,
-                CropKind.VIRTUAL, CropForm.NFT, null));
+                CropKind.VIRTUAL, CropForm.NFT, null, null));
 
         assertThat(created.crop().getKind()).isEqualTo(CropKind.VIRTUAL);
         assertThat(created.crop().getForm()).isEqualTo(CropForm.NFT);
@@ -160,12 +180,12 @@ class CropServiceTest {
         when(cropRepository.findByIdAndOwnerId(CROP, OWNER)).thenReturn(Optional.of(crop));
 
         assertThatThrownBy(() -> service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO,
-                CropKind.VIRTUAL, null, null)))
+                CropKind.VIRTUAL, null, null, null)))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("real a virtual");
 
         Crop updated = service.update(OWNER, CROP, new CropRequest("Tomates", CropType.TOMATO, CropKind.REAL,
-                CropForm.TOWER, null));
+                CropForm.TOWER, null, null));
         assertThat(updated.getKind()).isEqualTo(CropKind.REAL);
         assertThat(updated.getForm()).isEqualTo(CropForm.TOWER);
     }
