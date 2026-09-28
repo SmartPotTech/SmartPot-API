@@ -7,19 +7,21 @@ package app.smartpot.api.crops.model.entity;
  */
 public record Placement(Setting setting, Exposure exposure, Location location) {
 
+    public Placement withLocation(Location newLocation) {
+        return new Placement(setting, exposure, newLocation);
+    }
+
     public enum Setting {
         INDOOR, OUTDOOR
     }
 
-    /** Al aire libre, horas de sol directo; bajo techo, qué tan soleada es su ventana. */
+    /**
+     * Al aire libre, horas de sol directo; bajo techo, qué tan soleada es su ventana.
+     */
     public enum Exposure {
         FULL_SUN, PARTIAL_SUN, SHADE
     }
 
     public record Location(String name, double latitude, double longitude) {
-    }
-
-    public Placement withLocation(Location newLocation) {
-        return new Placement(setting, exposure, newLocation);
     }
 }
