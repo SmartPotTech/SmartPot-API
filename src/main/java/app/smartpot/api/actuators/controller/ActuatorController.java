@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.util.List;
 
 @RestController
@@ -28,15 +29,19 @@ import java.util.List;
 public class ActuatorController {
 
     private final ActuatorService actuatorService;
+    private final Clock clock;
 
-    public ActuatorController(ActuatorService actuatorService) {
+    public ActuatorController(ActuatorService actuatorService, Clock clock) {
         this.actuatorService = actuatorService;
+        this.clock = clock;
     }
 
     @GetMapping
     @Operation(summary = "Listar actuadores del cultivo")
     public List<ActuatorResponse> list(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId) {
-        return actuatorService.list(jwt.getSubject(), cropId).stream().map(ActuatorMapper::toResponse).toList();
+        return actuatorService.list(jwt.getSubject(), cropId).stream()
+                .map(actuator -> ActuatorMapper.toResponse(actuator, clock.instant()))
+                .toList();
     }
 
     @PostMapping
@@ -44,7 +49,8 @@ public class ActuatorController {
     @Operation(summary = "Agregar un actuador", description = "Un actuador por tipo en cada cultivo")
     public ActuatorResponse add(@AuthenticationPrincipal Jwt jwt, @PathVariable String cropId,
                                 @Valid @RequestBody ActuatorRequest request) {
-        return ActuatorMapper.toResponse(actuatorService.add(jwt.getSubject(), cropId, request.type()));
+        return ActuatorMapper.toResponse(actuatorService.add(jwt.getSubject(), cropId, request.type()),
+                clock.instant());
     }
 
     @DeleteMapping("/{actuatorId}")
