@@ -9,6 +9,7 @@ import app.smartpot.api.exception.ObjectIds;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,9 +64,11 @@ public class ActuatorService {
         return repository.findByCropIdAndType(cropId, type);
     }
 
-    public void updateState(String actuatorId, boolean active) {
+    /** Estado confirmado: encendido sin límite (active), encendido hasta una hora (runningUntil) o apagado. */
+    public void updateState(String actuatorId, boolean active, Instant runningUntil) {
         repository.findById(actuatorId).ifPresent(actuator -> {
             actuator.setActive(active);
+            actuator.setRunningUntil(runningUntil);
             actuator.setLastChangedAt(clock.instant());
             repository.save(actuator);
         });
