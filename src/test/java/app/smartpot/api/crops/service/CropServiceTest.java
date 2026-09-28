@@ -6,11 +6,7 @@ import app.smartpot.api.actuators.repository.ActuatorRepository;
 import app.smartpot.api.commands.repository.CommandRepository;
 import app.smartpot.api.crops.model.dto.CropRequest;
 import app.smartpot.api.crops.model.dto.PlacementRequest;
-import app.smartpot.api.crops.model.entity.Crop;
-import app.smartpot.api.crops.model.entity.CropForm;
-import app.smartpot.api.crops.model.entity.CropKind;
-import app.smartpot.api.crops.model.entity.CropType;
-import app.smartpot.api.crops.model.entity.Placement;
+import app.smartpot.api.crops.model.entity.*;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
 import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
@@ -33,15 +29,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class CropServiceTest {
 
