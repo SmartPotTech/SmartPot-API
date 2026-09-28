@@ -1,11 +1,7 @@
 package app.smartpot.api.ai.service;
 
 import app.smartpot.api.ai.config.AiProperties;
-import app.smartpot.api.ai.model.dto.FleetRequest;
-import app.smartpot.api.ai.model.dto.FleetResponse;
-import app.smartpot.api.ai.model.dto.InsightRequest;
-import app.smartpot.api.ai.model.dto.InsightResponse;
-import app.smartpot.api.ai.model.dto.LearningBatch;
+import app.smartpot.api.ai.model.dto.*;
 import app.smartpot.api.cache.CacheStore;
 import app.smartpot.api.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +74,9 @@ public class AiClient {
         }
     }
 
-    /** Análisis de todos los cultivos de una cuenta: ranking, problemas compartidos, grupos y acciones en bloque. */
+    /**
+     * Análisis de todos los cultivos de una cuenta: ranking, problemas compartidos, grupos y acciones en bloque.
+     */
     public FleetResponse fleet(FleetRequest request) {
         requireEnabled();
         try {
@@ -98,7 +96,9 @@ public class AiClient {
         }
     }
 
-    /** Envía un lote de lecturas reales para el aprendizaje continuo. */
+    /**
+     * Envía un lote de lecturas reales para el aprendizaje continuo.
+     */
     public void learn(LearningBatch batch) {
         requireEnabled();
         try {
@@ -113,7 +113,9 @@ public class AiClient {
         }
     }
 
-    /** Borra del aprendizaje las lecturas de un cultivo eliminado. */
+    /**
+     * Borra del aprendizaje las lecturas de un cultivo eliminado.
+     */
     public void forget(String cropId) {
         if (!properties.enabled()) {
             return;
@@ -125,7 +127,9 @@ public class AiClient {
         }
     }
 
-    /** Qué ha aprendido el asistente: datos agregados por especie, sin información de personas ni cultivos. */
+    /**
+     * Qué ha aprendido el asistente: datos agregados por especie, sin información de personas ni cultivos.
+     */
     public String learningStatusJson() {
         requireEnabled();
         return cacheStore.get("ai:learning-status").orElseGet(() -> {
@@ -143,7 +147,9 @@ public class AiClient {
         });
     }
 
-    /** Perfiles de cultivo (rangos óptimos). Se guardan una hora en caché porque casi nunca cambian. */
+    /**
+     * Perfiles de cultivo (rangos óptimos). Se guardan una hora en caché porque casi nunca cambian.
+     */
     public String cropProfilesJson() {
         requireEnabled();
         return cacheStore.get("ai:crop-profiles").orElseGet(() -> {
