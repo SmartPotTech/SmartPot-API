@@ -1,6 +1,7 @@
 package app.smartpot.api.users.service;
 
 import app.smartpot.api.channels.service.ChannelService;
+import app.smartpot.api.channels.service.CropChannelService;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.notifications.service.NotificationService;
@@ -25,17 +26,19 @@ public class UserService {
     private final CropService cropService;
     private final NotificationService notificationService;
     private final ChannelService channelService;
+    private final CropChannelService cropChannelService;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     public UserService(UserRepository userRepository, CropService cropService, NotificationService notificationService,
-                       ChannelService channelService, PasswordResetTokenRepository resetTokenRepository,
-                       PasswordEncoder passwordEncoder, Clock clock) {
+                       ChannelService channelService, CropChannelService cropChannelService,
+                       PasswordResetTokenRepository resetTokenRepository, PasswordEncoder passwordEncoder, Clock clock) {
         this.userRepository = userRepository;
         this.cropService = cropService;
         this.notificationService = notificationService;
         this.channelService = channelService;
+        this.cropChannelService = cropChannelService;
         this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
@@ -74,6 +77,7 @@ public class UserService {
         cropService.deleteAllOwnedBy(userId);
         notificationService.deleteAllForUser(userId);
         channelService.deleteAllForUser(userId);
+        cropChannelService.deleteAllForOwner(userId);
         resetTokenRepository.deleteByUserId(userId);
         userRepository.delete(user);
         log.info("Cuenta {} eliminada con todos sus datos", userId);
