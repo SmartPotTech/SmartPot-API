@@ -50,6 +50,20 @@ public class AutomationAgent {
         this.automationCooldown = properties.automationCooldown();
     }
 
+    private static <E extends Enum<E>> E parse(Class<E> type, String value) {
+        if (value == null) {
+            return null;
+        }
+        return Arrays.stream(type.getEnumConstants())
+                .filter(constant -> constant.name().equalsIgnoreCase(value))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static String orEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
     @Async
     @EventListener
     public void onReading(ReadingRecordedEvent event) {
@@ -104,19 +118,5 @@ public class AutomationAgent {
                             Duration.ofMinutes(30), crop.getOwnerId(), crop.getId(), NotificationType.AI,
                             "El asistente actuó en " + crop.getName(), action.reason()));
         }
-    }
-
-    private static <E extends Enum<E>> E parse(Class<E> type, String value) {
-        if (value == null) {
-            return null;
-        }
-        return Arrays.stream(type.getEnumConstants())
-                .filter(constant -> constant.name().equalsIgnoreCase(value))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static String orEmpty(String value) {
-        return value == null ? "" : value;
     }
 }
