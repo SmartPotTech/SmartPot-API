@@ -7,7 +7,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-/** Estado de un cultivo virtual tal como lo informa el simulador. */
+/**
+ * Estado de un cultivo virtual tal como lo informa el simulador.
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SimulatorPot(String cropId, String cropType, String mode, boolean managed, boolean connected,
                            double intervalSeconds, Map<String, Double> lastReading, Instant lastPublishedAt,
@@ -18,7 +20,9 @@ public record SimulatorPot(String cropId, String cropType, String mode, boolean 
     public record Location(String name, double latitude, double longitude) {
     }
 
-    /** condition: CLEAR, MOSTLY_CLEAR, PARTLY_CLOUDY, CLOUDY, FOG, DRIZZLE, RAIN, SNOW o STORM. */
+    /**
+     * condition: CLEAR, MOSTLY_CLEAR, PARTLY_CLOUDY, CLOUDY, FOG, DRIZZLE, RAIN, SNOW o STORM.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Weather(double temperature, double humidity, double cloudCover, double radiation,
                           double precipitation, double pressure, double windSpeed,
