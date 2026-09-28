@@ -17,7 +17,7 @@ public interface ReadingRepository extends MongoRepository<Reading, String> {
     List<Reading> findByCropIdOrderByMeasuredAtDesc(String cropId, Pageable pageable);
 
     List<Reading> findByCropIdAndMeasuredAtBetweenOrderByMeasuredAtDesc(String cropId, Instant from, Instant to,
-                                                                          Pageable pageable);
+                                                                        Pageable pageable);
 
     void deleteByCropId(String cropId);
 }
