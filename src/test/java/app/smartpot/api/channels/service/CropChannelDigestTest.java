@@ -20,24 +20,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class CropChannelDigestTest {
 
@@ -59,6 +50,16 @@ class CropChannelDigestTest {
             .health(new CropHealth(81.6, "GOOD", "Saludable", NOW)).build();
     private CropChannelDigest digest;
 
+    private static CropChannel settings() {
+        return CropChannel.builder().cropId(CROP).ownerId(OWNER).type(ChannelType.TELEGRAM).enabled(true)
+                .events(EnumSet.of(NotificationType.ALERT)).delivery(CropChannel.Delivery.DIGEST).digestHours(6)
+                .recipients(new ArrayList<>()).build();
+    }
+
+    private static Notification notification(NotificationType type, String title, Instant at) {
+        return Notification.builder().cropId(CROP).type(type).title(title).message("…").createdAt(at).build();
+    }
+
     @BeforeEach
     void setUp() {
         digest = new CropChannelDigest(repository, channelService, sender, cropService, notifications, readingService,
@@ -68,16 +69,6 @@ class CropChannelDigestTest {
         when(channelService.available(ChannelType.TELEGRAM, false)).thenReturn(Optional.of(telegram));
         when(channelService.link(OWNER, ChannelType.TELEGRAM)).thenReturn(Optional.of(link));
         when(cropService.find(CROP)).thenReturn(Optional.of(crop));
-    }
-
-    private static CropChannel settings() {
-        return CropChannel.builder().cropId(CROP).ownerId(OWNER).type(ChannelType.TELEGRAM).enabled(true)
-                .events(EnumSet.of(NotificationType.ALERT)).delivery(CropChannel.Delivery.DIGEST).digestHours(6)
-                .recipients(new ArrayList<>()).build();
-    }
-
-    private static Notification notification(NotificationType type, String title, Instant at) {
-        return Notification.builder().cropId(CROP).type(type).title(title).message("…").createdAt(at).build();
     }
 
     @Test
