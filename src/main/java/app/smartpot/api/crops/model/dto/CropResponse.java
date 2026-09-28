@@ -1,6 +1,7 @@
 package app.smartpot.api.crops.model.dto;
 
 import app.smartpot.api.crops.model.entity.CropHealth;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.readings.model.dto.ReadingResponse;
 
 import java.time.Instant;
@@ -11,6 +12,7 @@ public record CropResponse(
         String type,
         String kind,
         String form,
+        Placement placement,
         boolean automationEnabled,
         DeviceStatus device,
         CropHealth health,

@@ -20,7 +20,7 @@ public final class CropMapper {
                 : new CropResponse.DeviceStatus(device.isOnline(), device.getLastSeenAt(), device.getKeyRotatedAt());
         String kind = (crop.getKind() == null ? CropKind.REAL : crop.getKind()).name();
         String form = (crop.getForm() == null ? CropForm.POT : crop.getForm()).name();
-        return new CropResponse(crop.getId(), crop.getName(), crop.getType().name(), kind, form, crop.isAutomationEnabled(),
-                deviceStatus, crop.getHealth(), ReadingMapper.toResponse(latestReading), crop.getCreatedAt());
+        return new CropResponse(crop.getId(), crop.getName(), crop.getType().name(), kind, form, crop.getPlacement(),
+                crop.isAutomationEnabled(), deviceStatus, crop.getHealth(), ReadingMapper.toResponse(latestReading), crop.getCreatedAt());
     }
 }
