@@ -25,25 +25,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class OverviewServiceTest {
 
@@ -59,14 +48,13 @@ class OverviewServiceTest {
     private final NotificationService notificationService = mock(NotificationService.class);
     private final ReadingSeriesRepository seriesRepository = mock(ReadingSeriesRepository.class);
     private final AiClient aiClient = mock(AiClient.class);
-    private OverviewService service;
-
     private final Crop lettuce = Crop.builder().id(LETTUCE).ownerId(OWNER).name("Lechugas").type(CropType.LETTUCE)
             .automationEnabled(true).device(Device.builder().online(true).build())
             .health(new CropHealth(92, "EXCELLENT", "Excelente", NOW)).createdAt(NOW).build();
     private final Crop tomato = Crop.builder().id(TOMATO).ownerId(OWNER).name("Tomates").type(CropType.TOMATO)
             .device(Device.builder().online(true).build())
             .health(new CropHealth(40, "POOR", "En riesgo", NOW)).createdAt(NOW).build();
+    private OverviewService service;
 
     @BeforeEach
     void setUp() {
