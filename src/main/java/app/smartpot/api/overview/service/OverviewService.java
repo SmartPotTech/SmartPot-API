@@ -22,13 +22,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Panel general: la cuenta completa en lugar de un cultivo. Totales, series comparables entre
@@ -64,6 +59,22 @@ public class OverviewService {
         this.aiClient = aiClient;
         this.clock = clock;
         this.timezone = aiProperties.timezone();
+    }
+
+    /**
+     * Unos 48 puntos por serie: suficiente para ver la forma sin saturar el gráfico.
+     */
+    static int bucketMinutes(int hours) {
+        if (hours <= 6) {
+            return 10;
+        }
+        if (hours <= 24) {
+            return 30;
+        }
+        if (hours <= 72) {
+            return 90;
+        }
+        return 180;
     }
 
     public OverviewResponse overview(String ownerId) {
@@ -116,25 +127,11 @@ public class OverviewService {
                     "Crea tu primer cultivo para que el asistente pueda compararlo.");
         }
         List<FleetRequest.Crop> input = crops.stream().map(crop -> new FleetRequest.Crop(
-                crop.getId(), crop.getName(), crop.getType().name(),
-                readingService.latest(crop.getId()).map(Reading::getMeasures).orElse(null),
-                actuatorService.listForCrop(crop.getId()).stream().map(Actuator::getType).map(Enum::name).toList()))
+                        crop.getId(), crop.getName(), crop.getType().name(),
+                        readingService.latest(crop.getId()).map(Reading::getMeasures).orElse(null),
+                        actuatorService.listForCrop(crop.getId()).stream().map(Actuator::getType).map(Enum::name).toList()))
                 .toList();
         int hour = clock.instant().atZone(timezone).getHour();
         return aiClient.fleet(new FleetRequest(input, hour));
-    }
-
-    /** Unos 48 puntos por serie: suficiente para ver la forma sin saturar el gráfico. */
-    static int bucketMinutes(int hours) {
-        if (hours <= 6) {
-            return 10;
-        }
-        if (hours <= 24) {
-            return 30;
-        }
-        if (hours <= 72) {
-            return 90;
-        }
-        return 180;
     }
 }
