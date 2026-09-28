@@ -28,6 +28,18 @@ public class TelegramChannel implements NotificationChannel {
         this.client = client;
     }
 
+    static String format(ChannelMessage message) {
+        String icon = ICONS.getOrDefault(message.type(), "🌱");
+        return icon + " <b>" + escape(message.title()) + "</b>\n" + escape(message.body());
+    }
+
+    /**
+     * Telegram solo reconoce &amp;, &lt;, &gt; y &quot;: las tildes y la ñ van tal cual.
+     */
+    static String escape(String text) {
+        return text == null ? "" : text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
     @Override
     public ChannelType type() {
         return ChannelType.TELEGRAM;
@@ -66,16 +78,6 @@ public class TelegramChannel implements NotificationChannel {
     @Override
     public void send(String address, ChannelMessage message) {
         client.sendMessage(address, format(message), "Abrir en SmartPot", message.url());
-    }
-
-    static String format(ChannelMessage message) {
-        String icon = ICONS.getOrDefault(message.type(), "🌱");
-        return icon + " <b>" + escape(message.title()) + "</b>\n" + escape(message.body());
-    }
-
-    /** Telegram solo reconoce &amp;, &lt;, &gt; y &quot;: las tildes y la ñ van tal cual. */
-    static String escape(String text) {
-        return text == null ? "" : text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private String username() {
