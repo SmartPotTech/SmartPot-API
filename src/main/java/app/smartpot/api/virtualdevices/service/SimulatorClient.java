@@ -20,7 +20,9 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.Optional;
 
-/** Cliente de la API interna del simulador de dispositivos. */
+/**
+ * Cliente de la API interna del simulador de dispositivos.
+ */
 @Slf4j
 @Component
 public class SimulatorClient {
@@ -71,7 +73,9 @@ public class SimulatorClient {
         }
     }
 
-    /** Estado en vivo; vacío si el cultivo no existe en el simulador o si este no responde. */
+    /**
+     * Estado en vivo; vacío si el cultivo no existe en el simulador o si este no responde.
+     */
     public Optional<SimulatorPot> get(String cropId) {
         if (!isAvailable()) {
             return Optional.empty();
@@ -125,7 +129,9 @@ public class SimulatorClient {
         }
     }
 
-    /** Clima actual de un lugar; vacío si el simulador no está o no pudo consultarlo. */
+    /**
+     * Clima actual de un lugar; vacío si el simulador no está o no pudo consultarlo.
+     */
     public Optional<SimulatorPot.Weather> weather(double latitude, double longitude) {
         if (!isAvailable()) {
             return Optional.empty();
