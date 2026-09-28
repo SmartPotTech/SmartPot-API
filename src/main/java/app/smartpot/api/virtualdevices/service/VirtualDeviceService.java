@@ -8,11 +8,7 @@ import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
 import app.smartpot.api.readings.model.entity.Measures;
-import app.smartpot.api.virtualdevices.model.dto.PlaceResponse;
-import app.smartpot.api.virtualdevices.model.dto.SimulatorPot;
-import app.smartpot.api.virtualdevices.model.dto.SimulatorPotRequest;
-import app.smartpot.api.virtualdevices.model.dto.VirtualDeviceRequest;
-import app.smartpot.api.virtualdevices.model.dto.VirtualDeviceResponse;
+import app.smartpot.api.virtualdevices.model.dto.*;
 import app.smartpot.api.virtualdevices.model.entity.VirtualDevice;
 import app.smartpot.api.virtualdevices.model.entity.VirtualLocation;
 import app.smartpot.api.virtualdevices.model.entity.VirtualMode;
@@ -25,11 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +50,65 @@ public class VirtualDeviceService {
         this.clock = clock;
     }
 
-    /** Antes de crear un cultivo virtual: que haya simulador, cupo en la cuenta y una configuración válida. */
+    private static Crop requireVirtual(Crop crop) {
+        if (!crop.isVirtual()) {
+            throw ApiException.badRequest("Este cultivo es real: sus lecturas llegan de su propio dispositivo");
+        }
+        return crop;
+    }
+
+    private static void validate(VirtualDeviceRequest request, Placement placement) {
+        boolean placed = placement != null && placement.location() != null;
+        if (request.mode() == VirtualMode.WEATHER && request.location() == null && !placed) {
+            throw ApiException.badRequest("Elige una ubicación para que el cultivo siga su clima");
+        }
+    }
+
+    static VirtualLocation locationOf(Crop crop, VirtualDevice config) {
+        Placement placement = crop.getPlacement();
+        if (placement != null && placement.location() != null) {
+            Placement.Location location = placement.location();
+            return new VirtualLocation(location.name(), location.latitude(), location.longitude());
+        }
+        return config.getLocation();
+    }
+
+    static Measures merge(Measures current, VirtualDeviceRequest.ManualValues update) {
+        Measures base = current == null ? new Measures() : current;
+        return Measures.builder()
+                .temperature(first(update.temperature(), base.getTemperature()))
+                .humidity(first(update.humidity(), base.getHumidity()))
+                .brightness(first(update.brightness(), base.getBrightness()))
+                .ph(first(update.ph(), base.getPh()))
+                .tds(first(update.tds(), base.getTds()))
+                .atmosphere(first(update.atmosphere(), base.getAtmosphere()))
+                .soilMoisture(first(update.soilMoisture(), base.getSoilMoisture()))
+                .build();
+    }
+
+    static Map<String, Double> values(Measures measures) {
+        if (measures == null) {
+            return null;
+        }
+        Map<String, Double> values = new LinkedHashMap<>();
+        values.put("temperature", measures.getTemperature());
+        values.put("humidity", measures.getHumidity());
+        values.put("brightness", measures.getBrightness());
+        values.put("ph", measures.getPh());
+        values.put("tds", measures.getTds());
+        values.put("atmosphere", measures.getAtmosphere());
+        values.put("soilMoisture", measures.getSoilMoisture());
+        values.values().removeIf(Objects::isNull);
+        return values.isEmpty() ? null : values;
+    }
+
+    private static Double first(Double preferred, Double fallback) {
+        return preferred != null ? preferred : fallback;
+    }
+
+    /**
+     * Antes de crear un cultivo virtual: que haya simulador, cupo en la cuenta y una configuración válida.
+     */
     public void checkCanCreate(String ownerId, VirtualDeviceRequest setup, Placement placement) {
         requireSimulator();
         if (repository.countByOwnerId(ownerId) >= MAX_PER_ACCOUNT) {
@@ -67,7 +117,9 @@ public class VirtualDeviceService {
         validate(setup != null ? setup : DEFAULT_SETUP, placement);
     }
 
-    /** Arranca la simulación de un cultivo virtual recién creado; si el simulador falla, la reconciliación reintenta. */
+    /**
+     * Arranca la simulación de un cultivo virtual recién creado; si el simulador falla, la reconciliación reintenta.
+     */
     public void startFor(Crop crop, VirtualDeviceRequest setup) {
         Instant now = clock.instant();
         VirtualDevice config = VirtualDevice.builder()
@@ -89,7 +141,9 @@ public class VirtualDeviceService {
                 .orElseGet(() -> VirtualDeviceResponse.inactive(crop.getId(), simulator.isAvailable()));
     }
 
-    /** Cambia la simulación y la reanuda si estaba en pausa. */
+    /**
+     * Cambia la simulación y la reanuda si estaba en pausa.
+     */
     public VirtualDeviceResponse configure(String ownerId, String cropId, VirtualDeviceRequest request) {
         Crop crop = requireVirtual(cropService.getOwned(ownerId, cropId));
         requireSimulator();
@@ -107,7 +161,9 @@ public class VirtualDeviceService {
         return VirtualDeviceResponse.of(saved, locationOf(placed, saved), live, true);
     }
 
-    /** Pone la simulación en pausa: el cultivo deja de publicar, pero conserva su configuración. */
+    /**
+     * Pone la simulación en pausa: el cultivo deja de publicar, pero conserva su configuración.
+     */
     public void pause(String ownerId, String cropId) {
         Crop crop = requireVirtual(cropService.getOwned(ownerId, cropId));
         repository.findByCropId(crop.getId()).ifPresent(config -> {
@@ -126,7 +182,9 @@ public class VirtualDeviceService {
         return simulator.places(trimmed);
     }
 
-    /** Vuelve a crear en el simulador los cultivos activos que falten y retira los pausados o inexistentes. */
+    /**
+     * Vuelve a crear en el simulador los cultivos activos que falten y retira los pausados o inexistentes.
+     */
     @Scheduled(fixedDelayString = "${smartpot.simulator.reconcile-interval:PT1M}", initialDelay = 20_000)
     public void reconcile() {
         if (!simulator.isAvailable()) {
@@ -173,27 +231,15 @@ public class VirtualDeviceService {
                 cropService.find(event.cropId()).ifPresent(crop -> pushQuietly(crop, config)));
     }
 
-    private static Crop requireVirtual(Crop crop) {
-        if (!crop.isVirtual()) {
-            throw ApiException.badRequest("Este cultivo es real: sus lecturas llegan de su propio dispositivo");
-        }
-        return crop;
-    }
-
     private void requireSimulator() {
         if (!simulator.isAvailable()) {
             throw ApiException.unavailable("Los cultivos virtuales no están habilitados en este servidor");
         }
     }
 
-    private static void validate(VirtualDeviceRequest request, Placement placement) {
-        boolean placed = placement != null && placement.location() != null;
-        if (request.mode() == VirtualMode.WEATHER && request.location() == null && !placed) {
-            throw ApiException.badRequest("Elige una ubicación para que el cultivo siga su clima");
-        }
-    }
-
-    /** El lugar del cultivo es uno solo: la ubicación que elige la simulación queda como la del cultivo. */
+    /**
+     * El lugar del cultivo es uno solo: la ubicación que elige la simulación queda como la del cultivo.
+     */
     private Crop apply(Crop crop, VirtualDevice config, VirtualDeviceRequest request, Instant now) {
         config.setMode(request.mode());
         if (request.manual() != null) {
@@ -212,15 +258,6 @@ public class VirtualDeviceService {
         config.setActive(true);
         config.setUpdatedAt(now);
         return placed;
-    }
-
-    static VirtualLocation locationOf(Crop crop, VirtualDevice config) {
-        Placement placement = crop.getPlacement();
-        if (placement != null && placement.location() != null) {
-            Placement.Location location = placement.location();
-            return new VirtualLocation(location.name(), location.latitude(), location.longitude());
-        }
-        return config.getLocation();
     }
 
     private void pushQuietly(Crop crop, VirtualDevice config) {
@@ -243,38 +280,5 @@ public class VirtualDeviceService {
                 config.getIntervalSeconds(),
                 placement == null || placement.setting() == null ? null : placement.setting().name(),
                 placement == null || placement.exposure() == null ? null : placement.exposure().name()));
-    }
-
-    static Measures merge(Measures current, VirtualDeviceRequest.ManualValues update) {
-        Measures base = current == null ? new Measures() : current;
-        return Measures.builder()
-                .temperature(first(update.temperature(), base.getTemperature()))
-                .humidity(first(update.humidity(), base.getHumidity()))
-                .brightness(first(update.brightness(), base.getBrightness()))
-                .ph(first(update.ph(), base.getPh()))
-                .tds(first(update.tds(), base.getTds()))
-                .atmosphere(first(update.atmosphere(), base.getAtmosphere()))
-                .soilMoisture(first(update.soilMoisture(), base.getSoilMoisture()))
-                .build();
-    }
-
-    static Map<String, Double> values(Measures measures) {
-        if (measures == null) {
-            return null;
-        }
-        Map<String, Double> values = new LinkedHashMap<>();
-        values.put("temperature", measures.getTemperature());
-        values.put("humidity", measures.getHumidity());
-        values.put("brightness", measures.getBrightness());
-        values.put("ph", measures.getPh());
-        values.put("tds", measures.getTds());
-        values.put("atmosphere", measures.getAtmosphere());
-        values.put("soilMoisture", measures.getSoilMoisture());
-        values.values().removeIf(Objects::isNull);
-        return values.isEmpty() ? null : values;
-    }
-
-    private static Double first(Double preferred, Double fallback) {
-        return preferred != null ? preferred : fallback;
     }
 }
