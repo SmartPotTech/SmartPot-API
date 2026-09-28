@@ -18,13 +18,22 @@ public record InsightResponse(
         List<Action> actions,
         List<Forecast> forecasts,
         Learning learning,
+        PlacementAdvice placement,
         String summary,
         Instant evaluatedAt
 ) {
 
     public InsightResponse withEvaluatedAt(Instant instant) {
         return new InsightResponse(cropType, health, diagnosis, conclusions, predictions, actions, forecasts, learning,
-                summary, instant);
+                placement, summary, instant);
+    }
+
+    /**
+     * Si el lugar le sirve a la especie: level OK, UNKNOWN (sin lugar), TIP (no es el ideal, pero la planta está
+     * bien) o MOVE (el lugar ya afecta su salud). ideal es el lugar recomendado y lightNeed, la luz que pide.
+     */
+    public record PlacementAdvice(String level, String title, String message, String lightNeed, String idealSetting,
+                                  String idealExposure) {
     }
 
     /** byParameter: salud de 0 a 100 de cada variable; explica de dónde sale el índice. */

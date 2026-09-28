@@ -48,7 +48,7 @@ class AutomationAgentTest {
                     "El sustrato está muy seco.", "Riega de inmediato.")),
             List.of(), List.of(),
             List.of(new InsightResponse.Action("WATER_PUMP", "ACTIVATE", 30, "Sustrato seco")),
-            List.of(), null, "Riega tu lechuga", null);
+            List.of(), null, null, "Riega tu lechuga", null);
 
     @BeforeEach
     void setUp() {
