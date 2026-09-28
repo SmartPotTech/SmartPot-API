@@ -1,12 +1,7 @@
 package app.smartpot.api.crops.controller;
 
 import app.smartpot.api.crops.mapper.CropMapper;
-import app.smartpot.api.crops.model.dto.AutomationRequest;
-import app.smartpot.api.crops.model.dto.BulkAutomationRequest;
-import app.smartpot.api.crops.model.dto.CropCreatedResponse;
-import app.smartpot.api.crops.model.dto.CropRequest;
-import app.smartpot.api.crops.model.dto.CropResponse;
-import app.smartpot.api.crops.model.dto.DeviceCredentialsResponse;
+import app.smartpot.api.crops.model.dto.*;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.service.CropService;
@@ -22,15 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
