@@ -18,11 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +70,27 @@ public class CropChannelDigest {
         this.webBaseUrl = properties.webBaseUrl().replaceAll("/+$", "");
     }
 
+    static String describe(Reading reading) {
+        Measures m = reading.getMeasures();
+        if (m == null) {
+            return "Sin lecturas recientes";
+        }
+        List<String> parts = new ArrayList<>();
+        if (m.getTemperature() != null) {
+            parts.add(String.format(Locale.ROOT, "%.1f °C", m.getTemperature()).replace('.', ','));
+        }
+        if (m.getHumidity() != null) {
+            parts.add("humedad " + Math.round(m.getHumidity()) + " %");
+        }
+        if (m.getSoilMoisture() != null) {
+            parts.add("sustrato " + Math.round(m.getSoilMoisture()) + " %");
+        }
+        if (m.getBrightness() != null) {
+            parts.add("luz " + Math.round(m.getBrightness()) + " lux");
+        }
+        return "Última lectura: " + (parts.isEmpty() ? "sin datos" : String.join(" · ", parts));
+    }
+
     @Scheduled(fixedDelayString = "${smartpot.channels.digest-interval:PT1M}", initialDelay = 30_000)
     public void run() {
         Instant now = clock.instant();
@@ -101,7 +118,7 @@ public class CropChannelDigest {
                 changed = true;
             } else if (!now.isBefore(since.plus(Duration.ofHours(hours)))) {
                 List<Notification> items = notifications.findByCropIdAndCreatedAtAfterOrderByCreatedAtAsc(
-                        crop.getId(), since).stream()
+                                crop.getId(), since).stream()
                         .filter(item -> settings.getEvents() != null && settings.getEvents().contains(item.getType()))
                         .toList();
                 if (!items.isEmpty()) {
@@ -166,27 +183,6 @@ public class CropChannelDigest {
                 + (orders == 1 ? " orden" : " órdenes"));
         return new ChannelMessage(NotificationType.INFO, "Resumen diario de «" + crop.getName() + "»",
                 String.join("\n", lines), url(crop));
-    }
-
-    static String describe(Reading reading) {
-        Measures m = reading.getMeasures();
-        if (m == null) {
-            return "Sin lecturas recientes";
-        }
-        List<String> parts = new ArrayList<>();
-        if (m.getTemperature() != null) {
-            parts.add(String.format(Locale.ROOT, "%.1f °C", m.getTemperature()).replace('.', ','));
-        }
-        if (m.getHumidity() != null) {
-            parts.add("humedad " + Math.round(m.getHumidity()) + " %");
-        }
-        if (m.getSoilMoisture() != null) {
-            parts.add("sustrato " + Math.round(m.getSoilMoisture()) + " %");
-        }
-        if (m.getBrightness() != null) {
-            parts.add("luz " + Math.round(m.getBrightness()) + " lux");
-        }
-        return "Última lectura: " + (parts.isEmpty() ? "sin datos" : String.join(" · ", parts));
     }
 
     private String url(Crop crop) {
