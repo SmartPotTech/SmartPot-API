@@ -1,21 +1,13 @@
 package app.smartpot.api.security.controller;
 
-import app.smartpot.api.security.model.dto.AuthResponse;
-import app.smartpot.api.security.model.dto.ForgotPasswordRequest;
-import app.smartpot.api.security.model.dto.LoginRequest;
-import app.smartpot.api.security.model.dto.RegisterRequest;
-import app.smartpot.api.security.model.dto.ResetPasswordRequest;
+import app.smartpot.api.security.model.dto.*;
 import app.smartpot.api.security.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
