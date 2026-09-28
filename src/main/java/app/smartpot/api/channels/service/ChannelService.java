@@ -17,13 +17,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -53,6 +47,14 @@ public class ChannelService {
         this.channels = channels.stream().collect(Collectors.toMap(NotificationChannel::type, Function.identity()));
         this.cacheStore = cacheStore;
         this.clock = clock;
+    }
+
+    public static String nameOf(ChannelType type) {
+        return NAMES.getOrDefault(type, type.name());
+    }
+
+    private static String codeKey(ChannelType type, String code) {
+        return "channel-link:" + type.name().toLowerCase() + ":" + code;
     }
 
     public List<ChannelOptionResponse> overview(String userId) {
@@ -164,7 +166,9 @@ public class ChannelService {
         return channels.get(type);
     }
 
-    /** El canal existe y el servidor lo tiene configurado. */
+    /**
+     * El canal existe y el servidor lo tiene configurado.
+     */
     public Optional<NotificationChannel> available(ChannelType type, boolean required) {
         NotificationChannel channel = channels.get(type);
         if (channel != null && channel.isAvailable()) {
@@ -176,17 +180,15 @@ public class ChannelService {
         return Optional.empty();
     }
 
-    public static String nameOf(ChannelType type) {
-        return NAMES.getOrDefault(type, type.name());
-    }
-
     public void delivered(ChannelLink link) {
         link.setLastDeliveredAt(clock.instant());
         link.setFailures(0);
         repository.save(link);
     }
 
-    /** Tras varios fallos seguidos, o si el canal dice que el destino ya no existe, el vínculo se pausa. */
+    /**
+     * Tras varios fallos seguidos, o si el canal dice que el destino ya no existe, el vínculo se pausa.
+     */
     public void failed(ChannelLink link, boolean permanent) {
         link.setFailures(link.getFailures() + 1);
         if (permanent || link.getFailures() >= 5) {
@@ -204,9 +206,5 @@ public class ChannelService {
     private ChannelLink find(String userId, String linkId) {
         ObjectIds.require(linkId, NOT_FOUND);
         return repository.findByIdAndUserId(linkId, userId).orElseThrow(() -> ApiException.notFound(NOT_FOUND));
-    }
-
-    private static String codeKey(ChannelType type, String code) {
-        return "channel-link:" + type.name().toLowerCase() + ":" + code;
     }
 }
