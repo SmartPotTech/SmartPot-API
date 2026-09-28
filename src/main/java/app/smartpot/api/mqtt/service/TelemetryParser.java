@@ -19,6 +19,24 @@ public class TelemetryParser {
         this.jsonMapper = jsonMapper;
     }
 
+    private static Double number(JsonNode root, String field) {
+        JsonNode node = root.get(field);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        if (node.isNumber()) {
+            return node.doubleValue();
+        }
+        if (node.isString()) {
+            try {
+                return Double.parseDouble(node.asString().trim());
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("El campo " + field + " no es numérico");
+            }
+        }
+        throw new IllegalArgumentException("El campo " + field + " no es numérico");
+    }
+
     /**
      * Lee la telemetría del dispositivo. Acepta números o textos numéricos e ignora campos desconocidos.
      */
@@ -59,23 +77,5 @@ public class TelemetryParser {
         } catch (JacksonException ex) {
             throw new IllegalArgumentException("El mensaje no es un JSON válido", ex);
         }
-    }
-
-    private static Double number(JsonNode root, String field) {
-        JsonNode node = root.get(field);
-        if (node == null || node.isNull()) {
-            return null;
-        }
-        if (node.isNumber()) {
-            return node.doubleValue();
-        }
-        if (node.isString()) {
-            try {
-                return Double.parseDouble(node.asString().trim());
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException("El campo " + field + " no es numérico");
-            }
-        }
-        throw new IllegalArgumentException("El campo " + field + " no es numérico");
     }
 }
