@@ -1,7 +1,9 @@
 package app.smartpot.api.virtualdevices.service;
 
 import app.smartpot.api.crops.model.entity.Crop;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
@@ -57,12 +59,12 @@ public class VirtualDeviceService {
     }
 
     /** Antes de crear un cultivo virtual: que haya simulador, cupo en la cuenta y una configuración válida. */
-    public void checkCanCreate(String ownerId, VirtualDeviceRequest setup) {
+    public void checkCanCreate(String ownerId, VirtualDeviceRequest setup, Placement placement) {
         requireSimulator();
         if (repository.countByOwnerId(ownerId) >= MAX_PER_ACCOUNT) {
             throw ApiException.badRequest("Puedes tener hasta " + MAX_PER_ACCOUNT + " cultivos virtuales");
         }
-        validate(setup != null ? setup : DEFAULT_SETUP);
+        validate(setup != null ? setup : DEFAULT_SETUP, placement);
     }
 
     /** Arranca la simulación de un cultivo virtual recién creado; si el simulador falla, la reconciliación reintenta. */
@@ -73,16 +75,16 @@ public class VirtualDeviceService {
                 .ownerId(crop.getOwnerId())
                 .createdAt(now)
                 .build();
-        apply(config, setup != null ? setup : DEFAULT_SETUP, now);
+        Crop placed = apply(crop, config, setup != null ? setup : DEFAULT_SETUP, now);
         repository.save(config);
-        pushQuietly(crop, config);
+        pushQuietly(placed, config);
         log.info("Simulación del cultivo virtual {} en modo {}", crop.getId(), config.getMode());
     }
 
     public VirtualDeviceResponse get(String ownerId, String cropId) {
         Crop crop = requireVirtual(cropService.getOwned(ownerId, cropId));
         return repository.findByCropId(crop.getId())
-                .map(config -> VirtualDeviceResponse.of(config,
+                .map(config -> VirtualDeviceResponse.of(config, locationOf(crop, config),
                         config.isActive() ? simulator.get(crop.getId()).orElse(null) : null, simulator.isAvailable()))
                 .orElseGet(() -> VirtualDeviceResponse.inactive(crop.getId(), simulator.isAvailable()));
     }
@@ -91,18 +93,18 @@ public class VirtualDeviceService {
     public VirtualDeviceResponse configure(String ownerId, String cropId, VirtualDeviceRequest request) {
         Crop crop = requireVirtual(cropService.getOwned(ownerId, cropId));
         requireSimulator();
-        validate(request);
+        validate(request, crop.getPlacement());
         Instant now = clock.instant();
         VirtualDevice config = repository.findByCropId(crop.getId()).orElseGet(() -> VirtualDevice.builder()
                 .cropId(crop.getId())
                 .ownerId(ownerId)
                 .createdAt(now)
                 .build());
-        apply(config, request, now);
-        SimulatorPot live = push(crop, config);
+        Crop placed = apply(crop, config, request, now);
+        SimulatorPot live = push(placed, config);
         VirtualDevice saved = repository.save(config);
         log.info("Simulación del cultivo virtual {} en modo {}", crop.getId(), config.getMode());
-        return VirtualDeviceResponse.of(saved, live, true);
+        return VirtualDeviceResponse.of(saved, locationOf(placed, saved), live, true);
     }
 
     /** Pone la simulación en pausa: el cultivo deja de publicar, pero conserva su configuración. */
@@ -159,6 +161,13 @@ public class VirtualDeviceService {
 
     @Async
     @EventListener
+    public void onPlacementChanged(CropPlacementChangedEvent event) {
+        repository.findByCropId(event.cropId()).filter(VirtualDevice::isActive).ifPresent(config ->
+                cropService.find(event.cropId()).ifPresent(crop -> pushQuietly(crop, config)));
+    }
+
+    @Async
+    @EventListener
     public void onKeyRotated(DeviceKeyRotatedEvent event) {
         repository.findByCropId(event.cropId()).filter(VirtualDevice::isActive).ifPresent(config ->
                 cropService.find(event.cropId()).ifPresent(crop -> pushQuietly(crop, config)));
@@ -177,25 +186,41 @@ public class VirtualDeviceService {
         }
     }
 
-    private static void validate(VirtualDeviceRequest request) {
-        if (request.mode() == VirtualMode.WEATHER && request.location() == null) {
+    private static void validate(VirtualDeviceRequest request, Placement placement) {
+        boolean placed = placement != null && placement.location() != null;
+        if (request.mode() == VirtualMode.WEATHER && request.location() == null && !placed) {
             throw ApiException.badRequest("Elige una ubicación para que el cultivo siga su clima");
         }
     }
 
-    private static void apply(VirtualDevice config, VirtualDeviceRequest request, Instant now) {
+    /** El lugar del cultivo es uno solo: la ubicación que elige la simulación queda como la del cultivo. */
+    private Crop apply(Crop crop, VirtualDevice config, VirtualDeviceRequest request, Instant now) {
         config.setMode(request.mode());
         if (request.manual() != null) {
             config.setManual(merge(config.getManual(), request.manual()));
         }
+        Crop placed = crop;
         if (request.location() != null) {
-            config.setLocation(new VirtualLocation(request.location().name().trim(), request.location().latitude(),
-                    request.location().longitude()));
+            VirtualLocation location = new VirtualLocation(request.location().name().trim(),
+                    request.location().latitude(), request.location().longitude());
+            config.setLocation(location);
+            placed = cropService.setLocation(crop, new Placement.Location(location.name(), location.latitude(),
+                    location.longitude()));
         }
         config.setIntervalSeconds(request.intervalSeconds() != null ? request.intervalSeconds()
                 : config.getIntervalSeconds() > 0 ? config.getIntervalSeconds() : DEFAULT_INTERVAL);
         config.setActive(true);
         config.setUpdatedAt(now);
+        return placed;
+    }
+
+    static VirtualLocation locationOf(Crop crop, VirtualDevice config) {
+        Placement placement = crop.getPlacement();
+        if (placement != null && placement.location() != null) {
+            Placement.Location location = placement.location();
+            return new VirtualLocation(location.name(), location.latitude(), location.longitude());
+        }
+        return config.getLocation();
     }
 
     private void pushQuietly(Crop crop, VirtualDevice config) {
@@ -209,12 +234,15 @@ public class VirtualDeviceService {
     private SimulatorPot push(Crop crop, VirtualDevice config) {
         String key = cropService.deviceKey(crop).orElseThrow(() -> ApiException.conflict(
                 "El cultivo no tiene clave de dispositivo: créalo de nuevo"));
-        VirtualLocation location = config.getLocation();
+        VirtualLocation location = locationOf(crop, config);
+        Placement placement = crop.getPlacement();
         return simulator.put(crop.getId(), new SimulatorPotRequest(key, crop.getType().name(),
                 config.getMode().name(), values(config.getManual()),
                 location == null ? null : new SimulatorPot.Location(location.name(), location.latitude(),
                         location.longitude()),
-                config.getIntervalSeconds()));
+                config.getIntervalSeconds(),
+                placement == null || placement.setting() == null ? null : placement.setting().name(),
+                placement == null || placement.exposure() == null ? null : placement.exposure().name()));
     }
 
     static Measures merge(Measures current, VirtualDeviceRequest.ManualValues update) {
