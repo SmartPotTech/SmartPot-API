@@ -63,6 +63,15 @@ public class AuthService {
         this.dummyHash = passwordEncoder.encode("smartpot-timing-guard");
     }
 
+    static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     public AuthResponse register(RegisterRequest request) {
         String email = UserService.normalizeEmail(request.email());
         PasswordPolicy.validate(request.password());
@@ -140,14 +149,5 @@ public class AuthService {
     private AuthResponse toAuthResponse(User user) {
         JwtService.IssuedToken token = jwtService.issue(user);
         return new AuthResponse(token.value(), token.expiresAt(), UserMapper.toResponse(user));
-    }
-
-    static String sha256(String value) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 }
