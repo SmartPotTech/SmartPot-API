@@ -21,12 +21,7 @@ import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class LearningFeedTest {
 
@@ -35,14 +30,6 @@ class LearningFeedTest {
 
     private final AiClient aiClient = mock(AiClient.class);
     private LearningFeed feed;
-
-    @BeforeEach
-    void setUp() {
-        when(aiClient.isEnabled()).thenReturn(true);
-        AiProperties ai = new AiProperties(true, "http://ai", "t", Duration.ofSeconds(2), Duration.ofMinutes(5),
-                Duration.ofMinutes(10), 48, ZoneId.of("America/Bogota"));
-        feed = new LearningFeed(aiClient, ai, new AiLearningProperties(true, Duration.ofSeconds(10)));
-    }
 
     private static ReadingRecordedEvent reading(String cropId, int minute) {
         return reading(cropId, minute, CropKind.REAL);
@@ -53,6 +40,14 @@ class LearningFeedTest {
         return new ReadingRecordedEvent(crop, Reading.builder().cropId(cropId)
                 .measuredAt(Instant.parse("2026-09-27T17:00:00Z").plusSeconds(minute * 60L))
                 .measures(Measures.builder().soilMoisture(64.0).build()).build());
+    }
+
+    @BeforeEach
+    void setUp() {
+        when(aiClient.isEnabled()).thenReturn(true);
+        AiProperties ai = new AiProperties(true, "http://ai", "t", Duration.ofSeconds(2), Duration.ofMinutes(5),
+                Duration.ofMinutes(10), 48, ZoneId.of("America/Bogota"));
+        feed = new LearningFeed(aiClient, ai, new AiLearningProperties(true, Duration.ofSeconds(10)));
     }
 
     @Test
