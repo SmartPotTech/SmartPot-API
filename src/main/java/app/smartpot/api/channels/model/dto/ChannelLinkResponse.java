@@ -8,11 +8,13 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
 
-public record ChannelLinkResponse(String id, ChannelType type, String displayName, boolean enabled,
+/** address: el identificador del destino en el canal (en Telegram, el id del chat). */
+public record ChannelLinkResponse(String id, ChannelType type, String address, String displayName, boolean enabled,
                                   Set<NotificationType> events, Instant linkedAt, Instant lastDeliveredAt) {
 
     public static ChannelLinkResponse of(ChannelLink link) {
-        return new ChannelLinkResponse(link.getId(), link.getType(), link.getDisplayName(), link.isEnabled(),
+        return new ChannelLinkResponse(link.getId(), link.getType(), link.getAddress(), link.getDisplayName(),
+                link.isEnabled(),
                 link.getEvents() == null ? Set.of() : new TreeSet<>(link.getEvents()), link.getLinkedAt(),
                 link.getLastDeliveredAt());
     }
