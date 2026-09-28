@@ -17,9 +17,6 @@ final class MailTemplates {
     private MailTemplates() {
     }
 
-    record Content(String html, String text) {
-    }
-
     static Content welcome(String name, String loginUrl) {
         String safeName = HtmlUtils.htmlEscape(name);
         String body = paragraph("Hola " + safeName + ",")
@@ -71,5 +68,8 @@ final class MailTemplates {
         return "<p style=\"margin:22px 0\"><a href=\"" + safeUrl + "\" style=\"background:" + PRIMARY
                 + ";color:#FFFFFF;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;"
                 + "display:inline-block\">" + label + "</a></p>";
+    }
+
+    record Content(String html, String text) {
     }
 }
