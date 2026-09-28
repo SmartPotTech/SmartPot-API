@@ -35,6 +35,8 @@ public class Crop {
 
     private CropForm form;
 
+    private Placement placement;
+
     private boolean automationEnabled;
 
     private Device device;
