@@ -8,12 +8,12 @@ import java.util.List;
  */
 public record BulkCommandResponse(int sent, int skipped, int failed, List<Result> results) {
 
-    public record Result(String cropId, String cropName, String status, String commandId, String message) {
-    }
-
     public static BulkCommandResponse of(List<Result> results) {
         int sent = (int) results.stream().filter(r -> "SENT".equals(r.status())).count();
         int skipped = (int) results.stream().filter(r -> "SKIPPED".equals(r.status())).count();
         return new BulkCommandResponse(sent, skipped, results.size() - sent - skipped, results);
+    }
+
+    public record Result(String cropId, String cropName, String status, String commandId, String message) {
     }
 }
