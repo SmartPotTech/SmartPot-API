@@ -19,12 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
-import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -54,6 +49,14 @@ public class SecurityConfiguration {
             "/api/v1/crop-profiles",
             "/docs", "/docs/**", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**"
     };
+
+    private static SecretKey secretKey(SmartPotProperties properties) {
+        byte[] secret = properties.security().jwtSecret().getBytes(StandardCharsets.UTF_8);
+        if (secret.length < 32) {
+            throw new IllegalStateException("SMARTPOT_JWT_SECRET debe tener al menos 32 caracteres");
+        }
+        return new SecretKeySpec(secret, "HmacSHA256");
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CorsConfig corsConfig, CacheStore cacheStore,
@@ -115,13 +118,5 @@ public class SecurityConfiguration {
             return role == null ? List.of() : List.of(new SimpleGrantedAuthority("ROLE_" + role));
         });
         return converter;
-    }
-
-    private static SecretKey secretKey(SmartPotProperties properties) {
-        byte[] secret = properties.security().jwtSecret().getBytes(StandardCharsets.UTF_8);
-        if (secret.length < 32) {
-            throw new IllegalStateException("SMARTPOT_JWT_SECRET debe tener al menos 32 caracteres");
-        }
-        return new SecretKeySpec(secret, "HmacSHA256");
     }
 }
