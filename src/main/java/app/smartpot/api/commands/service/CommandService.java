@@ -31,11 +31,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -66,6 +62,21 @@ public class CommandService {
         this.jsonMapper = jsonMapper;
         this.clock = clock;
         this.timeout = mqttProperties.commandTimeout();
+    }
+
+    private static BulkCommandResponse.Result skipped(Crop crop, String reason) {
+        return new BulkCommandResponse.Result(crop.getId(), crop.getName(), "SKIPPED", null, reason);
+    }
+
+    private static String truncate(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.length() <= 200 ? value : value.substring(0, 200);
+    }
+
+    private static String orDefault(String value) {
+        return value == null || value.isBlank() ? "sin detalle" : truncate(value);
     }
 
     public Command request(String ownerId, String cropId, CommandRequest request) {
@@ -117,7 +128,9 @@ public class CommandService {
         return Optional.of(dispatch(create(crop, actuator.get(), action, durationSeconds, CommandSource.AGENT, reason)));
     }
 
-    /** Misma orden para varios cultivos; cada uno se informa por separado y ninguno detiene a los demás. */
+    /**
+     * Misma orden para varios cultivos; cada uno se informa por separado y ninguno detiene a los demás.
+     */
     public BulkCommandResponse requestBulk(String ownerId, BulkCommandRequest request) {
         if (!gateway.isEnabled()) {
             throw ApiException.unavailable("La comunicación con los dispositivos no está habilitada en este servidor");
@@ -145,7 +158,9 @@ public class CommandService {
         return BulkCommandResponse.of(results);
     }
 
-    /** Comandos de todos los cultivos de la cuenta, más recientes primero. */
+    /**
+     * Comandos de todos los cultivos de la cuenta, más recientes primero.
+     */
     public List<Command> listForOwner(String ownerId, int limit) {
         List<String> cropIds = cropService.list(ownerId).stream().map(Crop::getId).toList();
         if (cropIds.isEmpty()) {
@@ -234,20 +249,5 @@ public class CommandService {
         cropService.find(command.getCropId()).ifPresent(crop -> notificationService.notifyOnce(
                 "command-failure:" + crop.getId(), FAILURE_NOTICE_COOLDOWN, crop.getOwnerId(), crop.getId(),
                 NotificationType.COMMAND, "Comando sin ejecutar en " + crop.getName(), message));
-    }
-
-    private static BulkCommandResponse.Result skipped(Crop crop, String reason) {
-        return new BulkCommandResponse.Result(crop.getId(), crop.getName(), "SKIPPED", null, reason);
-    }
-
-    private static String truncate(String value) {
-        if (value == null) {
-            return null;
-        }
-        return value.length() <= 200 ? value : value.substring(0, 200);
-    }
-
-    private static String orDefault(String value) {
-        return value == null || value.isBlank() ? "sin detalle" : truncate(value);
     }
 }
