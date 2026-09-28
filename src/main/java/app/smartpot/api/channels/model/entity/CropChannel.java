@@ -47,10 +47,14 @@ public class CropChannel {
 
     private Delivery delivery;
 
-    /** Cada cuántas horas llega el resumen cuando la entrega es DIGEST. */
+    /**
+     * Cada cuántas horas llega el resumen cuando la entrega es DIGEST.
+     */
     private int digestHours;
 
-    /** Hora local (HH:mm) del resumen diario, o null si no se quiere. */
+    /**
+     * Hora local (HH:mm) del resumen diario, o null si no se quiere.
+     */
     private String dailySummaryAt;
 
     @Builder.Default
@@ -62,12 +66,16 @@ public class CropChannel {
 
     private Instant updatedAt;
 
-    /** INSTANT: cada aviso en cuanto ocurre; DIGEST: un resumen cada digestHours horas. */
+    /**
+     * INSTANT: cada aviso en cuanto ocurre; DIGEST: un resumen cada digestHours horas.
+     */
     public enum Delivery {
         INSTANT, DIGEST
     }
 
-    /** Un chat con el que se comparte el cultivo: recibe sus avisos, pero no entra a la cuenta. */
+    /**
+     * Un chat con el que se comparte el cultivo: recibe sus avisos, pero no entra a la cuenta.
+     */
     public record Recipient(String id, String address, String displayName, Instant addedAt) {
     }
 }
