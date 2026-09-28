@@ -3,7 +3,9 @@ package app.smartpot.api.virtualdevices.service;
 import app.smartpot.api.crops.model.entity.Crop;
 import app.smartpot.api.crops.model.entity.CropKind;
 import app.smartpot.api.crops.model.entity.CropType;
+import app.smartpot.api.crops.model.entity.Placement;
 import app.smartpot.api.crops.model.event.CropDeletedEvent;
+import app.smartpot.api.crops.model.event.CropPlacementChangedEvent;
 import app.smartpot.api.crops.model.event.DeviceKeyRotatedEvent;
 import app.smartpot.api.crops.service.CropService;
 import app.smartpot.api.exception.ApiException;
@@ -63,6 +65,12 @@ class VirtualDeviceServiceTest {
         when(repository.findByCropId(CROP)).thenReturn(Optional.empty());
         when(repository.save(any(VirtualDevice.class))).thenAnswer(call -> call.getArgument(0));
         when(simulator.put(eq(CROP), any())).thenReturn(pot(CROP, true));
+        when(cropService.setLocation(any(), any())).thenAnswer(call -> {
+            Crop target = call.getArgument(0);
+            target.setPlacement(new Placement(Placement.Setting.OUTDOOR, Placement.Exposure.FULL_SUN,
+                    call.getArgument(1)));
+            return target;
+        });
     }
 
     private static SimulatorPot pot(String cropId, boolean connected) {
@@ -101,10 +109,37 @@ class VirtualDeviceServiceTest {
         assertThat(sent.getValue().key()).isEqualTo("clave-de-la-maceta-0001");
         assertThat(sent.getValue().cropType()).isEqualTo("LETTUCE");
         assertThat(sent.getValue().location().name()).isEqualTo("Medellín");
+        assertThat(sent.getValue().setting()).isEqualTo("OUTDOOR");
+        assertThat(sent.getValue().exposure()).isEqualTo("FULL_SUN");
+        assertThat(response.location().name()).isEqualTo("Medellín");
+        verify(cropService).setLocation(eq(crop), eq(new Placement.Location("Medellín", 6.245, -75.5715)));
         assertThat(response.active()).isTrue();
         assertThat(response.running()).isTrue();
         assertThat(response.connected()).isTrue();
         assertThat(response.intervalSeconds()).isEqualTo(20);
+    }
+
+    @Test
+    void weatherModeUsesTheLocationOfTheCrop() {
+        crop.setPlacement(new Placement(Placement.Setting.INDOOR, Placement.Exposure.PARTIAL_SUN,
+                new Placement.Location("Bogotá", 4.71, -74.07)));
+
+        service.configure(OWNER, CROP, new VirtualDeviceRequest(VirtualMode.WEATHER, null, null, null));
+
+        ArgumentCaptor<SimulatorPotRequest> sent = ArgumentCaptor.forClass(SimulatorPotRequest.class);
+        verify(simulator).put(eq(CROP), sent.capture());
+        assertThat(sent.getValue().location().name()).isEqualTo("Bogotá");
+        assertThat(sent.getValue().setting()).isEqualTo("INDOOR");
+        verify(cropService, never()).setLocation(any(), any());
+    }
+
+    @Test
+    void movingTheCropUpdatesItsSimulation() {
+        when(repository.findByCropId(CROP)).thenReturn(Optional.of(config(true)));
+
+        service.onPlacementChanged(new CropPlacementChangedEvent(CROP));
+
+        verify(simulator).put(eq(CROP), any());
     }
 
     @Test
@@ -124,7 +159,7 @@ class VirtualDeviceServiceTest {
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("ubicación");
         assertThatThrownBy(() -> service.checkCanCreate(OWNER,
-                new VirtualDeviceRequest(VirtualMode.WEATHER, null, null, null)))
+                new VirtualDeviceRequest(VirtualMode.WEATHER, null, null, null), null))
                 .hasMessageContaining("ubicación");
         verify(simulator, never()).put(any(), any());
     }
@@ -147,7 +182,7 @@ class VirtualDeviceServiceTest {
     @Test
     void limitsVirtualCropsPerAccount() {
         when(repository.countByOwnerId(OWNER)).thenReturn((long) VirtualDeviceService.MAX_PER_ACCOUNT);
-        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null))
+        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null, null))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("hasta 5");
     }
@@ -210,6 +245,6 @@ class VirtualDeviceServiceTest {
         when(simulator.isAvailable()).thenReturn(false);
         assertThat(service.get(OWNER, CROP).available()).isFalse();
         assertThatThrownBy(() -> service.configure(OWNER, CROP, weather())).isInstanceOf(ApiException.class);
-        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null)).hasMessageContaining("no están habilitados");
+        assertThatThrownBy(() -> service.checkCanCreate(OWNER, null, null)).hasMessageContaining("no están habilitados");
     }
 }

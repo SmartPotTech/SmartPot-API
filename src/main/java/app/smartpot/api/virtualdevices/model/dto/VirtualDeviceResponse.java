@@ -26,10 +26,12 @@ public record VirtualDeviceResponse(String cropId, boolean available, boolean ac
                 null, null, List.of(), null, null);
     }
 
-    public static VirtualDeviceResponse of(VirtualDevice config, SimulatorPot live, boolean available) {
+    /** location: la del cultivo, que la simulación comparte. */
+    public static VirtualDeviceResponse of(VirtualDevice config, VirtualLocation location, SimulatorPot live,
+                                           boolean available) {
         boolean running = live != null;
         return new VirtualDeviceResponse(config.getCropId(), available, config.isActive(), running, config.getMode(),
-                config.getManual(), config.getLocation(), config.getIntervalSeconds(),
+                config.getManual(), location, config.getIntervalSeconds(),
                 running && live.connected(), running ? live.lastReading() : null,
                 running ? live.lastPublishedAt() : null, running ? live.weather() : null,
                 running ? live.weatherError() : null,
