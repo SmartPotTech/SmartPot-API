@@ -25,15 +25,16 @@ import java.util.List;
 @Service
 public class InsightService {
 
+    /**
+     * Cuántas lecturas se revisan por cada punto enviado: el historial abarca más tiempo sin crecer.
+     */
+    static final int HISTORY_WINDOW_FACTOR = 8;
     private final AiClient aiClient;
     private final CropService cropService;
     private final ReadingService readingService;
     private final ActuatorService actuatorService;
     private final CropWeatherService weatherService;
     private final Clock clock;
-    /** Cuántas lecturas se revisan por cada punto enviado: el historial abarca más tiempo sin crecer. */
-    static final int HISTORY_WINDOW_FACTOR = 8;
-
     private final int historySize;
     private final ZoneId timezone;
 
@@ -50,6 +51,29 @@ public class InsightService {
         this.timezone = properties.timezone();
     }
 
+    private static InsightRequest.Place place(Placement placement) {
+        if (placement == null || (placement.setting() == null && placement.exposure() == null)) {
+            return null;
+        }
+        return new InsightRequest.Place(placement.setting() == null ? null : placement.setting().name(),
+                placement.exposure() == null ? null : placement.exposure().name());
+    }
+
+    /**
+     * Toma hasta {@code size} lecturas repartidas en todo el periodo, incluidas la primera y la última,
+     * para que el pronóstico vea la tendencia de varias horas y no solo los últimos minutos.
+     */
+    static <T> List<T> sample(List<T> items, int size) {
+        if (items.size() <= size || size < 2) {
+            return items;
+        }
+        List<T> sampled = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            sampled.add(items.get((int) Math.round(i * (items.size() - 1) / (double) (size - 1))));
+        }
+        return sampled;
+    }
+
     public InsightResponse forOwner(String ownerId, String cropId) {
         Crop crop = cropService.getOwned(ownerId, cropId);
         Reading latest = readingService.latest(cropId)
@@ -57,7 +81,9 @@ public class InsightService {
         return evaluate(crop, latest);
     }
 
-    /** Consulta al servicio de IA y guarda el índice de salud en el cultivo. */
+    /**
+     * Consulta al servicio de IA y guarda el índice de salud en el cultivo.
+     */
     public InsightResponse evaluate(Crop crop, Reading latest) {
         List<Reading> window = readingService.recent(crop.getId(), historySize * HISTORY_WINDOW_FACTOR).reversed();
         List<HistoryPoint> history = sample(window, historySize).stream().map(HistoryPoint::of).toList();
@@ -77,33 +103,10 @@ public class InsightService {
         return response;
     }
 
-    private static InsightRequest.Place place(Placement placement) {
-        if (placement == null || (placement.setting() == null && placement.exposure() == null)) {
-            return null;
-        }
-        return new InsightRequest.Place(placement.setting() == null ? null : placement.setting().name(),
-                placement.exposure() == null ? null : placement.exposure().name());
-    }
-
     private InsightRequest.Outside outside(Crop crop) {
         return weatherService.current(crop)
                 .map(w -> new InsightRequest.Outside(w.temperature(), w.humidity(), w.precipitation(), w.radiation(),
                         w.isDay(), w.condition()))
                 .orElse(null);
-    }
-
-    /**
-     * Toma hasta {@code size} lecturas repartidas en todo el periodo, incluidas la primera y la última,
-     * para que el pronóstico vea la tendencia de varias horas y no solo los últimos minutos.
-     */
-    static <T> List<T> sample(List<T> items, int size) {
-        if (items.size() <= size || size < 2) {
-            return items;
-        }
-        List<T> sampled = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            sampled.add(items.get((int) Math.round(i * (items.size() - 1) / (double) (size - 1))));
-        }
-        return sampled;
     }
 }
