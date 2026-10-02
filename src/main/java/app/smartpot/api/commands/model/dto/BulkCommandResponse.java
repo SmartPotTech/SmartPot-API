@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Resultado por cultivo: SENT (enviado al dispositivo), FAILED (el broker no respondió)
- * o SKIPPED (no tiene ese actuador o ya hay un comando en curso).
+ * o SKIPPED (no tiene ese actuador, ya hay un comando en curso o la orden no cambiaría nada).
  */
 public record BulkCommandResponse(int sent, int skipped, int failed, List<Result> results) {
 
