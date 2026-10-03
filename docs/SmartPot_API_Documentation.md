@@ -5,7 +5,7 @@ acento: API
 subtitulo: El centro de la plataforma SmartPot
 bajada: REST con JWT, puente MQTT con el broker, cultivos reales y virtuales, agente de automatización con el asistente de IA, canales de notificación, seguridad, configuración y operación de la API.
 documento: SmartPot-API
-version: 1.0 · septiembre 2026
+version: 1.1 · octubre 2026
 equipo: SmartPotTech
 proyecto: smartpot.app
 -->
@@ -18,7 +18,7 @@ proyecto: smartpot.app
 |--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Proyecto                       | SmartPot · [smartpot.app](https://smartpot.app)                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Componente                     | [SmartPot-API](https://github.com/SmartPotTech/SmartPot-API)                                                                                                                                                                                                                                                                                                                                                                                            |
-| Versión                        | 1.0 · septiembre 2026                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Versión                        | 1.1 · octubre 2026                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Alcance                        | Dominios de la API, cultivos reales y virtuales, flujo de lecturas y comandos, seguridad, configuración, pruebas y operación                                                                                                                                                                                                                                                                                                                            |
 | Documentación de la plataforma | [Documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md), [recorrido del proyecto](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Project_Journey.md), [ciclo de vida](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Software_Lifecycle.md) y [diagramas generales](https://github.com/SmartPotTech/.github/blob/main/docs/README.md#diagramas-generales) |
 | Mantenimiento                  | Se genera desde `docs/` de este repositorio con las herramientas de `.github/docs/tools`; se actualiza con cada cambio del componente                                                                                                                                                                                                                                                                                                                   |
@@ -34,16 +34,16 @@ del broker. La API guarda las lecturas, le pregunta al asistente de IA cómo va 
 actuadores, administra las cuentas MQTT de cada cultivo y avisa por la PWA y por Telegram. Todo lo que ve una persona
 pasa por aquí, siempre con su sesión y solo sobre sus propios cultivos.
 
-| Responsabilidad  | Cómo                                                                                                  |
-|------------------|-------------------------------------------------------------------------------------------------------|
-| Cuentas y sesión | Registro, ingreso con JWT, recuperación de contraseña por correo, perfil y borrado de la cuenta       |
-| Cultivos         | Reales o virtuales (se elige al crear y no cambia), seis especies, cuatro formas y modo automático    |
-| Dispositivos     | Cuenta MQTT por cultivo con clave de 192 bits cifrada con AES-256-GCM; aprovisionamiento en Mosquitto |
-| Lecturas         | Telemetría MQTT validada contra el rango físico de cada sensor, historial, resumen y CSV              |
-| Órdenes          | Comandos con QoS 1, confirmación del dispositivo, vencimiento y órdenes en bloque                     |
-| Asistente        | Evaluación con SmartPot-AI, agente de automatización y envío de lecturas reales para el aprendizaje   |
-| Simulación       | Configuración de los cultivos virtuales y proxy al simulador interno                                  |
-| Avisos           | Notificaciones en la PWA y en Telegram, con canales intercambiables                                   |
+| Responsabilidad  | Cómo                                                                                                                                                             |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Cuentas y sesión | Registro, ingreso con JWT, recuperación de contraseña por correo, perfil y borrado de la cuenta                                                                  |
+| Cultivos         | Reales o virtuales (se elige al crear y no cambia), seis especies, cuatro formas, su lugar con el clima de afuera y modo automático                              |
+| Dispositivos     | Cuenta MQTT por cultivo con clave de 192 bits cifrada con AES-256-GCM; aprovisionamiento en Mosquitto                                                            |
+| Lecturas         | Telemetría MQTT validada contra el rango físico de cada sensor, historial, resumen y CSV                                                                         |
+| Órdenes          | Actuadores como switches (409 si la orden no cambia nada o se cruza con otra), comandos con QoS 1, confirmación del dispositivo, vencimiento y órdenes en bloque |
+| Asistente        | Evaluación con SmartPot-AI, agente de automatización y envío de lecturas reales para el aprendizaje                                                              |
+| Simulación       | Configuración de los cultivos virtuales y proxy al simulador interno                                                                                             |
+| Avisos           | Notificaciones en la PWA y en Telegram, con canales intercambiables, avisos por cultivo, resúmenes y chats compartidos                                           |
 
 ## 2. Arquitectura del componente
 
@@ -66,11 +66,11 @@ flowchart LR
   subgraph dominio["Dominios · controller → service → repository"]
     direction TB
     auth["security · users<br/>AuthService · UserService"]
-    crops["crops<br/>CropService · real o virtual<br/>forma · clave del dispositivo"]
+    crops["crops<br/>CropService · real o virtual<br/>forma · lugar · clave del dispositivo<br/>CropWeatherService"]
     readings["readings<br/>ReadingService · MeasureRanges"]
-    actuators["actuators · commands<br/>ActuatorService · CommandService"]
+    actuators["actuators · commands<br/>ActuatorService · CommandService<br/>switches · 409 si no cambia nada"]
     overview["overview<br/>totales · series · flota"]
-    notif["notifications · channels<br/>ChannelDispatcher · TelegramBot"]
+    notif["notifications · channels<br/>ChannelDispatcher · TelegramBot<br/>CropChannelService · CropChannelDigest"]
     virtual["virtualdevices<br/>VirtualDeviceService · SimulatorClient<br/>CropKindBackfill"]
     ai["ai<br/>AutomationAgent · LearningFeed<br/>InsightService · AiClient"]
   end
@@ -98,6 +98,7 @@ flowchart LR
   ai -->|"POST /v1/insights · /v1/learning"| aisvc
   ai --> actuators --> gateway
   virtual -->|"PUT /v1/pots · token"| sim
+  crops -->|"GET /v1/weather · token"| sim
   sim -->|"MQTT con la cuenta del cultivo"| broker
   classDef leaf fill:#DDF5EA,stroke:#067A52,color:#17261F
   classDef water fill:#E3F2FB,stroke:#1F6FA0,color:#17261F
@@ -135,7 +136,7 @@ que cambia es quién la usa.
 |----------------------|------------------------------------------------------|--------------------------------------------------------------------|
 | Quién publica        | Un ESP32 con el firmware, físico o simulado en Wokwi | SmartPot-DataGenerator                                             |
 | Credenciales         | Se entregan una vez y se pueden rotar                | No se entregan: la API se las pasa al simulador por la red interna |
-| Actuadores al nacer  | Bomba, luz de cultivo y ventilador                   | Los seis                                                           |
+| Actuadores al nacer  | Bomba, luz ultravioleta y ventilador                 | Los seis                                                           |
 | Rutas propias        | `/device` y `/device/key`                            | `/virtual-device` (PUT cambia o reanuda, DELETE pausa)             |
 | Aprendizaje continuo | Sus lecturas entrenan los modelos                    | Sus lecturas no se envían                                          |
 | Límite               | 20 cultivos por cuenta en total                      | Hasta 5 por cuenta                                                 |
@@ -283,12 +284,12 @@ resume todas las rutas y
 la [documentación técnica](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md)
 detalla el contrato MQTT v1.
 
-| Grupo             | Rutas                                                                                       |
-|-------------------|---------------------------------------------------------------------------------------------|
-| Público           | `/health`, `/api/v1/auth/*`, `/api/v1/crop-profiles`                                        |
-| Cultivos          | `/api/v1/crops`, `/crops/{id}`, `/crops/automation`, `/crops/{id}/device`                   |
-| Datos del cultivo | `/readings`, `/actuators`, `/commands`, `/insights`, `/virtual-device`                      |
-| Cuenta            | `/api/v1/users/me`, `/notifications`, `/channels`, `/overview`, `/commands`, `/ai/learning` |
+| Grupo             | Rutas                                                                                            |
+|-------------------|--------------------------------------------------------------------------------------------------|
+| Público           | `/health`, `/api/v1/auth/*`, `/api/v1/crop-profiles`                                             |
+| Cultivos          | `/api/v1/crops`, `/crops/{id}`, `/crops/automation`, `/crops/{id}/device`, `/crops/{id}/weather` |
+| Datos del cultivo | `/readings`, `/actuators`, `/commands`, `/insights`, `/virtual-device`, `/channels`              |
+| Cuenta            | `/api/v1/users/me`, `/notifications`, `/channels`, `/overview`, `/commands`, `/ai/learning`      |
 
 <!-- parte: PARTE III | Operación -->
 
@@ -313,11 +314,11 @@ La API lee `.env` desde la carpeta del proyecto; `.env.example` lista todas las 
 
 ## 8. Pruebas
 
-`./mvnw verify` corre 118 pruebas con JUnit y Mockito: cifrado, JWT, contraseñas, tópicos y telemetría MQTT,
-aprovisionamiento, comandos, cultivos con su tipo fijo y su forma, el agente, el envío de lecturas para el aprendizaje (
+`./mvnw verify` corre 147 pruebas con JUnit y Mockito: cifrado, JWT, contraseñas, tópicos y telemetría MQTT,
+aprovisionamiento, comandos y switches, cultivos con su tipo fijo, su forma, su lugar y su clima, los avisos por cultivo, el agente, el envío de lecturas para el aprendizaje (
 solo reales), canales y bot de Telegram, la simulación de los virtuales (dueño, clave, límites, pausa y reconciliación),
 el completado de cultivos anteriores, la caché con respaldo local y la cadena de seguridad de los controladores. El E2E
-central de `.github` recorre la API completa con 35 comprobaciones.
+central de `.github` recorre la API completa con 46 comprobaciones.
 
 ## 9. Operación
 
