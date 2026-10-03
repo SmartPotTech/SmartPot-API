@@ -22,9 +22,9 @@ flowchart LR
   api --> cache[("Redis")]
   api --> mail["Mailpit / SMTP"]
   api -->|"evaluación · lecturas para aprender"| ai["SmartPot-AI"]
-  api -->|"cultivos virtuales"| sim["SmartPot-DataGenerator"]
+  api -->|"cultivos virtuales y clima"| sim["SmartPot-DataGenerator"]
   sim -->|"MQTT"| broker
-  api -->|"alertas"| tg["Telegram"]
+  api -->|"avisos y resúmenes"| tg["Telegram"]
 ```
 
 ## Estructura del Proyecto
@@ -58,48 +58,54 @@ src/main/java/app/smartpot/api/
 Base local `http://localhost:8091`, producción `https://api.smartpot.app`. Las rutas de negocio viven bajo `/api/v1` y
 usan `Authorization: Bearer <token>`. La documentación interactiva está en `/docs` y el esquema en `/v3/api-docs`.
 
-| Método          | Ruta                                                                                                                                          | Acceso             |
-|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
-| GET             | `/health` → `{"status","database","broker","cache","ai","simulator"}` (503 si la base cae)                                                    | Público            |
-| POST            | `/api/v1/auth/register` `{name,lastName,email,password}` → `{token,expiresAt,user}`                                                           | Público            |
-| POST            | `/api/v1/auth/login` `{email,password}`                                                                                                       | Público            |
-| POST            | `/api/v1/auth/password/forgot` `{email}` → 202 siempre                                                                                        | Público            |
-| POST            | `/api/v1/auth/password/reset` `{token,password}` → 204                                                                                        | Público            |
-| GET             | `/api/v1/crop-profiles` (rangos óptimos por especie)                                                                                          | Público            |
-| GET PUT DELETE  | `/api/v1/users/me` (PUT `{name,lastName}`)                                                                                                    | JWT                |
-| PUT             | `/api/v1/users/me/password` `{currentPassword,newPassword}`                                                                                   | JWT                |
-| GET POST        | `/api/v1/crops` (POST `{name,type,kind,form,virtual?}`; si es real devuelve la clave del dispositivo una sola vez)                            | JWT                |
-| PUT             | `/api/v1/crops/automation` `{cropIds?,enabled}` (modo automático en varios cultivos; sin ids, en todos)                                       | JWT                |
-| GET PUT DELETE  | `/api/v1/crops/{id}`                                                                                                                          | JWT, solo el dueño |
-| PUT             | `/api/v1/crops/{id}/automation` `{enabled}`                                                                                                   | JWT, solo el dueño |
-| GET             | `/api/v1/crops/{id}/device` (broker, usuario y tópicos; solo cultivos reales)                                                                 | JWT, solo el dueño |
-| POST            | `/api/v1/crops/{id}/device/key` (rota la clave y desconecta la sesión anterior; solo cultivos reales)                                         | JWT, solo el dueño |
-| GET POST        | `/api/v1/crops/{id}/readings` (`from`, `to`, `limit`)                                                                                         | JWT, solo el dueño |
-| GET             | `/api/v1/crops/{id}/readings/latest`, `/summary?hours=24`, `/export` (CSV)                                                                    | JWT, solo el dueño |
-| GET POST DELETE | `/api/v1/crops/{id}/actuators`, `/actuators/{actuatorId}`                                                                                     | JWT, solo el dueño |
-| GET POST        | `/api/v1/crops/{id}/commands` (POST `{actuatorId,action,durationSeconds}` → 202)                                                              | JWT, solo el dueño |
-| GET             | `/api/v1/crops/{id}/insights` (diagnóstico del asistente de IA con pronósticos)                                                               | JWT, solo el dueño |
-| GET             | `/api/v1/overview` (totales de la cuenta y cada cultivo con su última lectura)                                                                | JWT                |
-| GET             | `/api/v1/overview/series?metric=temperature&hours=24` (promedios por intervalo para comparar cultivos)                                        | JWT                |
-| GET             | `/api/v1/overview/fleet` (ranking, problemas compartidos, grupos y acciones en bloque de la IA)                                               | JWT                |
-| GET             | `/api/v1/commands?limit=50` (comandos de todos los cultivos)                                                                                  | JWT                |
-| POST            | `/api/v1/commands/bulk` `{cropIds?,actuatorType,action,durationSeconds}` → 202 con el resultado por cultivo                                   | JWT                |
-| GET             | `/api/v1/notifications` (`unreadOnly`, `limit`), `/unread-count`                                                                              | JWT                |
-| PUT DELETE      | `/api/v1/notifications/{id}/read`, `/read-all`, `/{id}`                                                                                       | JWT                |
-| GET             | `/api/v1/channels` (canales del servidor y mis vínculos)                                                                                      | JWT                |
-| POST            | `/api/v1/channels/telegram/link` → `{code,url,expiresAt}` (código de un solo uso, 10 minutos)                                                 | JWT                |
-| PUT POST DELETE | `/api/v1/channels/links/{id}` `{enabled?,events?}`, `/links/{id}/test`, `/links/{id}`                                                         | JWT, solo el dueño |
-| POST            | `/api/v1/channels/telegram/webhook` (modo webhook, firmado con `X-Telegram-Bot-Api-Secret-Token`)                                             | Telegram           |
-| GET PUT DELETE  | `/api/v1/crops/{id}/virtual-device` (solo cultivos virtuales; PUT `{mode,manual?,location?,intervalSeconds?}` cambia o reanuda, DELETE pausa) | JWT, solo el dueño |
-| GET             | `/api/v1/virtual-devices/places?q=` (lugares para el modo clima)                                                                              | JWT                |
-| GET             | `/api/v1/ai/learning` (qué ha aprendido la IA: solo datos agregados por especie)                                                              | JWT                |
+| Método          | Ruta                                                                                                                                                     | Acceso             |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
+| GET             | `/health` → `{"status","database","broker","cache","ai","simulator"}` (503 si la base cae)                                                               | Público            |
+| POST            | `/api/v1/auth/register` `{name,lastName,email,password}` → `{token,expiresAt,user}`                                                                      | Público            |
+| POST            | `/api/v1/auth/login` `{email,password}`                                                                                                                  | Público            |
+| POST            | `/api/v1/auth/password/forgot` `{email}` → 202 siempre                                                                                                   | Público            |
+| POST            | `/api/v1/auth/password/reset` `{token,password}` → 204                                                                                                   | Público            |
+| GET             | `/api/v1/crop-profiles` (rangos óptimos por especie)                                                                                                     | Público            |
+| GET PUT DELETE  | `/api/v1/users/me` (PUT `{name,lastName}`)                                                                                                               | JWT                |
+| PUT             | `/api/v1/users/me/password` `{currentPassword,newPassword}`                                                                                              | JWT                |
+| GET POST        | `/api/v1/crops` (POST `{name,type,kind,form,placement?,virtual?}`; si es real devuelve la clave del dispositivo una sola vez)                            | JWT                |
+| PUT             | `/api/v1/crops/automation` `{cropIds?,enabled}` (modo automático en varios cultivos; sin ids, en todos)                                                  | JWT                |
+| GET PUT DELETE  | `/api/v1/crops/{id}` (PUT `{name,type,form?,placement?}`)                                                                                                | JWT, solo el dueño |
+| PUT             | `/api/v1/crops/{id}/automation` `{enabled}`                                                                                                              | JWT, solo el dueño |
+| GET             | `/api/v1/crops/{id}/weather` (clima del lugar; 204 sin ubicación o sin clima disponible)                                                                 | JWT, solo el dueño |
+| GET             | `/api/v1/crops/{id}/device` (broker, usuario y tópicos; solo cultivos reales)                                                                            | JWT, solo el dueño |
+| POST            | `/api/v1/crops/{id}/device/key` (rota la clave y desconecta la sesión anterior; solo cultivos reales)                                                    | JWT, solo el dueño |
+| GET POST        | `/api/v1/crops/{id}/readings` (`from`, `to`, `limit`)                                                                                                    | JWT, solo el dueño |
+| GET             | `/api/v1/crops/{id}/readings/latest`, `/summary?hours=24`, `/export` (CSV)                                                                               | JWT, solo el dueño |
+| GET POST DELETE | `/api/v1/crops/{id}/actuators`, `/actuators/{actuatorId}`                                                                                                | JWT, solo el dueño |
+| GET POST        | `/api/v1/crops/{id}/commands` (POST `{actuatorId,action,durationSeconds}` → 202; 409 si no cambia nada o hay otra orden en curso)                        | JWT, solo el dueño |
+| GET             | `/api/v1/crops/{id}/insights` (diagnóstico del asistente de IA con pronósticos)                                                                          | JWT, solo el dueño |
+| GET             | `/api/v1/overview` (totales de la cuenta y cada cultivo con su última lectura)                                                                           | JWT                |
+| GET             | `/api/v1/overview/series?metric=temperature&hours=24` (promedios por intervalo para comparar cultivos)                                                   | JWT                |
+| GET             | `/api/v1/overview/fleet` (ranking, problemas compartidos, grupos y acciones en bloque de la IA)                                                          | JWT                |
+| GET             | `/api/v1/commands?limit=50` (comandos de todos los cultivos)                                                                                             | JWT                |
+| POST            | `/api/v1/commands/bulk` `{cropIds?,actuatorType,action,durationSeconds}` → 202 con el resultado por cultivo (`SENT`, `SKIPPED` con su motivo o `FAILED`) | JWT                |
+| GET             | `/api/v1/notifications` (`unreadOnly`, `limit`), `/unread-count`                                                                                         | JWT                |
+| PUT DELETE      | `/api/v1/notifications/{id}/read`, `/read-all`, `/{id}`                                                                                                  | JWT                |
+| GET             | `/api/v1/channels` (canales del servidor y mis vínculos)                                                                                                 | JWT                |
+| POST            | `/api/v1/channels/telegram/link` → `{code,url,expiresAt}` (código de un solo uso, 10 minutos)                                                            | JWT                |
+| PUT POST DELETE | `/api/v1/channels/links/{id}` `{enabled?,events?}`, `/links/{id}/test`, `/links/{id}`                                                                    | JWT, solo el dueño |
+| POST            | `/api/v1/channels/telegram/webhook` (modo webhook, firmado con `X-Telegram-Bot-Api-Secret-Token`)                                                        | Telegram           |
+| GET PUT         | `/api/v1/crops/{id}/channels`, `/channels/{type}` `{enabled?,events?,delivery?,digestHours?,dailySummaryAt?}` (avisos del cultivo)                       | JWT, solo el dueño |
+| POST DELETE     | `/api/v1/crops/{id}/channels/{type}/recipients` → `{code,url,expiresAt}` (compartir con otro chat), `/recipients/{recipientId}`                          | JWT, solo el dueño |
+| GET PUT DELETE  | `/api/v1/crops/{id}/virtual-device` (solo cultivos virtuales; PUT `{mode,manual?,location?,intervalSeconds?}` cambia o reanuda, DELETE pausa)            | JWT, solo el dueño |
+| GET             | `/api/v1/virtual-devices/places?q=` (lugares para el modo clima)                                                                                         | JWT                |
+| GET             | `/api/v1/ai/learning` (qué ha aprendido la IA: solo datos agregados por especie)                                                                         | JWT                |
 
 - Especies: `TOMATO`, `LETTUCE`, `STRAWBERRY`, `BASIL`, `SPINACH`, `PEPPER`.
 - Tipo (`kind`): `REAL` o `VIRTUAL`, fijo al crear el cultivo (`REAL` si falta); cambiarlo responde 400.
 - Forma (`form`): `POT`, `NFT`, `TOWER` o `RAFT` (`POT` si falta); se puede editar y solo cambia la ilustración de la
   PWA.
+- Lugar (`placement`): `setting` `INDOOR` u `OUTDOOR`, `exposure` `FULL_SUN`, `PARTIAL_SUN` o `SHADE` y `location`;
+  todo opcional y uno solo para el cultivo y su simulación.
 - Actuadores: `WATER_PUMP`, `UV_LIGHT`, `FAN`, `HUMIDIFIER`, `NUTRIENT_DOSER`, `PH_DOSER`. Un cultivo real nace con la
-  bomba, la luz UV y el ventilador; uno virtual, con los seis.
+  bomba, la luz ultravioleta y el ventilador; uno virtual, con los seis. Funcionan como switches: admiten una orden a la
+  vez, apagar lo apagado o encender sin límite lo encendido responde 409, y cada uno informa `running` y `runningUntil`.
 - Contraseñas de 8 caracteres a 72 bytes con mayúscula, minúscula y número (BCrypt de costo 12).
 - Un cultivo de otra cuenta responde **404**, igual que uno inexistente, para no revelar qué ids existen.
 - Límite por IP: 300 peticiones por minuto y 10 por minuto en `/api/v1/auth/*`. Responde 429 con `Retry-After`.
@@ -115,7 +121,7 @@ la API guarda cifrada con AES-256-GCM.
 |-------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 | `smartpot/v1/{cropId}/telemetry`    | Dispositivo → API                        | `{"temperature":24.5,"humidity":61,"brightness":710,"ph":6.1,"tds":820,"atmosphere":1012.8,"soilMoisture":55}` |
 | `smartpot/v1/{cropId}/commands`     | API → dispositivo                        | `{"id":"…","actuator":"WATER_PUMP","action":"ACTIVATE","durationSeconds":30}`                                  |
-| `smartpot/v1/{cropId}/commands/ack` | Dispositivo → API                        | `{"id":"…","status":"EXECUTED","message":"Bomba encendida"}`                                                   |
+| `smartpot/v1/{cropId}/commands/ack` | Dispositivo → API                        | `{"id":"…","status":"EXECUTED","message":"Bomba de agua encendida por 15 s"}`                                  |
 | `smartpot/v1/{cropId}/status`       | Dispositivo (retenido y última voluntad) | `online` / `offline`                                                                                           |
 
 La telemetría fuera de rango físico se descarta y cada cultivo guarda como máximo una lectura cada 5 segundos. Un
@@ -141,6 +147,11 @@ El **panel general** (`/api/v1/overview`) mira la cuenta completa: las series co
 `$dateTrunc` (unos 48 puntos por cultivo) y el análisis de flota pide a la IA el ranking, los problemas que comparten
 varios cultivos y las acciones sugeridas en bloque, que se aplican con `/api/v1/commands/bulk`.
 
+La evaluación también lleva el **lugar** del cultivo y el **clima de afuera**: `CropWeatherService` lo pide al simulador,
+que es el único con salida al servicio de clima, y lo guarda 10 minutos por lugar en Redis. Con eso la IA devuelve un
+consejo de lugar según la luz que pide la especie, no riega con lluvia sobre un cultivo al aire libre y avisa si el
+sensor no coincide con el clima. La PWA usa la misma ruta (`/crops/{id}/weather`) para dibujar el cultivo en su lugar.
+
 ## Notificaciones por Telegram
 
 Las notificaciones de la PWA (alertas, desconexiones, acciones del asistente y comandos) se reenvían a los **canales
@@ -157,6 +168,12 @@ Con `TELEGRAM_MODE=polling` la API consulta al bot con sondeo largo (sirve en lo
 pública); en producción `webhook` registra `PUBLIC_API_URL/api/v1/channels/telegram/webhook` y valida el secreto de cada
 llamada. Si Telegram rechaza los mensajes (chat bloqueado) o falla 5 veces seguidas, el vínculo se pausa.
 
+Cada cultivo puede afinar sus avisos (`crop_channels`): qué tipos manda, al instante o en un resumen cada 1 a 24 horas,
+un resumen diario a una hora fija y hasta 10 chats con los que se comparte, que se suman con un enlace de un solo uso
+(`/start <código>` desde el otro chat). `CropChannelDigest` revisa cada minuto los resúmenes pendientes, sin cron en el
+servidor. Si el servidor no tiene el bot, `GET /api/v1/channels` lo informa con `available: false` y las variables que
+faltan, y los ajustes por cultivo responden 503.
+
 ## Cultivos Reales y Virtuales
 
 Al crear un cultivo se elige, una sola vez, de dónde vienen sus lecturas. Uno **real** recibe la clave del dispositivo
@@ -165,13 +182,14 @@ credenciales: [SmartPot-DataGenerator](https://github.com/SmartPotTech/SmartPot-
 encendido con la cuenta del cultivo, que la API descifra y le entrega por la red interna. La PWA solo habla con la API,
 que comprueba el dueño y el tipo del cultivo en cada ruta.
 
-| Modo      | Comportamiento                                                                      |
-|-----------|-------------------------------------------------------------------------------------|
-| `WEATHER` | Sigue el clima real del lugar elegido (temperatura, humedad, sol, lluvia y presión) |
-| `MANUAL`  | Los medidores que mueve la persona; los actuadores siguen actuando encima           |
-| `AUTO`    | Día y noche típicos de la especie                                                   |
+| Modo      | Comportamiento                                                                                                     |
+|-----------|--------------------------------------------------------------------------------------------------------------------|
+| `WEATHER` | Sigue el clima real del lugar del cultivo, filtrado por si está bajo techo o al aire libre y por cuánto sol recibe |
+| `MANUAL`  | Los medidores que mueve la persona; los actuadores siguen actuando encima                                          |
+| `AUTO`    | Día y noche típicos de la especie                                                                                  |
 
-La configuración vive en la colección `virtual_devices`. Pausar la simulación (`DELETE`) la marca `active: false` y la
+La ubicación es la del cultivo (`placement.location`): cambiarla desde la simulación cambia la del cultivo. La
+configuración vive en la colección `virtual_devices`. Pausar la simulación (`DELETE`) la marca `active: false` y la
 retira del simulador sin perderla; `PUT` la cambia o la reanuda. Cada minuto la API compara con el simulador, vuelve a
 crear las simulaciones activas que falten (por ejemplo, tras un reinicio) y retira las pausadas; borrar el cultivo la
 elimina. Máximo 5 por cuenta. Al arrancar, `CropKindBackfill` completa el tipo y la forma de los cultivos anteriores.
@@ -209,8 +227,9 @@ docker run --rm -v smartpot-m2:/root/.m2 -v "$PWD":/workspace -w /workspace mave
 ```
 
 Cubren cifrado, JWT, política de contraseñas, tópicos y telemetría MQTT, aprovisionamiento en el broker, comandos,
-cultivos, el agente de automatización, el envío de lecturas para el aprendizaje, los canales y el bot de Telegram (
-códigos de un solo uso, webhook firmado, escape de HTML), el tipo fijo y la forma de los cultivos, la simulación de los
+cultivos con su lugar y su clima, los switches (409 al no cambiar nada o al cruzar órdenes), el agente de
+automatización, el envío de lecturas para el aprendizaje, los canales, los avisos por cultivo con resúmenes y chats
+compartidos y el bot de Telegram (códigos de un solo uso, webhook firmado, escape de HTML), el tipo fijo y la forma de los cultivos, la simulación de los
 virtuales (dueño, clave, límites, pausa y reconciliación), el aprendizaje solo con cultivos reales, la caché con
 respaldo local y la cadena de seguridad de los controladores.
 
