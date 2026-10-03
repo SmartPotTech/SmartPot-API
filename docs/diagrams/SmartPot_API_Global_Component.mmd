@@ -10,11 +10,11 @@ flowchart LR
   subgraph dominio["Dominios · controller → service → repository"]
     direction TB
     auth["security · users<br/>AuthService · UserService"]
-    crops["crops<br/>CropService · real o virtual<br/>forma · clave del dispositivo"]
+    crops["crops<br/>CropService · real o virtual<br/>forma · lugar · clave del dispositivo<br/>CropWeatherService"]
     readings["readings<br/>ReadingService · MeasureRanges"]
-    actuators["actuators · commands<br/>ActuatorService · CommandService"]
+    actuators["actuators · commands<br/>ActuatorService · CommandService<br/>switches · 409 si no cambia nada"]
     overview["overview<br/>totales · series · flota"]
-    notif["notifications · channels<br/>ChannelDispatcher · TelegramBot"]
+    notif["notifications · channels<br/>ChannelDispatcher · TelegramBot<br/>CropChannelService · CropChannelDigest"]
     virtual["virtualdevices<br/>VirtualDeviceService · SimulatorClient<br/>CropKindBackfill"]
     ai["ai<br/>AutomationAgent · LearningFeed<br/>InsightService · AiClient"]
   end
@@ -42,6 +42,7 @@ flowchart LR
   ai -->|"POST /v1/insights · /v1/learning"| aisvc
   ai --> actuators --> gateway
   virtual -->|"PUT /v1/pots · token"| sim
+  crops -->|"GET /v1/weather · token"| sim
   sim -->|"MQTT con la cuenta del cultivo"| broker
   classDef leaf fill:#DDF5EA,stroke:#067A52,color:#17261F
   classDef water fill:#E3F2FB,stroke:#1F6FA0,color:#17261F
