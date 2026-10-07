@@ -147,7 +147,8 @@ El **panel general** (`/api/v1/overview`) mira la cuenta completa: las series co
 `$dateTrunc` (unos 48 puntos por cultivo) y el análisis de flota pide a la IA el ranking, los problemas que comparten
 varios cultivos y las acciones sugeridas en bloque, que se aplican con `/api/v1/commands/bulk`.
 
-La evaluación también lleva el **lugar** del cultivo y el **clima de afuera**: `CropWeatherService` lo pide al simulador,
+La evaluación también lleva el **lugar** del cultivo y el **clima de afuera**: `CropWeatherService` lo pide al
+simulador,
 que es el único con salida al servicio de clima, y lo guarda 10 minutos por lugar en Redis. Con eso la IA devuelve un
 consejo de lugar según la luz que pide la especie, no riega con lluvia sobre un cultivo al aire libre y avisa si el
 sensor no coincide con el clima. La PWA usa la misma ruta (`/crops/{id}/weather`) para dibujar el cultivo en su lugar.
@@ -229,7 +230,8 @@ docker run --rm -v smartpot-m2:/root/.m2 -v "$PWD":/workspace -w /workspace mave
 Cubren cifrado, JWT, política de contraseñas, tópicos y telemetría MQTT, aprovisionamiento en el broker, comandos,
 cultivos con su lugar y su clima, los switches (409 al no cambiar nada o al cruzar órdenes), el agente de
 automatización, el envío de lecturas para el aprendizaje, los canales, los avisos por cultivo con resúmenes y chats
-compartidos y el bot de Telegram (códigos de un solo uso, webhook firmado, escape de HTML), el tipo fijo y la forma de los cultivos, la simulación de los
+compartidos y el bot de Telegram (códigos de un solo uso, webhook firmado, escape de HTML), el tipo fijo y la forma de
+los cultivos, la simulación de los
 virtuales (dueño, clave, límites, pausa y reconciliación), el aprendizaje solo con cultivos reales, la caché con
 respaldo local y la cadena de seguridad de los controladores.
 

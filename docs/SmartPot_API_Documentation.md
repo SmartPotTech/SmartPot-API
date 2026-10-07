@@ -315,7 +315,8 @@ La API lee `.env` desde la carpeta del proyecto; `.env.example` lista todas las 
 ## 8. Pruebas
 
 `./mvnw verify` corre 147 pruebas con JUnit y Mockito: cifrado, JWT, contraseñas, tópicos y telemetría MQTT,
-aprovisionamiento, comandos y switches, cultivos con su tipo fijo, su forma, su lugar y su clima, los avisos por cultivo, el agente, el envío de lecturas para el aprendizaje (
+aprovisionamiento, comandos y switches, cultivos con su tipo fijo, su forma, su lugar y su clima, los avisos por
+cultivo, el agente, el envío de lecturas para el aprendizaje (
 solo reales), canales y bot de Telegram, la simulación de los virtuales (dueño, clave, límites, pausa y reconciliación),
 el completado de cultivos anteriores, la caché con respaldo local y la cadena de seguridad de los controladores. El E2E
 central de `.github` recorre la API completa con 46 comprobaciones.
