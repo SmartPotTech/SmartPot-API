@@ -580,7 +580,8 @@
                             <div style="color: rgb(23, 38, 31) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"
                                  xmlns="http://www.w3.org/1999/xhtml">
                                 <span style="color:#17261F !important" class="nodeLabel">
-                                    <p>notifications · channels<br/>ChannelDispatcher · TelegramBot<br/>
+                                    <p>notifications · channels<br/>ChannelDispatcher · TelegramBot
+                                        <br/>
                                         CropChannelService · CropChannelDigest
                                     </p>
                                 </span>
