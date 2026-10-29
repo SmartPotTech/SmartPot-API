@@ -48,7 +48,65 @@
         <java.version>21</java.version>
         <springdoc.version>3.1.1</springdoc.version>
         <paho.version>1.2.5</paho.version>
+        <tomcat.version>11.0.27</tomcat.version>
+        <jackson-2.version>2.21.8</jackson-2.version>
+        <jackson-3.version>3.1.8</jackson-3.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Tomcat 11 mitigando CVE-2026-101296, CVE-2026-101356, CVE-2026-65905, CVE-2026-68525, CVE-2026-76183, CVE-2026-68569, CVE-2026-77791, CVE-2026-79677 -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+
+            <!-- Jackson 2.x mitigando CVE-2026-110879, CVE-2026-68498, CVE-2026-89425 (springdoc-openapi) -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson-2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-2.version}</version>
+            </dependency>
+
+            <!-- Jackson 3.x mitigando CVE-2026-110879, CVE-2026-68497, CVE-2026-89425, CVE-2026-91777 (Spring Boot 4) -->
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson-3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-3.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

@@ -10,6 +10,8 @@ RUN mvn -B -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine
 
+RUN apk update && apk upgrade --no-cache
+
 LABEL org.opencontainers.image.title="SmartPot API" \
       org.opencontainers.image.description="API REST y MQTT de SmartPot" \
       org.opencontainers.image.source="https://github.com/SmartPotTech/SmartPot-API" \
