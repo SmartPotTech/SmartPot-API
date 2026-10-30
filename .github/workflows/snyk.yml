@@ -36,7 +36,7 @@ jobs:
           cache: maven
 
       - name: Set up Snyk CLI
-        uses: snyk/actions/setup@v4
+        uses: snyk/actions/setup@master
 
       - name: Run Snyk Test
         run: |
