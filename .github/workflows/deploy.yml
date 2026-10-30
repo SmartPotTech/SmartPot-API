@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     name: Request Deployment
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_commit.message, '[skip deploy]') && !contains(github.event.workflow_run.head_commit.message, '[skip-deploy]') && !contains(github.event.workflow_run.head_commit.message, '#no-deploy') && !contains(github.event.workflow_run.head_commit.message, '#nodeploy'))
     uses: SmartPotTech/.github/.github/workflows/request-deploy.yml@main
     secrets:
       DEPLOY_DISPATCH_TOKEN: ${{ secrets.DEPLOY_DISPATCH_TOKEN }}
