@@ -8,7 +8,7 @@ RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q -DskipTests package
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:26.0.1_8-jre-alpine
 
 RUN apk update && apk upgrade --no-cache
 
