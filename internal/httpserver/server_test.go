@@ -246,3 +246,32 @@ func TestHTTPServer_ETagConditionalGET(t *testing.T) {
 		t.Errorf("se esperaba conservar ETag %q en 304, se obtuvo %q", etag, rec2.Header().Get("ETag"))
 	}
 }
+
+func TestHTTPServer_EventStreamSkipsETagBuffer(t *testing.T) {
+	e := New(testLogger())
+	e.GET("/api/v1/crops/:cropId/stream", func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+		c.Response().WriteHeader(http.StatusOK)
+		if _, err := c.Response().Write([]byte("data: primera\n\n")); err != nil {
+			return err
+		}
+		return http.NewResponseController(c.Response().Writer).Flush()
+	})
+	srv := httptest.NewServer(e)
+	defer srv.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/v1/crops/abc/stream", nil)
+	req.Header.Set(echo.HeaderAccept, "text/event-stream")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("no se pudo abrir el flujo: %v", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "data: primera") {
+		t.Fatalf("el flujo no llegó al cliente: %q", body)
+	}
+	if resp.Header.Get("ETag") != "" {
+		t.Fatal("un flujo de eventos no debe llevar ETag")
+	}
+}

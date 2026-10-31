@@ -106,7 +106,7 @@ func etagMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
-			if req.Method != http.MethodGet {
+			if req.Method != http.MethodGet || isEventStream(req) {
 				return next(c)
 			}
 			res := c.Response()
@@ -157,6 +157,13 @@ func etagMiddleware() echo.MiddlewareFunc {
 			return nil
 		}
 	}
+}
+
+// isEventStream indica si la petición abre un flujo de eventos (SSE): esas respuestas no se guardan en un búfer
+// para calcular el ETag, porque deben llegar al cliente a medida que se escriben.
+func isEventStream(req *http.Request) bool {
+	return strings.Contains(req.Header.Get(echo.HeaderAccept), "text/event-stream") ||
+		strings.HasSuffix(req.URL.Path, "/stream")
 }
 
 // RespondError es el HTTPErrorHandler centralizado: transforma errores de

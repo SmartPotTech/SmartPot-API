@@ -122,21 +122,26 @@ func (h *Handler) streamSSE(c echo.Context) error {
 		return err
 	}
 
+	// Funciona detrás de cualquier nginx: X-Accel-Buffering apaga su búfer, no-transform evita que un proxy
+	// comprima o retenga el flujo y, si el proxy habla HTTP/1.0 con la API, la respuesta va sin chunked hasta
+	// que se cierra la conexión. Si el flujo se corta, la PWA vuelve a consultar con ETag.
 	w := c.Response()
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set(echo.HeaderContentType, "text/event-stream; charset=utf-8")
+	w.Header().Set(echo.HeaderCacheControl, "no-cache, no-transform")
 	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
 
 	ch, unsubscribe := h.svc.SubscribeStream(cropID)
 	defer unsubscribe()
 
-	flusher, ok := w.Writer.(http.Flusher)
-	if !ok {
-		return apperr.Internal("Streaming no soportado")
+	flusher := http.NewResponseController(w.Writer)
+	// retry fija en 5 s la reconexión del cliente; el comentario inicial abre el flujo en los proxies.
+	if _, err := fmt.Fprint(w, "retry: 5000\n: conectado\n\n"); err != nil {
+		return nil
 	}
-	flusher.Flush()
+	if err := flusher.Flush(); err != nil {
+		return nil
+	}
 
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
