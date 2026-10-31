@@ -220,7 +220,10 @@ func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primit
 
 	if caggTable != "" {
 		caggCol := "avg_" + col
-		sqlCagg := "SELECT crop_id, time_bucket(make_interval(mins => $2), bucket) AS b, avg(" + caggCol + ") " +
+		// Promedio ponderado por cantidad de lecturas: reagrupar promedios con avg() daría el mismo peso a un balde
+		// de 3 lecturas que a uno de 60.
+		sqlCagg := "SELECT crop_id, time_bucket(make_interval(mins => $2), bucket) AS b, " +
+			"sum(" + caggCol + " * reading_count) / nullif(sum(reading_count), 0) " +
 			"FROM " + caggTable + " WHERE crop_id = ANY($1) AND bucket >= $3 AND " + caggCol + " IS NOT NULL " +
 			"GROUP BY crop_id, b ORDER BY b ASC"
 		rows, err := r.pool.Query(ctx, sqlCagg, hexes, bucketMinutes, from)
