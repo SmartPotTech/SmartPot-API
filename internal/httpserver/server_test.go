@@ -275,3 +275,31 @@ func TestHTTPServer_EventStreamSkipsETagBuffer(t *testing.T) {
 		t.Fatal("un flujo de eventos no debe llevar ETag")
 	}
 }
+
+func TestHTTPServer_ClientIPBehindTrustedProxy(t *testing.T) {
+	cases := []struct {
+		name   string
+		opts   Options
+		remote string
+		xff    string
+		want   string
+	}{
+		{"sin proxy se ignora la cabecera", Options{}, "10.0.0.2:5000", "1.2.3.4", "10.0.0.2"},
+		{"proxy privado de confianza", Options{TrustProxy: true}, "10.0.0.2:5000", "1.2.3.4", "1.2.3.4"},
+		{"par público no es de confianza", Options{TrustProxy: true}, "8.8.8.8:5000", "1.2.3.4", "8.8.8.8"},
+		{"rango explícito", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "172.18.0.5:80", "5.6.7.8", "5.6.7.8"},
+		{"fuera del rango explícito", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "10.0.0.2:80", "5.6.7.8", "10.0.0.2"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			e := New(testLogger(), tc.opts)
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.RemoteAddr = tc.remote
+			req.Header.Set(echo.HeaderXForwardedFor, tc.xff)
+			c := e.NewContext(req, httptest.NewRecorder())
+			if got := c.RealIP(); got != tc.want {
+				t.Fatalf("IP del cliente %q, se esperaba %q", got, tc.want)
+			}
+		})
+	}
+}

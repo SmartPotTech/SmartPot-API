@@ -35,6 +35,10 @@ type Server struct {
 	WebBaseURL   string
 	PublicAPIURL string
 	DocsEnabled  bool
+	// TrustProxy activa la IP real del cliente desde X-Forwarded-For, solo cuando la conexión llega desde
+	// TrustedProxies (CIDR). Sin rangos, se confía en redes privadas, loopback y link-local.
+	TrustProxy     bool
+	TrustedProxies []string
 }
 
 type Security struct {
@@ -158,11 +162,13 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		Server: Server{
-			Port:         envInt("PORT", 8091),
-			LogLevel:     env("LOG_LEVEL", "INFO"),
-			WebBaseURL:   env("WEB_BASE_URL", "http://localhost:5173"),
-			PublicAPIURL: publicAPIURL,
-			DocsEnabled:  envBool("API_DOCS_ENABLED", true),
+			Port:           envInt("PORT", 8091),
+			LogLevel:       env("LOG_LEVEL", "INFO"),
+			WebBaseURL:     env("WEB_BASE_URL", "http://localhost:5173"),
+			PublicAPIURL:   publicAPIURL,
+			DocsEnabled:    envBool("API_DOCS_ENABLED", true),
+			TrustProxy:     envBool("TRUST_PROXY", envBool("SMARTPOT_TRUST_PROXY", false)),
+			TrustedProxies: envList("TRUSTED_PROXY_CIDRS", ""),
 		},
 		Security: Security{
 			JWTSecret:               os.Getenv("SMARTPOT_JWT_SECRET"),

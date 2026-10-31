@@ -196,7 +196,10 @@ func run() error {
 
 	// Servidor HTTP.
 	rateLimiter := security.NewRateLimiter(cacheStore, cfg.Security.RateLimitPerMinute, cfg.Security.AuthRateLimitPerMinute)
-	engine := httpserver.New(logger)
+	engine := httpserver.New(logger, httpserver.Options{
+		TrustProxy:     cfg.Server.TrustProxy,
+		TrustedProxies: cfg.Server.TrustedProxies,
+	})
 	// El broker (EMQX) autentica los dispositivos contra este endpoint interno con caché. Va antes del límite de
 	// tasa y de CORS: lo llama el propio broker en cada conexión, no un navegador.
 	authnController := mqtt.NewAuthnController(cfg.MQTT, cropService, cacheStore, topics, logger)
