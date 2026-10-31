@@ -120,40 +120,6 @@ func (a *Adapter) Ping(ctx context.Context) error {
 	return a.rdb.Ping(ctx).Err()
 }
 
-// CheckDeadband evalúa si la telemetría excede el deadband respecto al valor en caché usando la función atómica Valkey.
-// Devuelve true si la telemetría debe procesarse/almacenarse, o false si se filtra por deadband.
-func (a *Adapter) CheckDeadband(ctx context.Context, cropID string, t, rh, ph, tds, m, maxAgeSec float64) (bool, error) {
-	key := "smartpot:deadband:" + cropID
-	now := float64(time.Now().Unix())
-	res, err := a.rdb.FCall(ctx, "deadband_check_and_update", []string{key}, t, rh, ph, tds, m, maxAgeSec, now).Int()
-	if err != nil {
-		// Degradación elegante: si la función no está cargada en Valkey, no descartar
-		return true, nil
-	}
-	return res == 1, nil
-}
-
-// CheckMqttDedupAndRateLimit verifica la deduplicación de paquetes por secuencia y aplica GCRA leaky-bucket.
-// Devuelve (allowed, isDuplicate, error).
-func (a *Adapter) CheckMqttDedupAndRateLimit(ctx context.Context, cropID, seqID string, rate, burst float64) (bool, bool, error) {
-	dedupKey := "smartpot:dedup:" + cropID + ":" + seqID
-	gcraKey := "smartpot:gcra:" + cropID
-	now := float64(time.Now().Unix())
-
-	res, err := a.rdb.FCall(ctx, "mqtt_dedup_and_rate_limit", []string{dedupKey, gcraKey}, seqID, rate, burst, now).Int()
-	if err != nil {
-		// Degradación elegante
-		return true, false, nil
-	}
-	if res == 2 {
-		return false, true, nil
-	}
-	if res == 0 {
-		return false, false, nil
-	}
-	return true, false, nil
-}
-
 // Close cierra el cliente.
 func (a *Adapter) Close() error {
 	return a.rdb.Close()

@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
@@ -19,6 +20,7 @@ const (
 	automaticInterval = 30 * time.Second
 	alertCooldown     = time.Hour
 	agentNoticeCd     = 30 * time.Minute
+	deadbandMaxAge    = 15 * time.Minute
 )
 
 // AutomationAgent percibe cada lectura, la hace evaluar por la IA y, con el modo
@@ -58,6 +60,16 @@ func (a *AutomationAgent) OnReading(event readings.ReadingRecordedEvent) {
 	if !a.cache.SetIfAbsent("ai-eval:"+crop.HexID(), interval) {
 		return
 	}
+	// Banda muerta: si la lectura casi no cambió desde la última evaluación, la IA respondería lo mismo. Como la
+	// marca expira, al menos cada deadbandMaxAge se vuelve a evaluar aunque todo siga estable.
+	lastKey := "ai-eval-last:" + crop.HexID()
+	if raw, ok := a.cache.Get(lastKey); ok {
+		var prev readings.Measures
+		if json.Unmarshal([]byte(raw), &prev) == nil && withinDeadband(prev, event.Reading.Measures) {
+			slog.Debug("evaluación omitida por banda muerta", "cropId", crop.HexID())
+			return
+		}
+	}
 	insight, err := a.insights.Evaluate(ctx, crop, event.Reading)
 	if err != nil {
 		var apiErr *apperr.Error
@@ -67,6 +79,9 @@ func (a *AutomationAgent) OnReading(event readings.ReadingRecordedEvent) {
 			slog.Warn("el agente no pudo evaluar el cultivo", "cropId", crop.HexID(), "err", err)
 		}
 		return
+	}
+	if raw, err := json.Marshal(event.Reading.Measures); err == nil {
+		a.cache.Put(lastKey, string(raw), deadbandMaxAge)
 	}
 	a.alertCriticalFindings(ctx, crop, insight)
 	if crop.AutomationEnabled {
