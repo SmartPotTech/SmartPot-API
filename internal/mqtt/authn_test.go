@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/cache"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/config"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/crops"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
@@ -141,5 +142,34 @@ func TestAuthn_EmptyTokenDeniesAll(t *testing.T) {
 	rec := doAuthn(c, "", `{"username":"`+id+`","password":"k"}`)
 	if resp := decode(t, rec); resp.Result != "deny" {
 		t.Fatalf("con token vacío todo debe rechazarse; obtuve %q", resp.Result)
+	}
+}
+
+func TestAuthnCachesOnlyAnHMACOfTheDeviceKey(t *testing.T) {
+	const id = "66f5a1000000000000000101"
+	const key = "demo-lettuce-device-key-2026"
+	store := cache.NewStore(nil)
+	cfg := config.MQTT{AuthnToken: testToken}
+	c := NewAuthnController(cfg, fakeVerifier{crop: cropWithID(t, id), key: key, hasKey: true}, store,
+		NewTopicResolver("smartpot/v1"), slog.New(slog.DiscardHandler))
+
+	body := `{"username":"` + strings.ToUpper(id) + `","password":"` + key + `","clientid":"smartpot-` + id + `"}`
+	if got := decode(t, doAuthn(c, testToken, body)); got.Result != "allow" {
+		t.Fatalf("la clave correcta debía permitirse, se obtuvo %q", got.Result)
+	}
+	cached, ok := store.Get(deviceKeyCachePrefix + id)
+	if !ok {
+		t.Fatal("la verificación debía quedar en caché con el id normalizado")
+	}
+	if strings.Contains(cached, key) {
+		t.Fatal("la caché no puede guardar la clave del dispositivo en claro")
+	}
+	wrong := `{"username":"` + id + `","password":"otra-clave","clientid":"x"}`
+	if got := decode(t, doAuthn(c, testToken, wrong)); got.Result != "deny" {
+		t.Fatalf("una clave distinta debía rechazarse desde la caché, se obtuvo %q", got.Result)
+	}
+	c.Invalidate(id)
+	if _, ok := store.Get(deviceKeyCachePrefix + id); ok {
+		t.Fatal("Invalidate debía borrar la entrada")
 	}
 }

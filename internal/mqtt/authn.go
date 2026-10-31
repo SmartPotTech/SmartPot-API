@@ -2,15 +2,20 @@ package mqtt
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/cache"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/config"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/crops"
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -73,6 +78,11 @@ type authnResponse struct {
 
 var deny = authnResponse{Result: "deny"}
 
+const (
+	deviceKeyCachePrefix = "crop:key-hmac:"
+	deviceKeyCacheTTL    = 5 * time.Minute
+)
+
 func (c *AuthnController) authenticate(ctx echo.Context) error {
 	if !c.authorized(ctx.Request().Header.Get(brokerTokenHeader)) {
 		return ctx.JSON(http.StatusOK, deny)
@@ -82,18 +92,27 @@ func (c *AuthnController) authenticate(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, deny)
 	}
 
-	// Consulta rápida en caché (evita pegar a PostgreSQL en cada reconexión o validación)
-	cacheKey := "crop:key:" + req.Username
+	// El usuario MQTT es el id del cultivo; se normaliza para que la llave de caché y el ACL coincidan siempre.
+	oid, ok := objectid.Parse(strings.TrimSpace(req.Username))
+	if !ok || req.Password == "" {
+		return ctx.JSON(http.StatusOK, deny)
+	}
+	cropID := oid.Hex()
+
+	// La caché evita ir a PostgreSQL en cada reconexión, pero solo guarda un HMAC de la clave: quien lea Valkey
+	// no obtiene credenciales de dispositivo.
+	cacheKey := deviceKeyCachePrefix + cropID
+	presented := c.digest(req.Password)
 	if c.cache != nil {
-		if cachedKey, ok := c.cache.Get(cacheKey); ok {
-			if subtle.ConstantTimeCompare([]byte(cachedKey), []byte(req.Password)) != 1 {
+		if cached, hit := c.cache.Get(cacheKey); hit {
+			if subtle.ConstantTimeCompare([]byte(cached), []byte(presented)) != 1 {
 				return ctx.JSON(http.StatusOK, deny)
 			}
-			return ctx.JSON(http.StatusOK, authnResponse{Result: "allow", ACL: c.deviceACL(req.Username)})
+			return ctx.JSON(http.StatusOK, authnResponse{Result: "allow", ACL: c.deviceACL(cropID)})
 		}
 	}
 
-	crop, err := c.crops.Find(ctx.Request().Context(), req.Username)
+	crop, err := c.crops.Find(ctx.Request().Context(), cropID)
 	if err != nil {
 		// Error real de la base: 5xx para que EMQX lo trate como "ignore" y no cachee un rechazo.
 		c.log.Warn("no se pudo verificar el dispositivo contra la base", "cropId", req.Username, "err", err)
@@ -107,16 +126,26 @@ func (c *AuthnController) authenticate(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, deny)
 	}
 	if c.cache != nil {
-		c.cache.Put(cacheKey, key, 5*time.Minute)
+		c.cache.Put(cacheKey, presented, deviceKeyCacheTTL)
 	}
 	return ctx.JSON(http.StatusOK, authnResponse{Result: "allow", ACL: c.deviceACL(crop.HexID())})
 }
 
 // Invalidate invalida la clave del dispositivo en caché (por borrado o rotación).
 func (c *AuthnController) Invalidate(cropID string) {
-	if c.cache != nil && cropID != "" {
-		c.cache.Delete("crop:key:" + cropID)
+	if c.cache == nil {
+		return
 	}
+	if oid, ok := objectid.Parse(strings.TrimSpace(cropID)); ok {
+		c.cache.Delete(deviceKeyCachePrefix + oid.Hex())
+	}
+}
+
+// digest es el HMAC-SHA256 de la clave presentada, con el secreto compartido con el broker como llave.
+func (c *AuthnController) digest(password string) string {
+	mac := hmac.New(sha256.New, []byte(c.token))
+	mac.Write([]byte(password))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 // deviceACL acota el dispositivo a los tópicos de su propio cultivo; lo demás se niega.
