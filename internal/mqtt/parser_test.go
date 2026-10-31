@@ -93,3 +93,56 @@ func TestParseCompactBinary_InvalidLength(t *testing.T) {
 		t.Fatal("expected error for invalid length, got nil")
 	}
 }
+
+// compactV2 arma un paquete v2 según el formato documentado en parser.go.
+func compactV2(mask uint16, temp int16, hum, ph, tds, atm, moist uint16, lux uint32) []byte {
+	buf := make([]byte, compactV2Size)
+	buf[0], buf[1] = CompactBinaryMagic, 2
+	binary.BigEndian.PutUint16(buf[2:4], 7)
+	binary.BigEndian.PutUint32(buf[4:8], 1_793_400_000)
+	binary.BigEndian.PutUint16(buf[8:10], mask)
+	binary.BigEndian.PutUint16(buf[10:12], uint16(temp))
+	binary.BigEndian.PutUint16(buf[12:14], hum)
+	binary.BigEndian.PutUint32(buf[14:18], lux)
+	binary.BigEndian.PutUint16(buf[18:20], ph)
+	binary.BigEndian.PutUint16(buf[20:22], tds)
+	binary.BigEndian.PutUint16(buf[22:24], atm)
+	binary.BigEndian.PutUint16(buf[24:26], moist)
+	buf[26] = CRC8(buf[:26])
+	return buf
+}
+
+func TestParseCompactBinaryV2KeepsZerosAndMissingSensors(t *testing.T) {
+	mask := PresentTemperature | PresentBrightness | PresentAtmosphere | PresentHumidity
+	m, err := ParseTelemetry(string(compactV2(mask, 0, 6550, 0, 0, 10132, 0, 0)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.Temperature == nil || *m.Temperature != 0 || m.Brightness == nil || *m.Brightness != 0 {
+		t.Fatalf("0 °C y 0 lux son lecturas reales: %+v", m)
+	}
+	if m.Atmosphere == nil || *m.Atmosphere != 1013.2 || m.Humidity == nil || *m.Humidity != 65.5 {
+		t.Fatalf("presión o humedad mal decodificadas: %+v", m)
+	}
+	if m.Ph != nil || m.Tds != nil || m.SoilMoisture != nil {
+		t.Fatalf("los sensores sin bit deben quedar ausentes: %+v", m)
+	}
+}
+
+func TestParseCompactBinaryV2ReadsFullSunlight(t *testing.T) {
+	m, err := ParseCompactBinary(compactV2(PresentBrightness|PresentTemperature, -250, 0, 0, 0, 0, 0, 98_000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if *m.Brightness != 98_000 || *m.Temperature != -2.5 {
+		t.Fatalf("luz o temperatura negativa mal decodificadas: %+v", m)
+	}
+}
+
+func TestParseCompactBinaryV2RejectsCorruptCRC(t *testing.T) {
+	buf := compactV2(PresentTemperature, 2100, 0, 0, 0, 0, 0, 0)
+	buf[11] ^= 0xFF
+	if _, err := ParseCompactBinary(buf); err == nil {
+		t.Fatal("un CRC que no coincide debía rechazarse")
+	}
+}
