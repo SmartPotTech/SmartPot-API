@@ -9,9 +9,23 @@ on:
     # Escaneo semanal los lunes a las 07:00 UTC
     - cron: '0 7 * * 1'
   workflow_dispatch:
+    inputs:
+      enforce_gate:
+        description: 'Detener y bloquear pipeline ante vulnerabilidades altas/críticas'
+        type: boolean
+        default: true
+      severity_threshold:
+        description: 'Umbral de severidad de Snyk'
+        type: choice
+        default: 'high'
+        options:
+          - medium
+          - high
+          - critical
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   security-events: write
 
 env:
@@ -20,7 +34,7 @@ env:
 
 jobs:
   snyk-sca:
-    name: Snyk Open Source (Maven / Java)
+    name: Snyk Open Source & Monitor (Maven / Java)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -38,21 +52,37 @@ jobs:
       - name: Set up Snyk CLI
         uses: snyk/actions/setup@master
 
-      - name: Run Snyk Test
+      # 1. Security Gate: Alertar o Detener
+      - name: Run Snyk Test (Security Gate)
         run: |
-          snyk test --org="${{ env.SNYK_CFG_ORG }}" --severity-threshold=medium --sarif-file-output=snyk.sarif || {
+          threshold="${{ inputs.severity_threshold || 'high' }}"
+          echo "::notice::Ejecutando Snyk Security Gate con umbral: $threshold"
+          snyk test --org="${{ env.SNYK_CFG_ORG }}" --severity-threshold="$threshold" --sarif-file-output=snyk.sarif || {
             code=$?
             if [ $code -eq 1 ]; then
-              echo "::warning::Snyk detectó vulnerabilidades en dependencias de Maven/Java."
+              if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ inputs.enforce_gate }}" = "true" ]; then
+                echo "::error::Snyk Security Gate BLOQUEADO: Se detectaron vulnerabilidades de severidad $threshold en dependencias de Maven/Java."
+                exit 1
+              else
+                echo "::warning::Snyk detectó vulnerabilidades en dependencias de Maven/Java."
+              fi
             else
               echo "::error::Error al ejecutar Snyk CLI (código $code)."
               exit $code
             fi
           }
 
+      # 2. Alertar: Subir SARIF a GitHub Security Tab
       - name: Upload SARIF to GitHub Security Tab
         uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('snyk.sarif') != ''
         with:
           sarif_file: snyk.sarif
           category: snyk-maven
+
+      # 3. Monitorear: snyk monitor en rama principal o schedule
+      - name: Snyk Monitor (Continuous Protection & Auto Fix PRs)
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule'
+        run: |
+          echo "::notice::Publicando snapshot a Snyk Platform para monitoreo continuo 24/7 y habilitación de Automatic Fix PRs..."
+          snyk monitor --org="${{ env.SNYK_CFG_ORG }}" --project-name="SmartPotTech/SmartPot-API"
