@@ -80,9 +80,9 @@ jobs:
           sarif_file: snyk.sarif
           category: snyk-maven
 
-      # 3. Monitorear: snyk monitor en rama principal o schedule
+      # 3. Monitorear: snyk monitor en rama principal, schedule o dispatch
       - name: Snyk Monitor (Continuous Protection & Auto Fix PRs)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           echo "::notice::Publicando snapshot a Snyk Platform para monitoreo continuo 24/7 y habilitación de Automatic Fix PRs..."
           snyk monitor --org="${{ env.SNYK_CFG_ORG }}" --project-name="SmartPotTech/SmartPot-API"
