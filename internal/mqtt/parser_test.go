@@ -27,16 +27,16 @@ func TestParseTelemetry_JSON(t *testing.T) {
 
 func TestParseCompactBinary_Valid(t *testing.T) {
 	buf := make([]byte, 22)
-	buf[0] = CompactBinaryMagic // 0x50
-	buf[1] = 0x01               // version 1
-	binary.BigEndian.PutUint16(buf[2:4], 42) // seqId
-	binary.BigEndian.PutUint32(buf[4:8], 1700000000) // timestamp
+	buf[0] = CompactBinaryMagic                         // 0x50
+	buf[1] = 0x01                                       // version 1
+	binary.BigEndian.PutUint16(buf[2:4], 42)            // seqId
+	binary.BigEndian.PutUint32(buf[4:8], 1700000000)    // timestamp
 	binary.BigEndian.PutUint16(buf[8:10], uint16(2350)) // temp = 23.5 C
-	binary.BigEndian.PutUint16(buf[10:12], 6200) // hum = 62.0 %
-	binary.BigEndian.PutUint16(buf[12:14], 650)  // ph = 6.50
-	binary.BigEndian.PutUint16(buf[14:16], 480)  // tds = 480 ppm
-	binary.BigEndian.PutUint16(buf[16:18], 5500) // moisture = 55.0 %
-	binary.BigEndian.PutUint16(buf[18:20], 15000) // bright = 15000 lux
+	binary.BigEndian.PutUint16(buf[10:12], 6200)        // hum = 62.0 %
+	binary.BigEndian.PutUint16(buf[12:14], 650)         // ph = 6.50
+	binary.BigEndian.PutUint16(buf[14:16], 480)         // tds = 480 ppm
+	binary.BigEndian.PutUint16(buf[16:18], 5500)        // moisture = 55.0 %
+	binary.BigEndian.PutUint16(buf[18:20], 15000)       // bright = 15000 lux
 	buf[21] = CRC8(buf[:21])
 
 	m, err := ParseTelemetry(string(buf))
