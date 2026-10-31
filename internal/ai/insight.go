@@ -60,7 +60,9 @@ func (s *InsightService) ForOwner(ctx context.Context, ownerID, cropID string) (
 // Evaluate consulta a la IA y guarda el índice de salud en el cultivo.
 // Utiliza caché inteligente de Valkey y singleflight para deduplicar llamadas concurrentes idénticas.
 func (s *InsightService) Evaluate(ctx context.Context, crop *crops.Crop, latest readings.Reading) (*InsightResponse, error) {
-	cacheKey := fmt.Sprintf("insights:%s:%s:%d", crop.HexID(), latest.ID.Hex(), latest.MeasuredAt.Unix())
+	// La llave incluye la última modificación del cultivo: cambiar su lugar, especie o forma invalida el diagnóstico.
+	cacheKey := fmt.Sprintf("insights:%s:%s:%d:%d", crop.HexID(), latest.ID.Hex(), latest.MeasuredAt.Unix(),
+		crop.UpdatedAt.UnixNano())
 	if s.cache != nil {
 		if raw, ok := s.cache.Get(cacheKey); ok {
 			var cached InsightResponse
