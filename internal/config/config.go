@@ -116,6 +116,9 @@ type AI struct {
 	Timezone           string
 	LearningEnabled    bool
 	LearningFlush      time.Duration
+	// GRPCSocket (socket UNIX) o GRPCAddr (host:puerto interno) activan gRPC hacia la IA; si faltan, solo REST.
+	GRPCSocket string
+	GRPCAddr   string
 }
 
 type Telegram struct {
@@ -237,6 +240,8 @@ func Load() (Config, error) {
 			Timezone:           env("AI_TIMEZONE", "America/Bogota"),
 			LearningEnabled:    envBool("AI_LEARNING_ENABLED", true),
 			LearningFlush:      dur("AI_LEARNING_FLUSH_INTERVAL", "PT1M"),
+			GRPCSocket:         os.Getenv("AI_GRPC_SOCKET"),
+			GRPCAddr:           os.Getenv("AI_GRPC_ADDR"),
 		},
 		Telegram: Telegram{
 			BotToken:      os.Getenv("TELEGRAM_BOT_TOKEN"),

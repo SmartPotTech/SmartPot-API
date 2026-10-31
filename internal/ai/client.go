@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/cache"
@@ -18,6 +19,8 @@ import (
 	smartpotv1 "github.com/SmartPotTech/SmartPot-API-Go/internal/proto/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -33,6 +36,7 @@ type Client struct {
 	enabled bool
 	baseURL string
 	token   string
+	timeout time.Duration
 	http    *http.Client
 	cache   cache.Cache
 	clock   func() time.Time
@@ -40,53 +44,62 @@ type Client struct {
 	cb *CircuitBreaker
 	sf *Singleflight
 
-	grpcConn   *grpc.ClientConn
-	grpcClient smartpotv1.SmartPotAIServiceClient
+	grpcConn     *grpc.ClientConn
+	grpcClient   smartpotv1.SmartPotAIServiceClient
+	lastFallback atomic.Int64
 
 	mu              sync.Mutex
 	healthCheckedAt time.Time
 	healthy         bool
 }
 
-// NewClient crea el cliente del servicio de IA.
-// Intenta conectar automáticamente via gRPC (por socket Unix o TCP) con degradación a REST.
+// defaultSocket es donde la IA abre su socket gRPC cuando comparten el volumen /var/run/smartpot.
+const defaultSocket = "/var/run/smartpot/ai.sock"
+
+// NewClient crea el cliente del servicio de IA. Usa gRPC (HTTP/2) por socket UNIX o TCP interno cuando está
+// configurado y, ante cualquier fallo, REST por HTTP/1.1, que pasa por cualquier proxy.
 func NewClient(cfg config.AI, store cache.Cache, clock func() time.Time) *Client {
 	c := &Client{
 		enabled: cfg.Enabled,
 		baseURL: strings.TrimRight(cfg.BaseURL, "/"),
 		token:   cfg.Token,
+		timeout: cfg.Timeout,
 		http:    &http.Client{Timeout: cfg.Timeout},
 		cache:   store,
 		clock:   clock,
 		cb:      NewCircuitBreaker(5, 10*time.Second, clock),
 		sf:      NewSingleflight(),
 	}
-
-	if cfg.Enabled {
-		target := ""
-		if sock := os.Getenv("AI_GRPC_SOCKET"); sock != "" {
-			target = "unix://" + sock
-		} else if _, err := os.Stat("/var/run/smartpot/ai.sock"); err == nil {
-			target = "unix:///var/run/smartpot/ai.sock"
-		} else if strings.Contains(cfg.BaseURL, ":8000") {
-			host := strings.TrimPrefix(cfg.BaseURL, "http://")
-			host = strings.TrimPrefix(host, "https://")
-			parts := strings.Split(host, ":")
-			if len(parts) > 0 && parts[0] != "" {
-				target = parts[0] + ":50051"
-			}
-		}
-
-		if target != "" {
-			conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
-			if err == nil {
-				c.grpcConn = conn
-				c.grpcClient = smartpotv1.NewSmartPotAIServiceClient(conn)
-			}
-		}
+	if !cfg.Enabled {
+		return c
 	}
-
+	target := grpcTarget(cfg)
+	if target == "" {
+		return c
+	}
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Warn("no se pudo preparar gRPC hacia la IA; se usará REST", "target", target, "err", err)
+		return c
+	}
+	c.grpcConn = conn
+	c.grpcClient = smartpotv1.NewSmartPotAIServiceClient(conn)
+	slog.Info("gRPC hacia la IA preparado", "target", target)
 	return c
+}
+
+// grpcTarget elige el destino gRPC: socket configurado, dirección TCP configurada o el socket compartido si existe.
+func grpcTarget(cfg config.AI) string {
+	switch {
+	case cfg.GRPCSocket != "":
+		return "unix://" + cfg.GRPCSocket
+	case cfg.GRPCAddr != "":
+		return cfg.GRPCAddr
+	}
+	if _, err := os.Stat(defaultSocket); err == nil {
+		return "unix://" + defaultSocket
+	}
+	return ""
 }
 
 // Close libera las conexiones gRPC activas.
@@ -108,126 +121,62 @@ func (c *Client) CircuitState() CircuitState {
 	return c.cb.State()
 }
 
-// Insights evalúa un cultivo priorizando gRPC de baja latencia con degradación transparente a HTTP REST.
+// Insights evalúa un cultivo: gRPC si está disponible y, si falla, REST con el mismo JSON.
 func (c *Client) Insights(ctx context.Context, req InsightRequest) (*InsightResponse, error) {
 	if err := c.requireEnabled(); err != nil {
 		return nil, err
 	}
-	if c.grpcClient != nil {
-		gResp, err := c.evalInsightGRPC(ctx, req)
-		if err == nil && gResp != nil {
-			return gResp, nil
-		}
-	}
 	var resp InsightResponse
+	if c.callGRPC(ctx, c.evaluateInsight, req, &resp) {
+		return &resp, nil
+	}
 	if err := c.do(ctx, http.MethodPost, "/v1/insights", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
-func (c *Client) evalInsightGRPC(ctx context.Context, in InsightRequest) (*InsightResponse, error) {
-	callCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
+type grpcCall func(ctx context.Context, in *smartpotv1.JsonBody, opts ...grpc.CallOption) (*smartpotv1.JsonBody, error)
 
-	var place *smartpotv1.Placement
-	if in.Placement != nil {
-		place = &smartpotv1.Placement{
-			Setting:  in.Placement.Setting,
-			Exposure: in.Placement.Exposure,
-		}
+func (c *Client) evaluateInsight(ctx context.Context, in *smartpotv1.JsonBody, opts ...grpc.CallOption) (*smartpotv1.JsonBody, error) {
+	return c.grpcClient.EvaluateInsight(ctx, in, opts...)
+}
+
+func (c *Client) analyzeFleet(ctx context.Context, in *smartpotv1.JsonBody, opts ...grpc.CallOption) (*smartpotv1.JsonBody, error) {
+	return c.grpcClient.AnalyzeFleet(ctx, in, opts...)
+}
+
+// callGRPC envía el cuerpo JSON por gRPC con el token en los metadatos. Devuelve false si no hay gRPC o si la
+// llamada falla, para que el llamador use REST.
+func (c *Client) callGRPC(ctx context.Context, call grpcCall, req, out any) bool {
+	if c.grpcClient == nil {
+		return false
 	}
-
-	val := func(p *float64) float64 {
-		if p == nil {
-			return 0.0
-		}
-		return *p
-	}
-
-	hist := make([]*smartpotv1.HistoryPoint, 0, len(in.History))
-	for _, h := range in.History {
-		hist = append(hist, &smartpotv1.HistoryPoint{
-			MeasuredAtUnixMs: h.MeasuredAt.UnixMilli(),
-			Measures: &smartpotv1.Measures{
-				Temperature:  val(h.Temperature),
-				Humidity:     val(h.Humidity),
-				Brightness:   val(h.Brightness),
-				Ph:           val(h.Ph),
-				Tds:          val(h.Tds),
-				Atmosphere:   val(h.Atmosphere),
-				SoilMoisture: val(h.SoilMoisture),
-			},
-		})
-	}
-
-	localHour := int32(0)
-	if in.LocalHour != nil {
-		localHour = int32(*in.LocalHour)
-	}
-
-	grpcReq := &smartpotv1.InsightRequest{
-		CropType:  in.CropType,
-		Placement: place,
-		Measures: &smartpotv1.Measures{
-			Temperature:  val(in.Measures.Temperature),
-			Humidity:     val(in.Measures.Humidity),
-			Brightness:   val(in.Measures.Brightness),
-			Ph:           val(in.Measures.Ph),
-			Tds:          val(in.Measures.Tds),
-			Atmosphere:   val(in.Measures.Atmosphere),
-			SoilMoisture: val(in.Measures.SoilMoisture),
-		},
-		History:   hist,
-		Actuators: in.Actuators,
-		LocalHour: localHour,
-	}
-
-	res, err := c.grpcClient.EvaluateInsight(callCtx, grpcReq)
+	body, err := json.Marshal(req)
 	if err != nil {
-		return nil, err
+		return false
 	}
-
-	out := &InsightResponse{
-		CropType:    in.CropType,
-		Summary:     res.Summary,
-		EvaluatedAt: c.clock(),
+	callCtx, cancel := context.WithTimeout(metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+c.token), c.timeout)
+	defer cancel()
+	res, err := call(callCtx, &smartpotv1.JsonBody{Json: body})
+	if err == nil {
+		err = json.Unmarshal(res.GetJson(), out)
 	}
-
-	if res.Health != nil {
-		byParam := make(map[string]float64, len(res.Health.ByParameter))
-		for k, v := range res.Health.ByParameter {
-			byParam[k] = float64(v)
-		}
-		out.Health = &Health{
-			Index:       float64(res.Health.Index),
-			Level:       res.Health.Level,
-			Label:       res.Health.Label,
-			ByParameter: byParam,
-		}
+	if err != nil {
+		c.warnFallback(err)
+		return false
 	}
+	return true
+}
 
-	if res.Diagnosis != "" {
-		out.Diagnosis = []Diagnosis{
-			{Message: res.Diagnosis},
-		}
+// warnFallback avisa como mucho una vez por minuto que gRPC falló y se usa REST.
+func (c *Client) warnFallback(err error) {
+	now := c.clock().UnixNano()
+	last := c.lastFallback.Load()
+	if now-last < int64(time.Minute) || !c.lastFallback.CompareAndSwap(last, now) {
+		return
 	}
-
-	for _, cStr := range res.Conclusions {
-		out.Conclusions = append(out.Conclusions, Conclusion{Title: cStr})
-	}
-
-	for _, a := range res.Actions {
-		dur := int(a.DurationSeconds)
-		out.Actions = append(out.Actions, Action{
-			Actuator:        a.Actuator,
-			Action:          a.Action,
-			Reason:          a.Reason,
-			DurationSeconds: &dur,
-		})
-	}
-
-	return out, nil
+	slog.Warn("gRPC hacia la IA no respondió; se usa REST", "code", status.Code(err).String(), "err", err)
 }
 
 // Fleet analiza todos los cultivos de una cuenta.
@@ -236,6 +185,9 @@ func (c *Client) Fleet(ctx context.Context, req FleetRequest) (*FleetResponse, e
 		return nil, err
 	}
 	var resp FleetResponse
+	if c.callGRPC(ctx, c.analyzeFleet, req, &resp) {
+		return &resp, nil
+	}
 	if err := c.do(ctx, http.MethodPost, "/v1/fleet", req, &resp); err != nil {
 		return nil, err
 	}

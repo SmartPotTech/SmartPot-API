@@ -21,18 +21,20 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	SmartPotAIService_EvaluateInsight_FullMethodName = "/smartpot.v1.SmartPotAIService/EvaluateInsight"
 	SmartPotAIService_AnalyzeFleet_FullMethodName    = "/smartpot.v1.SmartPotAIService/AnalyzeFleet"
-	SmartPotAIService_HotReloadModel_FullMethodName  = "/smartpot.v1.SmartPotAIService/HotReloadModel"
 )
 
 // SmartPotAIServiceClient is the client API for SmartPotAIService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// SmartPotAIService define el contrato de inferencia agronómica y gestión de modelos en caliente.
+// SmartPotAIService es el transporte rápido entre la API y la IA: HTTP/2 por socket UNIX (mismo servidor) o por TCP
+// interno. Se autentica con el metadato "authorization: Bearer <SMARTPOT_AI_TOKEN>". Si no está disponible, la API
+// usa REST por HTTP/1.1, que pasa por cualquier proxy.
 type SmartPotAIServiceClient interface {
-	EvaluateInsight(ctx context.Context, in *InsightRequest, opts ...grpc.CallOption) (*InsightResponse, error)
-	AnalyzeFleet(ctx context.Context, in *FleetRequest, opts ...grpc.CallOption) (*FleetResponse, error)
-	HotReloadModel(ctx context.Context, in *ReloadRequest, opts ...grpc.CallOption) (*ReloadResponse, error)
+	// Evalúa una lectura: cuerpo InsightRequest, respuesta InsightResponse.
+	EvaluateInsight(ctx context.Context, in *JsonBody, opts ...grpc.CallOption) (*JsonBody, error)
+	// Analiza los cultivos de una cuenta: cuerpo FleetRequest, respuesta FleetResponse.
+	AnalyzeFleet(ctx context.Context, in *JsonBody, opts ...grpc.CallOption) (*JsonBody, error)
 }
 
 type smartPotAIServiceClient struct {
@@ -43,9 +45,9 @@ func NewSmartPotAIServiceClient(cc grpc.ClientConnInterface) SmartPotAIServiceCl
 	return &smartPotAIServiceClient{cc}
 }
 
-func (c *smartPotAIServiceClient) EvaluateInsight(ctx context.Context, in *InsightRequest, opts ...grpc.CallOption) (*InsightResponse, error) {
+func (c *smartPotAIServiceClient) EvaluateInsight(ctx context.Context, in *JsonBody, opts ...grpc.CallOption) (*JsonBody, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(InsightResponse)
+	out := new(JsonBody)
 	err := c.cc.Invoke(ctx, SmartPotAIService_EvaluateInsight_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -53,20 +55,10 @@ func (c *smartPotAIServiceClient) EvaluateInsight(ctx context.Context, in *Insig
 	return out, nil
 }
 
-func (c *smartPotAIServiceClient) AnalyzeFleet(ctx context.Context, in *FleetRequest, opts ...grpc.CallOption) (*FleetResponse, error) {
+func (c *smartPotAIServiceClient) AnalyzeFleet(ctx context.Context, in *JsonBody, opts ...grpc.CallOption) (*JsonBody, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FleetResponse)
+	out := new(JsonBody)
 	err := c.cc.Invoke(ctx, SmartPotAIService_AnalyzeFleet_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *smartPotAIServiceClient) HotReloadModel(ctx context.Context, in *ReloadRequest, opts ...grpc.CallOption) (*ReloadResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReloadResponse)
-	err := c.cc.Invoke(ctx, SmartPotAIService_HotReloadModel_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +69,14 @@ func (c *smartPotAIServiceClient) HotReloadModel(ctx context.Context, in *Reload
 // All implementations must embed UnimplementedSmartPotAIServiceServer
 // for forward compatibility.
 //
-// SmartPotAIService define el contrato de inferencia agronómica y gestión de modelos en caliente.
+// SmartPotAIService es el transporte rápido entre la API y la IA: HTTP/2 por socket UNIX (mismo servidor) o por TCP
+// interno. Se autentica con el metadato "authorization: Bearer <SMARTPOT_AI_TOKEN>". Si no está disponible, la API
+// usa REST por HTTP/1.1, que pasa por cualquier proxy.
 type SmartPotAIServiceServer interface {
-	EvaluateInsight(context.Context, *InsightRequest) (*InsightResponse, error)
-	AnalyzeFleet(context.Context, *FleetRequest) (*FleetResponse, error)
-	HotReloadModel(context.Context, *ReloadRequest) (*ReloadResponse, error)
+	// Evalúa una lectura: cuerpo InsightRequest, respuesta InsightResponse.
+	EvaluateInsight(context.Context, *JsonBody) (*JsonBody, error)
+	// Analiza los cultivos de una cuenta: cuerpo FleetRequest, respuesta FleetResponse.
+	AnalyzeFleet(context.Context, *JsonBody) (*JsonBody, error)
 	mustEmbedUnimplementedSmartPotAIServiceServer()
 }
 
@@ -92,14 +87,11 @@ type SmartPotAIServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSmartPotAIServiceServer struct{}
 
-func (UnimplementedSmartPotAIServiceServer) EvaluateInsight(context.Context, *InsightRequest) (*InsightResponse, error) {
+func (UnimplementedSmartPotAIServiceServer) EvaluateInsight(context.Context, *JsonBody) (*JsonBody, error) {
 	return nil, status.Error(codes.Unimplemented, "method EvaluateInsight not implemented")
 }
-func (UnimplementedSmartPotAIServiceServer) AnalyzeFleet(context.Context, *FleetRequest) (*FleetResponse, error) {
+func (UnimplementedSmartPotAIServiceServer) AnalyzeFleet(context.Context, *JsonBody) (*JsonBody, error) {
 	return nil, status.Error(codes.Unimplemented, "method AnalyzeFleet not implemented")
-}
-func (UnimplementedSmartPotAIServiceServer) HotReloadModel(context.Context, *ReloadRequest) (*ReloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method HotReloadModel not implemented")
 }
 func (UnimplementedSmartPotAIServiceServer) mustEmbedUnimplementedSmartPotAIServiceServer() {}
 func (UnimplementedSmartPotAIServiceServer) testEmbeddedByValue()                           {}
@@ -123,7 +115,7 @@ func RegisterSmartPotAIServiceServer(s grpc.ServiceRegistrar, srv SmartPotAIServ
 }
 
 func _SmartPotAIService_EvaluateInsight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InsightRequest)
+	in := new(JsonBody)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -135,13 +127,13 @@ func _SmartPotAIService_EvaluateInsight_Handler(srv interface{}, ctx context.Con
 		FullMethod: SmartPotAIService_EvaluateInsight_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SmartPotAIServiceServer).EvaluateInsight(ctx, req.(*InsightRequest))
+		return srv.(SmartPotAIServiceServer).EvaluateInsight(ctx, req.(*JsonBody))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SmartPotAIService_AnalyzeFleet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FleetRequest)
+	in := new(JsonBody)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -153,25 +145,7 @@ func _SmartPotAIService_AnalyzeFleet_Handler(srv interface{}, ctx context.Contex
 		FullMethod: SmartPotAIService_AnalyzeFleet_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SmartPotAIServiceServer).AnalyzeFleet(ctx, req.(*FleetRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SmartPotAIService_HotReloadModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReloadRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SmartPotAIServiceServer).HotReloadModel(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SmartPotAIService_HotReloadModel_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SmartPotAIServiceServer).HotReloadModel(ctx, req.(*ReloadRequest))
+		return srv.(SmartPotAIServiceServer).AnalyzeFleet(ctx, req.(*JsonBody))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -190,10 +164,6 @@ var SmartPotAIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AnalyzeFleet",
 			Handler:    _SmartPotAIService_AnalyzeFleet_Handler,
-		},
-		{
-			MethodName: "HotReloadModel",
-			Handler:    _SmartPotAIService_HotReloadModel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
