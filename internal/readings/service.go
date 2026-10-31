@@ -2,6 +2,7 @@ package readings
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -17,6 +18,13 @@ import (
 )
 
 const exportLimit = 50000
+
+// La última lectura de cada cultivo vive en la caché compartida (Valkey) para que todas las réplicas de la API
+// respondan lo mismo; expira sola si el cultivo deja de enviar.
+const (
+	latestKeyPrefix = "reading:latest:"
+	latestTTL       = 10 * time.Minute
+)
 
 var batchSlicePool = sync.Pool{
 	New: func() any {
@@ -47,8 +55,6 @@ type Service struct {
 	batchActive atomic.Bool
 	batchWg     sync.WaitGroup
 	batchStop   chan struct{}
-
-	latestCache sync.Map // Caché de última lectura por cultivo para latencia instantánea <0.1ms
 
 	streamMu sync.RWMutex
 	streams  map[string]map[chan *Reading]struct{}
@@ -95,10 +101,33 @@ func (s *Service) StartBatchWorker(ctx context.Context) {
 				return
 			}
 			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			saved := batch
 			if err := s.repo.InsertBatch(flushCtx, batch); err != nil {
-				slog.Error("falló la inserción en lote de telemetría", "count", len(batch), "err", err)
+				// Si falla el lote completo, se guarda una por una para no perder las válidas.
+				slog.Warn("falló la inserción en lote; se reintenta lectura por lectura", "count", len(batch), "err", err)
+				saved = saved[:0:0]
+				for i := range batch {
+					if err := s.repo.Insert(flushCtx, &batch[i]); err != nil {
+						slog.Error("lectura descartada al guardar", "cropId", batch[i].CropID.Hex(), "err", err)
+						continue
+					}
+					saved = append(saved, batch[i])
+				}
 			}
 			cancel()
+			// Los eventos (agente, aprendizaje, avisos) salen solo con la lectura ya guardada. Sus manejadores pueden
+			// tardar (consultan a la IA), así que corren aparte para no frenar el siguiente lote.
+			for i := range saved {
+				s.rememberLatest(&saved[i])
+			}
+			if len(saved) > 0 {
+				events := append([]Reading(nil), saved...)
+				go func() {
+					for i := range events {
+						s.bus.Publish(ReadingRecordedEvent{CropID: events[i].CropID.Hex(), Reading: events[i]})
+					}
+				}()
+			}
 			batch = batch[:0]
 		}
 
@@ -175,23 +204,35 @@ func (s *Service) RecordManual(ctx context.Context, ownerID, cropID string, meas
 	return reading, nil
 }
 
-// Latest devuelve la última lectura del cultivo (sin comprobar dueño).
-// Consulta primero la memoria local (sync.Map) para latencia instantánea <0.1ms sin esperar al flush del batch.
+// Latest devuelve la última lectura del cultivo (sin comprobar dueño): primero la caché compartida, si no, la base.
 func (s *Service) Latest(ctx context.Context, cropID string) (*Reading, error) {
-	if val, ok := s.latestCache.Load(cropID); ok {
-		if r, ok := val.(*Reading); ok {
-			return r, nil
-		}
-	}
 	oid, ok := objectid.Parse(cropID)
 	if !ok {
 		return nil, nil
 	}
+	if raw, hit := s.cache.Get(latestKeyPrefix + oid.Hex()); hit {
+		var cached Reading
+		if json.Unmarshal([]byte(raw), &cached) == nil {
+			return &cached, nil
+		}
+	}
 	reading, err := s.repo.Latest(ctx, oid)
 	if err == nil && reading != nil {
-		s.latestCache.Store(cropID, reading)
+		s.rememberLatest(reading)
 	}
 	return reading, err
+}
+
+func (s *Service) rememberLatest(r *Reading) {
+	if raw, err := json.Marshal(r); err == nil {
+		s.cache.Put(latestKeyPrefix+r.CropID.Hex(), string(raw), latestTTL)
+	}
+}
+
+// recorded deja la lectura guardada como la última y avisa al resto del sistema.
+func (s *Service) recorded(r *Reading) {
+	s.rememberLatest(r)
+	s.bus.Publish(ReadingRecordedEvent{CropID: r.CropID.Hex(), Reading: *r})
 }
 
 // LatestOwned devuelve la última lectura comprobando el dueño.
@@ -327,11 +368,11 @@ func (s *Service) broadcastStream(cropID string, r *Reading) {
 
 // DeleteByCrop borra las lecturas de un cultivo (borrado en cascada por evento).
 func (s *Service) DeleteByCrop(ctx context.Context, cropID string) error {
-	s.latestCache.Delete(cropID)
 	oid, ok := objectid.Parse(cropID)
 	if !ok {
 		return nil
 	}
+	s.cache.Delete(latestKeyPrefix + oid.Hex())
 	return s.repo.DeleteByCrop(ctx, oid)
 }
 
@@ -344,14 +385,12 @@ func (s *Service) store(ctx context.Context, cropID string, measures Measures, s
 		return nil, apperr.NotFound("El cultivo no existe")
 	}
 	reading := &Reading{ID: primitive.NewObjectID(), CropID: oid, MeasuredAt: s.clock(), Measures: measures, Source: source}
-	// Guarda de inmediato en caché en memoria para que Latest devuelva la última lectura sin esperar al flush del batch
-	s.latestCache.Store(cropID, reading)
-	s.broadcastStream(cropID, reading)
+	// El flujo en vivo (SSE) recibe la lectura validada de inmediato; la caché y los eventos, al quedar guardada.
+	s.broadcastStream(oid.Hex(), reading)
 
 	if source == SourceMQTT && s.batchActive.Load() {
 		select {
 		case s.batchQueue <- *reading:
-			s.bus.Publish(ReadingRecordedEvent{CropID: cropID, Reading: *reading})
 			return reading, nil
 		default:
 			slog.Warn("cola de lote de lecturas saturada; guardando inmediatamente", "cropId", cropID)
@@ -360,7 +399,7 @@ func (s *Service) store(ctx context.Context, cropID string, measures Measures, s
 	if err := s.repo.Insert(ctx, reading); err != nil {
 		return nil, err
 	}
-	s.bus.Publish(ReadingRecordedEvent{CropID: cropID, Reading: *reading})
+	s.recorded(reading)
 	return reading, nil
 }
 
