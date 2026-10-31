@@ -3,6 +3,7 @@ package mqtt
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"hash/fnv"
 	"log/slog"
 	"runtime"
 	"sync"
@@ -35,8 +36,9 @@ type Gateway struct {
 	connected   atomic.Bool
 	sharedGroup string
 
-	// Worker Pool con backpressure
-	jobs       chan mqttJob
+	// Un worker por cola; cada cultivo cae siempre en la misma cola, así sus mensajes (estado, lecturas y ACK)
+	// se procesan en orden aunque haya varios workers.
+	shards     []chan mqttJob
 	workerWg   sync.WaitGroup
 	stopSignal chan struct{}
 	stopped    atomic.Bool
@@ -49,7 +51,6 @@ func NewGateway(cfg config.MQTT, topics *TopicResolver, logger *slog.Logger) *Ga
 		topics:      topics,
 		log:         logger,
 		sharedGroup: cfg.SharedSubscriptionGroup,
-		jobs:        make(chan mqttJob, defaultJobQueueCap),
 		stopSignal:  make(chan struct{}),
 	}
 	if !cfg.Enabled {
@@ -99,8 +100,13 @@ func (g *Gateway) Start() {
 	if numWorkers > 32 {
 		numWorkers = 32
 	}
-	g.log.Info("iniciando worker pool de MQTT", "workers", numWorkers, "queueCapacity", cap(g.jobs))
-	for i := 0; i < numWorkers; i++ {
+	perShard := max(defaultJobQueueCap/numWorkers, 64)
+	g.shards = make([]chan mqttJob, numWorkers)
+	for i := range g.shards {
+		g.shards[i] = make(chan mqttJob, perShard)
+	}
+	g.log.Info("iniciando worker pool de MQTT", "workers", numWorkers, "queueCapacity", perShard*numWorkers)
+	for i := range numWorkers {
 		g.workerWg.Add(1)
 		go g.worker(i)
 	}
@@ -180,12 +186,23 @@ func (g *Gateway) onMessage(_ paho.Client, m paho.Message) {
 		return
 	}
 	job := mqttJob{topic: m.Topic(), payload: string(m.Payload())}
+	// Si la cola del cultivo está llena se espera: el cliente deja de leer del socket y el broker retiene los
+	// mensajes (presión real) en vez de perder lecturas o ACK.
 	select {
-	case g.jobs <- job:
-	default:
-		// Backpressure activo: la cola está llena ante una ráfaga masiva
-		g.log.Warn("cola de telemetría MQTT saturada; aplicando backpressure", "topic", job.topic)
+	case g.shards[g.shardFor(job.topic)] <- job:
+	case <-g.stopSignal:
 	}
+}
+
+// shardFor elige la cola del cultivo del tópico (FNV-1a sobre su id).
+func (g *Gateway) shardFor(topic string) int {
+	key := topic
+	if parsed, ok := g.topics.Parse(topic); ok {
+		key = parsed.CropID
+	}
+	hash := fnv.New32a()
+	_, _ = hash.Write([]byte(key))
+	return int(hash.Sum32() % uint32(len(g.shards)))
 }
 
 func (g *Gateway) worker(id int) {
@@ -196,7 +213,7 @@ func (g *Gateway) worker(id int) {
 			// Drena los mensajes restantes en la cola antes de salir
 			for {
 				select {
-				case job := <-g.jobs:
+				case job := <-g.shards[id]:
 					if g.router != nil {
 						g.router(job.topic, job.payload)
 					}
@@ -204,7 +221,7 @@ func (g *Gateway) worker(id int) {
 					return
 				}
 			}
-		case job, ok := <-g.jobs:
+		case job, ok := <-g.shards[id]:
 			if !ok {
 				return
 			}
