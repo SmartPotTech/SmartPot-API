@@ -154,10 +154,11 @@ usan `Authorization: Bearer <token>`. La documentación interactiva está en `/d
 
 ## MQTT
 
-La API es la cuenta administradora de [SmartPot-Broker](https://github.com/SmartPotTech/SmartPot-Broker). Al arrancar
-crea el rol `device` y sincroniza las cuentas de todos los cultivos; al crear, rotar o borrar un cultivo actualiza su
-cuenta. El dispositivo de cada cultivo se conecta con **usuario = id del cultivo** y la **clave del dispositivo**, que
-la API guarda cifrada con AES-256-GCM.
+El broker es [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/SmartPot-Broker-EMQX), que delega la autenticación
+de cada dispositivo en la API (`POST /internal/mqtt/authn`, con el secreto compartido `MQTT_AUTHN_TOKEN`): la API
+verifica la clave del cultivo (guardada cifrada con AES-256-GCM) y responde un ACL acotado a sus tópicos. La caché de
+esa verificación solo guarda un HMAC de la clave. El dispositivo se conecta con **usuario = id del cultivo** y la
+**clave del dispositivo**; al rotar o borrar la clave, la API corta sus sesiones en EMQX.
 
 | Tópico                              | Sentido                                  | Carga                                                                                                          |
 |-------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------|
@@ -166,7 +167,9 @@ la API guarda cifrada con AES-256-GCM.
 | `smartpot/v1/{cropId}/commands/ack` | Dispositivo → API                        | `{"id":"…","status":"EXECUTED","message":"Bomba de agua encendida por 15 s"}`                                  |
 | `smartpot/v1/{cropId}/status`       | Dispositivo (retenido y última voluntad) | `online` / `offline`                                                                                           |
 
-La telemetría fuera de rango físico se descarta y cada cultivo guarda como máximo una lectura cada 5 segundos. Un
+La telemetría también puede llegar como **paquete compacto v2** (27 bytes, mismo tópico): máscara de presencia por
+sensor, presión y luz de 32 bits; el formato está documentado en `internal/mqtt/parser.go`. Los mensajes de un mismo
+cultivo se procesan en orden. La telemetría fuera de rango físico se descarta y cada cultivo guarda como máximo una lectura cada 5 segundos. Un
 comando sin ACK en 2 minutos pasa a `EXPIRED` y avisa al dueño.
 
 ## Asistente de IA
@@ -278,22 +281,22 @@ la plataforma completa en una sola imagen ampliable:
 - [Máquinas de estado](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_05_State_Machines.svg)
 - [Modelo de dominio](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_06_Domain_Model.svg)
 
-## Hoja de Ruta Industrial: Gateway de Ingesta Masiva, Disruptor y Transporte Dual
+## Transporte y rendimiento
 
-Como parte del **Plan Maestro de Maximización del Stack B (demo-beta)**, `SmartPot-API-Go` implementa las siguientes capacidades de rendimiento extremo y seguridad:
-
-1. **Servidor EMQX gRPC ExHook**:
-   - Implementación de `emqx.exhook.v2.HookProviderServer` para recepción de eventos MQTT directamente desde EMQX en un stream bidireccional HTTP/2 persistente, deserializando payloads binarios Postcard/Protobuf sin sobrecarga de webhooks HTTP.
-2. **Disruptor Ring Buffer y Escritura Binaria Masiva (`pgx.CopyFrom`)**:
-   - Encolado de telemetría en un Ring Buffer lock-free preasignado con `sync.Pool`.
-   - Vaciado asíncrono cada 25 ms o al alcanzar 500 registros ejecutando `pgxPoolIngest.CopyFrom` directo al rol `smartpot_ingest` sobre el protocolo binario de PostgreSQL.
-3. **Filtro de Banda Muerta Agronómico (L1 In-Memory + L2 Valkey)**:
-   - Comparación del estado del cultivo antes de invocar la IA: si $|\Delta T| < 0.1^\circ\text{C}$, $|\Delta RH| < 0.4\%$, $|\Delta pH| < 0.03$ y $|\Delta EC| < 15\,\mu\text{S/cm}$ dentro del TTL de 60s, devuelve la inferencia en caché en $< 5\text{ µs}$, ahorrando hasta el 80% de llamadas al motor de IA.
-4. **Transporte Dual Adaptativo (UDS / gRPC HTTP/2)**:
-   - Detección en arranque: si existen `/var/run/smartpot/ai.sock` y `/var/run/smartpot/valkey.sock`, conecta por sockets UNIX de latencia cero; en caso contrario, conmuta a gRPC sobre HTTP/2 y RESP3 TCP con keepalive agresivo.
-5. **Seguridad Stateless y Compilación PGO**:
-   - Soporte para tokens **PASETO v4.public** y **JWT EdDSA (Ed25519)** verificados en memoria en $< 15\text{ µs}$.
-   - Perfil de compilación guiada por perfiles (`default.pgo`) con `-pgo=default.pgo` en la etapa de empaquetado.
+- **IA por gRPC con respaldo REST.** Con `AI_GRPC_SOCKET` (socket UNIX compartido) o `AI_GRPC_ADDR` (TCP interno),
+  la API llama a la IA por HTTP/2 con el mismo JSON del contrato REST y el token en los metadatos; si gRPC falla,
+  usa REST por HTTP/1.1, que pasa por cualquier proxy.
+- **Lecturas en vivo por SSE.** `GET /api/v1/crops/{cropId}/stream` envía cada lectura validada; funciona con chunked
+  y detrás de un nginx que hable HTTP/1.0 con la API (`X-Accel-Buffering: no`). El resto de los GET lleva `ETag` y
+  responde `304` si nada cambió.
+- **Ingesta por lotes.** La telemetría MQTT se guarda en lotes de hasta 100 lecturas o cada 10 ms con `COPY` binario;
+  si un lote falla, se reintenta lectura por lectura. Los eventos (agente, aprendizaje, avisos) salen con la lectura ya
+  guardada, y la última lectura de cada cultivo vive en la caché compartida.
+- **Banda muerta.** El agente no vuelve a consultar a la IA si ninguna variable cambió más que su umbral desde la
+  última evaluación (0,1 °C, 0,4 % HR, 0,03 pH, 15 ppm, 0,5 % de sustrato, 0,5 hPa, 5 % de luz); al menos cada
+  15 minutos reevalúa.
+- **Detrás de un proxy.** Con `TRUST_PROXY=true` la IP del cliente sale de `X-Forwarded-For` solo si la conexión
+  llega desde `TRUSTED_PROXY_CIDRS` (por defecto, redes privadas); así el límite de tasa es por cliente.
 
 ## Licencia
 
