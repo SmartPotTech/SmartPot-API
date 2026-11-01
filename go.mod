@@ -12,7 +12,7 @@ require (
 	github.com/wneessen/go-mail v0.8.1
 	go.mongodb.org/mongo-driver v1.17.10
 	golang.org/x/crypto v0.57.0
-	golang.org/x/sync v0.23.0
+	golang.org/x/sync v0.24.0
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
 )
