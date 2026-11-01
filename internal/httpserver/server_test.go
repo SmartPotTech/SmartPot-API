@@ -303,3 +303,30 @@ func TestHTTPServer_ClientIPBehindTrustedProxy(t *testing.T) {
 		})
 	}
 }
+
+// Echo ≤ 4.16.2 confía por defecto en X-Forwarded-For y X-Real-IP (GHSA-246p-cpwv-v3jq y GHSA-99jh-6h7p-pp36).
+// La API fija su propio IPExtractor: ninguna de las dos cabeceras falsas cambia la IP que usa el límite de tasa.
+func TestHTTPServer_SpoofedForwardingHeadersAreIgnored(t *testing.T) {
+	cases := []struct {
+		name   string
+		opts   Options
+		remote string
+		want   string
+	}{
+		{"sin proxy", Options{}, "203.0.113.9:4000", "203.0.113.9"},
+		{"proxy activado pero par público", Options{TrustProxy: true}, "203.0.113.9:4000", "203.0.113.9"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			e := New(testLogger(), tc.opts)
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.RemoteAddr = tc.remote
+			req.Header.Set(echo.HeaderXForwardedFor, "1.2.3.4")
+			req.Header.Set(echo.HeaderXRealIP, "5.6.7.8")
+			c := e.NewContext(req, httptest.NewRecorder())
+			if got := c.RealIP(); got != tc.want {
+				t.Fatalf("IP del cliente %q, se esperaba %q", got, tc.want)
+			}
+		})
+	}
+}
