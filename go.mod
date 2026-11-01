@@ -2,6 +2,8 @@ module github.com/SmartPotTech/SmartPot-API-Go
 
 go 1.26.10
 
+toolchain go1.27.3
+
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
