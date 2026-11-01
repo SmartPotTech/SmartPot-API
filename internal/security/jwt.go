@@ -20,6 +20,8 @@ type TokenService struct {
 	secret     []byte
 	expiration time.Duration
 	now        func() time.Time
+	// connections, si existe, permite que el guard acepte tokens de conexión.
+	connections ConnectionAuthenticator
 }
 
 // NewTokenService crea el servicio con el secreto y la vigencia del token.

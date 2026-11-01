@@ -22,6 +22,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/channels/telegram"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/commands"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/config"
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/connections"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/crops"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/health"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/httpserver"
@@ -154,6 +155,10 @@ func run() error {
 	userService.AddAccountDeleter(notificationService.DeleteAllForUser)
 	userService.AddAccountDeleter(tokenRepo.DeleteByUserID)
 	userService.AddAccountDeleter(cropService.DeleteAllOwnedBy)
+	// Conexiones personales (clientes MCP y similares): el guard las acepta además de la sesión.
+	connectionService := connections.NewService(postgres.NewAccessTokenRepository(pool.Pool), clock)
+	tokenService.UseConnections(connectionService)
+	userService.AddAccountDeleter(connectionService.DeleteAllForUser)
 	authService := auth.NewService(userRepo, tokenRepo, tokenService, mailer, notificationService, clock,
 		cfg.Security.PasswordResetExpiration)
 
@@ -243,6 +248,7 @@ func run() error {
 	overview.NewHandler(overviewService).Register(authed)
 	virtualdevices.NewHandler(virtualDeviceService).Register(authed)
 	channels.NewHandler(channelService, cropChannelService).Register(authed)
+	connections.NewHandler(connectionService).Register(authed)
 
 	// Completa el tipo, la forma y el lugar de los cultivos anteriores (idempotente).
 	runCropBackfill(logger, vdRepo, cropService)

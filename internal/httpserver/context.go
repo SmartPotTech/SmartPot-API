@@ -26,6 +26,9 @@ type Identity struct {
 	IssuedAt      time.Time
 	ExpiresAt     time.Time
 	Authenticated bool
+	// ConnectionID y Scope solo se llenan cuando la petición llega con un token de conexión (no con la sesión).
+	ConnectionID string
+	Scope        string
 }
 
 // TelemetryTrace almacena las trazas de telemetría de la petición HTTP en curso.
