@@ -67,7 +67,7 @@ func run() error {
 	defer cancelConnect()
 	// Adaptador de almacenamiento: PostgreSQL + TimescaleDB. La conexión es perezosa (la API arranca aunque la
 	// base no responda todavía) y /health informa el estado real.
-	pool, err := postgres.Connect(connectCtx, cfg.Database.URL, int32(cfg.Database.MaxConns))
+	pool, err := postgres.Connect(connectCtx, cfg.Database.URL, cfg.Database.MaxConns)
 	if err != nil {
 		return err
 	}
