@@ -207,6 +207,22 @@ llamada. Cada cultivo puede afinar sus avisos (`crop_channels`): al instante o e
 resumen diario a una hora fija y hasta 10 chats con los que se comparte. El preparador de resúmenes revisa cada minuto
 los pendientes, sin cron en el servidor.
 
+## Conexiones para asistentes de IA (MCP)
+
+Cada persona crea desde la PWA (Perfil › Conexiones) tokens de conexión `spt_…` para clientes externos, como el
+servidor [SmartPot-MCP](https://github.com/SmartPotTech/SmartPot-MCP): `GET/POST /api/v1/connections` y
+`DELETE /api/v1/connections/{id}`. El token solo se devuelve al crearlo; la base guarda su SHA-256, un prefijo para
+reconocerlo y el último uso. El guard lo acepta igual que la sesión, pero con límites:
+
+| Alcance   | Puede                                                     |
+|-----------|-----------------------------------------------------------|
+| `READ`    | Solo consultas (`GET`)                                    |
+| `CONTROL` | Además crear, editar, borrar y accionar actuadores        |
+
+Ninguna conexión administra conexiones, cambia la cuenta, configura canales de aviso, ve credenciales de
+dispositivos ni obtiene el rol de administrador. Revocar o vencer la conexión la corta al instante (401), y borrar la
+cuenta borra sus conexiones. Máximo 10 por cuenta.
+
 ## Cultivos Reales y Virtuales
 
 Al crear un cultivo se elige, una sola vez, de dónde vienen sus lecturas. Uno **real** recibe la clave del dispositivo

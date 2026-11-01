@@ -76,6 +76,10 @@ var routes = []route{
 	{"PUT", "/api/v1/notifications/read-all", "Notificaciones", "Marcar todas como leídas", false},
 	{"DELETE", "/api/v1/notifications/{id}", "Notificaciones", "Eliminar una notificación", false},
 
+	{"GET", "/api/v1/connections", "Conexiones", "Listar las conexiones (tokens spt_ para clientes MCP)", false},
+	{"POST", "/api/v1/connections", "Conexiones", "Crear una conexión (el token solo se devuelve aquí)", false},
+	{"DELETE", "/api/v1/connections/{id}", "Conexiones", "Revocar una conexión", false},
+
 	{"GET", "/api/v1/crops/{cropId}/virtual-device", "Dispositivo virtual", "Ver el dispositivo virtual", false},
 	{"PUT", "/api/v1/crops/{cropId}/virtual-device", "Dispositivo virtual", "Configurar el dispositivo virtual", false},
 	{"DELETE", "/api/v1/crops/{cropId}/virtual-device", "Dispositivo virtual", "Pausar el dispositivo virtual", false},
