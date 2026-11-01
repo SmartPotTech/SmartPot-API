@@ -20,14 +20,21 @@ type Pool struct {
 	Pool *pgxpool.Pool
 }
 
+// MaxPoolConns acota DATABASE_MAX_CONNS: más conexiones por instancia de la API no tiene sentido y el pool
+// de pgx usa int32.
+const MaxPoolConns = 1000
+
 // Connect crea el pool a partir de la URL de PostgreSQL. No abre conexiones hasta la primera consulta.
-func Connect(ctx context.Context, url string, maxConns int32) (*Pool, error) {
+func Connect(ctx context.Context, url string, maxConns int) (*Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		return nil, fmt.Errorf("DATABASE_URL inválida: %w", err)
 	}
+	if maxConns > MaxPoolConns {
+		return nil, fmt.Errorf("DATABASE_MAX_CONNS no puede superar %d", MaxPoolConns)
+	}
 	if maxConns > 0 {
-		cfg.MaxConns = maxConns
+		cfg.MaxConns = int32(maxConns)
 	}
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
