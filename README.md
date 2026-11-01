@@ -220,6 +220,19 @@ completa el tipo y la forma de los cultivos anteriores.
 
 ## Guía de Instalación
 
+### Despliegue en un comando
+
+La imagen es pública: `ghcr.io/smartpottech/smartpot-api-go`. La plataforma completa, con este servicio incluido, se
+levanta con un solo comando y sin descargar el código:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SmartPotTech/.github/main/docker/demo-beta/compose.yaml | docker compose -f - up -d --wait
+```
+
+Abre http://localhost:5173 e ingresa con `demo@smartpot.app` / `SmartPot2026`. Se detiene con
+`docker compose -p smartpot-demo-beta down` (con `-v` borra también los datos). Más detalle en la
+[demo beta](https://github.com/SmartPotTech/.github/tree/main/docker/demo-beta).
+
 ### Requisitos Previos
 
 - Go 1.26 (o solo Docker)
@@ -228,11 +241,9 @@ completa el tipo y la forma de los cultivos anteriores.
   Mailpit, el broker y el servicio de IA: el entorno completo está
   en [SmartPotTech/.github](https://github.com/SmartPotTech/.github)
 
-### Ejecución local
+### Desarrollo
 
 ```bash
-git clone https://github.com/SmartPotTech/SmartPot-API-Go.git
-cd SmartPot-API-Go
 cp .env.example .env    # completa secretos y conexiones
 go run ./cmd/api
 ```
