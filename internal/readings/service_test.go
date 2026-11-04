@@ -30,7 +30,7 @@ func (r *fakeRepo) Insert(_ context.Context, reading *Reading) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if t := reading.Measures.Temperature; t != nil && *t == r.rejectTemp {
-		return errors.New("fila inválida")
+		return errors.New("invalid row")
 	}
 	r.saved = append(r.saved, *reading)
 	return nil

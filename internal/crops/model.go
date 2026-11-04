@@ -55,7 +55,7 @@ func (t *CropType) UnmarshalJSON(b []byte) error {
 		*t = CropType(s)
 		return nil
 	default:
-		return fmt.Errorf("tipo de cultivo inválido: %q", s)
+		return fmt.Errorf("invalid crop type: %q", s)
 	}
 }
 
@@ -70,7 +70,7 @@ func (k *CropKind) UnmarshalJSON(b []byte) error {
 		*k = CropKind(s)
 		return nil
 	default:
-		return fmt.Errorf("tipo de cultivo inválido: %q", s)
+		return fmt.Errorf("invalid crop type: %q", s)
 	}
 }
 
@@ -85,7 +85,7 @@ func (f *CropForm) UnmarshalJSON(b []byte) error {
 		*f = CropForm(s)
 		return nil
 	default:
-		return fmt.Errorf("forma de cultivo inválida: %q", s)
+		return fmt.Errorf("invalid crop form: %q", s)
 	}
 }
 

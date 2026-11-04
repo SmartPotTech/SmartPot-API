@@ -38,7 +38,7 @@ func (Validator) Validate(i any) error {
 // inválido devuelve un error de dominio 400 para el HTTPErrorHandler centralizado.
 func DecodeJSON(c echo.Context, dst any) error {
 	if err := json.NewDecoder(c.Request().Body).Decode(dst); err != nil {
-		return apperr.BadRequest("El cuerpo de la solicitud no es un JSON válido")
+		return apperr.BadRequest("Request body is not valid JSON")
 	}
 	return nil
 }

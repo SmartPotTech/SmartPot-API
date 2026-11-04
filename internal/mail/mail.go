@@ -24,7 +24,7 @@ type Mailer struct {
 func NewMailer(cfg config.Mail, webBaseURL string, logger *slog.Logger) (*Mailer, error) {
 	m := &Mailer{enabled: cfg.Enabled, from: cfg.From, webBaseURL: webBaseURL, log: logger}
 	if !cfg.Enabled {
-		logger.Info("correo deshabilitado")
+		logger.Info("mail disabled")
 		return m, nil
 	}
 
@@ -54,26 +54,26 @@ func NewMailer(cfg config.Mail, webBaseURL string, logger *slog.Logger) (*Mailer
 
 // SendWelcome envía el correo de bienvenida.
 func (m *Mailer) SendWelcome(name, email string) {
-	m.sendAsync(email, "Bienvenido a SmartPot", welcome(name, m.webBaseURL+"/login"))
+	m.sendAsync(email, "Welcome to SmartPot", welcome(name, m.webBaseURL+"/login"))
 }
 
 // SendPasswordReset envía el enlace de recuperación de contraseña.
 func (m *Mailer) SendPasswordReset(name, email, token string, validity time.Duration) {
 	resetURL := m.webBaseURL + "/reset-password?token=" + token
-	m.sendAsync(email, "Restablece tu contraseña de SmartPot", passwordReset(name, resetURL, int64(validity.Minutes())))
+	m.sendAsync(email, "Reset your SmartPot password", passwordReset(name, resetURL, int64(validity.Minutes())))
 }
 
 func (m *Mailer) sendAsync(to, subject string, c content) {
 	go func() {
 		if err := m.send(to, subject, c); err != nil {
-			m.log.Warn("no se pudo enviar el correo", "subject", subject, "err", err)
+			m.log.Warn("failed to send email", "subject", subject, "err", err)
 		}
 	}()
 }
 
 func (m *Mailer) send(to, subject string, c content) error {
 	if !m.enabled {
-		m.log.Info("correo deshabilitado; no se envía", "subject", subject)
+		m.log.Info("mail disabled; not sending", "subject", subject)
 		return nil
 	}
 	msg := gomail.NewMsg()

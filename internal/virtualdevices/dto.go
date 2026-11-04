@@ -35,30 +35,30 @@ type LocationInput struct {
 
 // Validate aplica las mismas reglas y mensajes que la versión en Java.
 func (r VirtualDeviceRequest) Validate() validation.Fields {
-	v := validation.New().Required("mode", r.Mode != nil, "Elige el modo de la simulación")
+	v := validation.New().Required("mode", r.Mode != nil, "Choose the simulation mode")
 	if r.IntervalSeconds != nil {
 		if *r.IntervalSeconds < 10 {
-			v.Add("intervalSeconds", "El intervalo mínimo es de 10 segundos")
+			v.Add("intervalSeconds", "Minimum interval is 10 seconds")
 		} else if *r.IntervalSeconds > 300 {
-			v.Add("intervalSeconds", "El intervalo máximo es de 300 segundos")
+			v.Add("intervalSeconds", "Maximum interval is 300 seconds")
 		}
 	}
 	if m := r.Manual; m != nil {
-		v.DecimalRange("manual.temperature", m.Temperature, -20, 60, "Valor fuera de rango").
-			DecimalRange("manual.humidity", m.Humidity, 0, 100, "Valor fuera de rango").
-			DecimalRange("manual.brightness", m.Brightness, 0, 2000, "Valor fuera de rango").
-			DecimalRange("manual.ph", m.Ph, 0, 14, "Valor fuera de rango").
-			DecimalRange("manual.tds", m.Tds, 0, 3000, "Valor fuera de rango").
-			DecimalRange("manual.atmosphere", m.Atmosphere, 300, 1100, "Valor fuera de rango").
-			DecimalRange("manual.soilMoisture", m.SoilMoisture, 0, 100, "Valor fuera de rango")
+		v.DecimalRange("manual.temperature", m.Temperature, -20, 60, "Value out of range").
+			DecimalRange("manual.humidity", m.Humidity, 0, 100, "Value out of range").
+			DecimalRange("manual.brightness", m.Brightness, 0, 2000, "Value out of range").
+			DecimalRange("manual.ph", m.Ph, 0, 14, "Value out of range").
+			DecimalRange("manual.tds", m.Tds, 0, 3000, "Value out of range").
+			DecimalRange("manual.atmosphere", m.Atmosphere, 300, 1100, "Value out of range").
+			DecimalRange("manual.soilMoisture", m.SoilMoisture, 0, 100, "Value out of range")
 	}
 	if loc := r.Location; loc != nil {
-		v.NotBlank("location.name", loc.Name, "Indica el nombre del lugar").
-			MaxSize("location.name", loc.Name, 120, "El nombre del lugar es demasiado largo").
-			Required("location.latitude", loc.Latitude != nil, "Indica la latitud").
-			Required("location.longitude", loc.Longitude != nil, "Indica la longitud").
-			DecimalRange("location.latitude", loc.Latitude, -90, 90, "La latitud está fuera de rango").
-			DecimalRange("location.longitude", loc.Longitude, -180, 180, "La longitud está fuera de rango")
+		v.NotBlank("location.name", loc.Name, "Location name is required").
+			MaxSize("location.name", loc.Name, 120, "Location name is too long").
+			Required("location.latitude", loc.Latitude != nil, "Latitude is required").
+			Required("location.longitude", loc.Longitude != nil, "Longitude is required").
+			DecimalRange("location.latitude", loc.Latitude, -90, 90, "Latitude is out of range").
+			DecimalRange("location.longitude", loc.Longitude, -180, 180, "Longitude is out of range")
 	}
 	return v.Result()
 }

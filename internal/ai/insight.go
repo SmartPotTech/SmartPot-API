@@ -52,7 +52,7 @@ func (s *InsightService) ForOwner(ctx context.Context, ownerID, cropID string) (
 		return nil, err
 	}
 	if latest == nil {
-		return nil, apperr.NotFound("Aún no hay lecturas para analizar en este cultivo")
+		return nil, apperr.NotFound("No readings to analyze yet for this crop")
 	}
 	return s.Evaluate(ctx, crop, *latest)
 }

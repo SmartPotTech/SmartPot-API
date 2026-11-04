@@ -39,14 +39,14 @@ func TestGuard(t *testing.T) {
 	}
 
 	if rec := send(""); rec.Code != http.StatusUnauthorized {
-		t.Errorf("sin token: código %d, se esperaba 401", rec.Code)
+		t.Errorf("without token: code %d, expected 401", rec.Code)
 	}
 	if rec := send("Bearer no-es-un-token"); rec.Code != http.StatusUnauthorized {
-		t.Errorf("token inválido: código %d, se esperaba 401", rec.Code)
+		t.Errorf("invalid token: code %d, expected 401", rec.Code)
 	}
 	rec := send("Bearer " + issued.Value)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("token válido: código %d, se esperaba 200", rec.Code)
+		t.Fatalf("valid token: code %d, expected 200", rec.Code)
 	}
 	if rec.Body.String() != "user-123" {
 		t.Errorf("CurrentUserID = %q, se esperaba user-123", rec.Body.String())
@@ -57,7 +57,7 @@ func TestGuardCookieAndCSRF(t *testing.T) {
 	svc := NewTokenService(testSecret, time.Hour)
 	issued, err := svc.Issue("user-456", "ana@smartpot.app", RoleUser)
 	if err != nil {
-		t.Fatalf("error al emitir token: %v", err)
+		t.Fatalf("error issuing token: %v", err)
 	}
 	csrf := svc.CSRFToken(issued.Value)
 
@@ -97,10 +97,10 @@ func TestGuardCookieAndCSRF(t *testing.T) {
 		}
 	}
 	if sessionCookie == nil || !sessionCookie.HttpOnly || sessionCookie.Value != issued.Value {
-		t.Fatalf("cookie HttpOnly de sesión inválida: %+v", sessionCookie)
+		t.Fatalf("invalid HttpOnly session cookie: %+v", sessionCookie)
 	}
 	if csrfCookie == nil || csrfCookie.HttpOnly || csrfCookie.Value != csrf {
-		t.Fatalf("cookie CSRF inválida: %+v", csrfCookie)
+		t.Fatalf("invalid CSRF cookie: %+v", csrfCookie)
 	}
 
 	// 2. Lectura GET con cookie HttpOnly funciona sin cabecera X-CSRF-Token.
@@ -109,7 +109,7 @@ func TestGuardCookieAndCSRF(t *testing.T) {
 	getReq.AddCookie(sessionCookie)
 	e.ServeHTTP(getRec, getReq)
 	if getRec.Code != http.StatusOK || getRec.Body.String() != "user-456" {
-		t.Fatalf("GET con cookie HttpOnly: código %d, cuerpo %q", getRec.Code, getRec.Body.String())
+		t.Fatalf("GET with HttpOnly cookie: code %d, body %q", getRec.Code, getRec.Body.String())
 	}
 
 	// 3. Escritura POST con cookie de sesión pero sin token CSRF se rechaza con 403.

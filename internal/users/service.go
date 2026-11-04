@@ -42,7 +42,7 @@ func (s *Service) GetByID(ctx context.Context, userID string) (*User, error) {
 		return nil, err
 	}
 	if u == nil {
-		return nil, apperr.Unauthorized("Tu cuenta ya no existe. Inicia sesión de nuevo")
+		return nil, apperr.Unauthorized("Your account no longer exists. Please log in again")
 	}
 	return u, nil
 }
@@ -69,7 +69,7 @@ func (s *Service) ChangePassword(ctx context.Context, userID string, req ChangeP
 		return err
 	}
 	if !security.PasswordMatches(req.CurrentPassword, u.PasswordHash) {
-		return apperr.BadRequest("La contraseña actual no es correcta")
+		return apperr.BadRequest("Current password is incorrect")
 	}
 	if err := security.ValidatePassword(req.NewPassword); err != nil {
 		return err

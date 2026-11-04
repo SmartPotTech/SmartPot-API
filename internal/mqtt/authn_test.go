@@ -33,7 +33,7 @@ func cropWithID(t *testing.T, hex string) *crops.Crop {
 	t.Helper()
 	oid, ok := objectid.Parse(hex)
 	if !ok {
-		t.Fatalf("id de prueba inválido: %s", hex)
+		t.Fatalf("invalid test id: %s", hex)
 	}
 	return &crops.Crop{ID: oid}
 }
@@ -106,11 +106,11 @@ func TestAuthn_Denies(t *testing.T) {
 		body     string
 	}{
 		{"sin token", valid, "", body},
-		{"token incorrecto", valid, "otro-token", body},
-		{"cuerpo inválido", valid, testToken, "no-es-json"},
-		{"cultivo inexistente", fakeVerifier{crop: nil}, testToken, body},
-		{"sin clave de dispositivo (virtual)", fakeVerifier{crop: cropWithID(t, id), hasKey: false}, testToken, body},
-		{"clave incorrecta", fakeVerifier{crop: cropWithID(t, id), key: "otra", hasKey: true}, testToken, body},
+		{"wrong token", valid, "otro-token", body},
+		{"invalid body", valid, testToken, "no-es-json"},
+		{"nonexistent crop", fakeVerifier{crop: nil}, testToken, body},
+		{"no device key (virtual)", fakeVerifier{crop: cropWithID(t, id), hasKey: false}, testToken, body},
+		{"wrong key", fakeVerifier{crop: cropWithID(t, id), key: "otra", hasKey: true}, testToken, body},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestAuthn_EmptyTokenDeniesAll(t *testing.T) {
 		nil, NewTopicResolver("smartpot/v1"), slog.New(slog.DiscardHandler))
 	rec := doAuthn(c, "", `{"username":"`+id+`","password":"k"}`)
 	if resp := decode(t, rec); resp.Result != "deny" {
-		t.Fatalf("con token vacío todo debe rechazarse; obtuve %q", resp.Result)
+		t.Fatalf("with empty token all must be rejected; got %q", resp.Result)
 	}
 }
 
@@ -162,7 +162,7 @@ func TestAuthnCachesOnlyAnHMACOfTheDeviceKey(t *testing.T) {
 		t.Fatal("la verificación debía quedar en caché con el id normalizado")
 	}
 	if strings.Contains(cached, key) {
-		t.Fatal("la caché no puede guardar la clave del dispositivo en claro")
+		t.Fatal("cache must not store device key in plaintext")
 	}
 	wrong := `{"username":"` + id + `","password":"otra-clave","clientid":"x"}`
 	if got := decode(t, doAuthn(c, testToken, wrong)); got.Result != "deny" {

@@ -38,14 +38,14 @@ func NewService(repo Repository, clock func() time.Time) *Service {
 func (s *Service) Create(ctx context.Context, userID string, req CreateRequest) (*CreatedResponse, error) {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, apperr.Unauthorized("Inicia sesión para continuar")
+		return nil, apperr.Unauthorized("Log in to continue")
 	}
 	count, err := s.repo.CountByUser(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 	if count >= MaxPerUser {
-		return nil, apperr.Conflict("Llegaste al máximo de 10 conexiones; revoca alguna para crear otra")
+		return nil, apperr.Conflict("You reached the limit of 10 connections; revoke one to create a new one")
 	}
 	raw, err := newToken()
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *Service) Create(ctx context.Context, userID string, req CreateRequest) 
 func (s *Service) List(ctx context.Context, userID string) ([]AccessToken, error) {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, apperr.Unauthorized("Inicia sesión para continuar")
+		return nil, apperr.Unauthorized("Log in to continue")
 	}
 	return s.repo.ListByUser(ctx, uid)
 }
@@ -84,18 +84,18 @@ func (s *Service) List(ctx context.Context, userID string) ([]AccessToken, error
 func (s *Service) Revoke(ctx context.Context, userID, id string) error {
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return apperr.Unauthorized("Inicia sesión para continuar")
+		return apperr.Unauthorized("Please log in to continue")
 	}
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return apperr.NotFound("La conexión no existe")
+		return apperr.NotFound("Connection does not exist")
 	}
 	n, err := s.repo.DeleteByIDAndUser(ctx, oid, uid)
 	if err != nil {
 		return err
 	}
 	if n == 0 {
-		return apperr.NotFound("La conexión no existe")
+		return apperr.NotFound("Connection does not exist")
 	}
 	return nil
 }
@@ -111,7 +111,7 @@ func (s *Service) DeleteAllForUser(ctx context.Context, userID string) error {
 
 // AuthenticateConnection verifica un token de conexión y devuelve a quién representa y con qué alcance.
 func (s *Service) AuthenticateConnection(ctx context.Context, raw string) (security.ConnectionPrincipal, error) {
-	invalid := apperr.Unauthorized("El token de conexión no es válido o fue revocado")
+	invalid := apperr.Unauthorized("Connection token is invalid or has been revoked")
 	if !strings.HasPrefix(raw, TokenPrefix) || len(raw) < prefixLength {
 		return security.ConnectionPrincipal{}, invalid
 	}

@@ -41,7 +41,7 @@ func (e *ValidationError) Error() string { return e.Message }
 // Validation construye un error de validación 400 con el detalle por campo.
 func Validation(fields map[string]string) *ValidationError {
 	return &ValidationError{
-		Message: "Revisa los datos enviados",
+		Message: "Invalid input data",
 		Fields:  fields,
 	}
 }

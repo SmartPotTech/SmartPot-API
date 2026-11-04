@@ -9,16 +9,16 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/crops"
 )
 
-const helpText = "Soy el asistente de <b>SmartPot</b> 🌱\n" +
-	"Te aviso aquí cuando un cultivo necesita atención, cuando un cultivo se desconecta o cuando el " +
-	"asistente actúa por su cuenta.\n\n" +
-	"/estado — cómo están tus cultivos y los que te compartieron\n" +
-	"/desvincular — dejar de recibir avisos en este chat\n" +
-	"/ayuda — este mensaje\n\n" +
-	"Para vincular este chat entra a SmartPot › Perfil › Aplicaciones y toca «Vincular Telegram». Si alguien " +
-	"te comparte un cultivo, abre el enlace que te envíe."
+const helpText = "I am the <b>SmartPot</b> assistant 🌱\n" +
+	"I notify you here when a crop needs attention, when a crop disconnects, or when the " +
+	"assistant acts autonomously.\n\n" +
+	"/status — how your crops and shared crops are doing\n" +
+	"/unlink — stop receiving alerts in this chat\n" +
+	"/help — this message\n\n" +
+	"To link this chat go to SmartPot › Profile › Applications and tap «Link Telegram». If someone " +
+	"shares a crop with you, open the link they send you."
 
-const notLinked = "Este chat aún no está vinculado. Entra a SmartPot › Perfil › Aplicaciones y toca «Vincular Telegram»."
+const notLinked = "This chat is not linked yet. Go to SmartPot › Profile › Applications and tap «Link Telegram»."
 
 // Bot atiende la conversación con el bot (solo chats privados).
 type Bot struct {
@@ -41,7 +41,7 @@ func (b *Bot) Handle(update Update) {
 	}
 	chatID := strconv.FormatInt(msg.Chat.ID, 10)
 	if msg.Chat.Type != "private" {
-		b.reply(chatID, "Escríbeme en un chat privado para vincular tus cultivos.")
+		b.reply(chatID, "Message me in a private chat to link your crops.")
 		return
 	}
 	parts := strings.SplitN(strings.TrimSpace(msg.Text), " ", 2)
@@ -56,9 +56,9 @@ func (b *Bot) Handle(update Update) {
 	switch command {
 	case "/start":
 		b.start(chatID, argument, msg)
-	case "/estado":
+	case "/status", "/estado":
 		b.reply(chatID, b.status(chatID))
-	case "/desvincular":
+	case "/unlink", "/desvincular":
 		b.reply(chatID, b.unlink(chatID))
 	default:
 		b.reply(chatID, helpText)
@@ -88,19 +88,19 @@ func (b *Bot) start(chatID, code string, msg *Message) {
 	if channels.IsShareCode(code) {
 		crop, ok := b.cropChannels.AcceptShare(ctx, channels.Telegram, code, chatID, display)
 		if ok && crop != nil {
-			b.reply(chatID, "¡Listo"+greeting+"! Desde ahora recibirás aquí los avisos de «"+escape(crop.Name)+
-				"». Escribe /estado para verlo y /desvincular para dejar de recibirlos.")
+			b.reply(chatID, "All set"+greeting+"! From now on you will receive alerts here for «"+escape(crop.Name)+
+				"». Type /status to view it and /unlink to stop receiving alerts.")
 		} else {
-			b.reply(chatID, "El enlace expiró, ya se usó o el cultivo ya se comparte con demasiados chats. Pide uno nuevo.")
+			b.reply(chatID, "The link expired, has already been used, or the crop is shared with too many chats. Request a new one.")
 		}
 		return
 	}
 	link, ok := b.channels.CompleteLink(ctx, channels.Telegram, code, chatID, display)
 	if ok && link != nil {
-		b.reply(chatID, "¡Listo"+greeting+"! Este chat quedó vinculado a tu cuenta de SmartPot. Te avisaré de "+
-			"alertas, desconexiones y acciones del asistente; puedes elegir cuáles en tu perfil.\n\nEscribe /estado para ver tus cultivos.")
+		b.reply(chatID, "All set"+greeting+"! This chat is now linked to your SmartPot account. I will notify you of "+
+			"alerts, disconnections, and assistant actions; you can customize them in your profile.\n\nType /status to view your crops.")
 	} else {
-		b.reply(chatID, "El enlace expiró o ya se usó. Genera uno nuevo desde SmartPot › Perfil › Notificaciones.")
+		b.reply(chatID, "The link expired or has already been used. Generate a new one from SmartPot › Profile › Notifications.")
 	}
 }
 
@@ -109,9 +109,9 @@ func (b *Bot) unlink(chatID string) string {
 	linked, _ := b.channels.UnlinkAddress(ctx, channels.Telegram, chatID)
 	shared, _ := b.cropChannels.Leave(ctx, channels.Telegram, chatID)
 	if !linked && shared == 0 {
-		return "Este chat no estaba vinculado a ninguna cuenta ni recibía avisos compartidos."
+		return "This chat was not linked to any account and was not receiving shared alerts."
 	}
-	return "Listo: ya no recibirás avisos en este chat. Puedes volver a vincularlo desde tu perfil."
+	return "Done: you will no longer receive alerts in this chat. You can re-link it anytime from your profile."
 }
 
 func (b *Bot) status(chatID string) string {
@@ -126,18 +126,18 @@ func (b *Bot) status(chatID string) string {
 		own, _ = b.crops.List(ctx, link.UserID.Hex())
 	}
 	if len(own) == 0 && len(shared) == 0 {
-		return "Todavía no tienes cultivos. Crea el primero desde la app."
+		return "You do not have any crops yet. Create your first one in the app."
 	}
 	var text strings.Builder
 	if len(own) > 0 {
-		text.WriteString("🌱 <b>Tus cultivos</b>\n")
+		text.WriteString("🌱 <b>Your crops</b>\n")
 		describe(&text, own)
 	}
 	if len(shared) > 0 {
 		if text.Len() > 0 {
 			text.WriteString("\n\n")
 		}
-		text.WriteString("🤝 <b>Te compartieron</b>\n")
+		text.WriteString("🤝 <b>Shared with you</b>\n")
 		describe(&text, shared)
 	}
 	return text.String()
@@ -152,15 +152,15 @@ func describe(text *strings.Builder, list []crops.Crop) {
 			text.WriteString(" (virtual)")
 		}
 		if online {
-			text.WriteString(" — 🟢 en línea")
+			text.WriteString(" — 🟢 online")
 		} else {
-			text.WriteString(" — ⚪ sin conexión")
+			text.WriteString(" — ⚪ offline")
 		}
 		if crop.Health != nil {
 			text.WriteString(" · " + escape(crop.Health.Label) + " (" + strconv.Itoa(int(round(crop.Health.Index))) + "/100)")
 		}
 		if crop.AutomationEnabled {
-			text.WriteString(" · 🤖 automático")
+			text.WriteString(" · 🤖 auto")
 		}
 	}
 }

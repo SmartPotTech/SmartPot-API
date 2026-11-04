@@ -22,8 +22,8 @@ import (
 const MaxCropsPerUser = 20
 
 const (
-	notFound           = "El cultivo no existe"
-	virtualHasNoDevice = "Un cultivo virtual no usa credenciales: SmartPot lo simula por ti"
+	notFound           = "Crop does not exist"
+	virtualHasNoDevice = "A virtual crop does not use credentials: SmartPot simulates it for you"
 )
 
 // DeviceProvisioner aprovisiona la cuenta del dispositivo en el broker (lo
@@ -90,14 +90,14 @@ func (s *Service) SetActuatorSeeder(a ActuatorSeeder) {
 func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (CreatedCrop, error) {
 	ownerOID, ok := objectid.Parse(ownerID)
 	if !ok {
-		return CreatedCrop{}, apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+		return CreatedCrop{}, apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
 	}
 	count, err := s.repo.CountByOwner(ctx, ownerOID)
 	if err != nil {
 		return CreatedCrop{}, err
 	}
 	if count >= MaxCropsPerUser {
-		return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("Alcanzaste el máximo de %d cultivos por cuenta", MaxCropsPerUser))
+		return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", MaxCropsPerUser))
 	}
 	now := s.clock()
 	key := newDeviceKey()
@@ -133,9 +133,9 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 	}
 	// La cuenta en el broker (incluso la de un virtual) es best-effort: Paho reintenta.
 	if err := s.provisioner.Provision(ctx, crop.HexID(), key, false); err != nil {
-		slog.Warn("no se pudo aprovisionar el dispositivo en el broker", "cropId", crop.HexID(), "err", err)
+		slog.Warn("could not provision device in broker", "cropId", crop.HexID(), "err", err)
 	}
-	slog.Info("cultivo creado", "kind", kind, "cropId", crop.HexID())
+	slog.Info("crop created", "kind", kind, "cropId", crop.HexID())
 
 	var creds *DeviceCredentialsResponse
 	if !crop.IsVirtual() {
@@ -187,7 +187,7 @@ func (s *Service) Update(ctx context.Context, ownerID, cropID string, req CropRe
 		return nil, err
 	}
 	if req.Kind != nil && *req.Kind != crop.KindOrDefault() {
-		return nil, apperr.BadRequest("Un cultivo no puede pasar de real a virtual ni al revés: crea uno nuevo")
+		return nil, apperr.BadRequest("A crop cannot transition between real and virtual: create a new one")
 	}
 	crop.Name = strings.TrimSpace(req.Name)
 	crop.Type = *req.Type
@@ -310,7 +310,7 @@ func (s *Service) RotateDeviceKey(ctx context.Context, ownerID, cropID string) (
 		return DeviceCredentialsResponse{}, err
 	}
 	if err := s.provisioner.Provision(ctx, crop.HexID(), key, true); err != nil {
-		slog.Warn("no se pudo reaprovisionar el dispositivo", "cropId", crop.HexID(), "err", err)
+		slog.Warn("could not re-provision device", "cropId", crop.HexID(), "err", err)
 	}
 	s.bus.Publish(DeviceKeyRotatedEvent{CropID: crop.HexID()})
 	return s.credentials(crop, key), nil
@@ -393,7 +393,7 @@ func (s *Service) MarkDeviceSeen(ctx context.Context, cropID string, online *boo
 		return
 	}
 	if err := s.repo.MarkDeviceSeen(ctx, oid, online, s.clock()); err != nil {
-		slog.Warn("no se pudo actualizar el estado del dispositivo", "cropId", cropID, "err", err)
+		slog.Warn("could not update device status", "cropId", cropID, "err", err)
 	}
 }
 
@@ -406,8 +406,8 @@ func (s *Service) UpdateDeviceStatus(ctx context.Context, cropID string, online 
 	s.MarkDeviceSeen(ctx, cropID, &online)
 	if !online {
 		_, _ = s.notifier.NotifyOnce(ctx, "offline:"+cropID, time.Hour, crop.OwnerID.Hex(), cropID,
-			notifications.TypeDevice, "Cultivo desconectado",
-			"«"+crop.Name+"» perdió la conexión con SmartPot.")
+			notifications.TypeDevice, "Crop disconnected",
+			"«"+crop.Name+"» lost connection with SmartPot.")
 	}
 }
 
@@ -418,7 +418,7 @@ func (s *Service) UpdateHealth(ctx context.Context, cropID string, health CropHe
 		return
 	}
 	if err := s.repo.UpdateHealth(ctx, oid, &health); err != nil {
-		slog.Warn("no se pudo actualizar la salud del cultivo", "cropId", cropID, "err", err)
+		slog.Warn("could not update crop health", "cropId", cropID, "err", err)
 	}
 }
 
@@ -450,10 +450,10 @@ func (s *Service) deleteCascade(ctx context.Context, crop *Crop) error {
 		return err
 	}
 	if err := s.provisioner.Deprovision(ctx, crop.HexID()); err != nil {
-		slog.Warn("no se pudo retirar el dispositivo del broker", "cropId", crop.HexID(), "err", err)
+		slog.Warn("could not deprovision device from broker", "cropId", crop.HexID(), "err", err)
 	}
 	s.bus.Publish(DeletedEvent{CropID: crop.HexID(), OwnerID: crop.OwnerID.Hex()})
-	slog.Info("cultivo eliminado", "cropId", crop.HexID())
+	slog.Info("crop deleted", "cropId", crop.HexID())
 	return nil
 }
 

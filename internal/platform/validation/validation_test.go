@@ -10,10 +10,10 @@ var personName = regexp.MustCompile(`^[\p{L}][\p{L} '\-]*$`)
 func TestFirstErrorPerFieldWins(t *testing.T) {
 	// Nombre vacío: NotBlank va primero y debe ganar sobre Size y Pattern.
 	v := New().
-		NotBlank("name", "", "El nombre es obligatorio").
-		Size("name", "", 2, 40, "El nombre debe tener entre 2 y 40 caracteres").
+		NotBlank("name", "", "Name is required").
+		Size("name", "", 2, 40, "Name must be between 2 and 40 characters").
 		Pattern("name", "", personName, "El nombre solo puede tener letras y espacios")
-	if got := v.Result()["name"]; got != "El nombre es obligatorio" {
+	if got := v.Result()["name"]; got != "Name is required" {
 		t.Errorf("name = %q, se esperaba el mensaje de NotBlank", got)
 	}
 }
@@ -30,11 +30,11 @@ func TestValidInputHasNoErrors(t *testing.T) {
 }
 
 func TestChecks(t *testing.T) {
-	if New().Email("email", "no-es-correo", "mal").OK() {
-		t.Error("un correo inválido debía fallar")
+	if New().Email("email", "not-an-email", "mal").OK() {
+		t.Error("an invalid email should fail")
 	}
 	if !New().Email("email", "", "mal").OK() {
-		t.Error("un correo vacío debía considerarse válido (lo cubre NotBlank)")
+		t.Error("an empty email should be valid (covered by NotBlank)")
 	}
 	if New().Pattern("name", "A1", personName, "mal").OK() {
 		t.Error("un nombre con dígitos debía fallar el patrón")

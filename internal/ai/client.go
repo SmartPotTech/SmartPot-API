@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	unavailableMsg = "El asistente de IA no está disponible en este momento"
-	disabledMsg    = "El asistente de IA está deshabilitado en este servidor"
+	unavailableMsg = "The AI assistant is not available at this moment"
+	disabledMsg    = "The AI assistant is disabled on this server"
 	profilesTTL    = time.Hour
 	learningTTL    = time.Minute
 	healthTTL      = 30 * time.Second
@@ -79,12 +79,12 @@ func NewClient(cfg config.AI, store cache.Cache, clock func() time.Time) *Client
 	}
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		slog.Warn("no se pudo preparar gRPC hacia la IA; se usará REST", "target", target, "err", err)
+		slog.Warn("could not initialize gRPC client for AI; using REST", "target", target, "err", err)
 		return c
 	}
 	c.grpcConn = conn
 	c.grpcClient = smartpotv1.NewSmartPotAIServiceClient(conn)
-	slog.Info("gRPC hacia la IA preparado", "target", target)
+	slog.Info("gRPC client for AI initialized", "target", target)
 	return c
 }
 
@@ -176,7 +176,7 @@ func (c *Client) warnFallback(err error) {
 	if now-last < int64(time.Minute) || !c.lastFallback.CompareAndSwap(last, now) {
 		return
 	}
-	slog.Warn("gRPC hacia la IA no respondió; se usa REST", "code", status.Code(err).String(), "err", err)
+	slog.Warn("gRPC client for AI did not respond; using REST", "code", status.Code(err).String(), "err", err)
 }
 
 // Fleet analiza todos los cultivos de una cuenta.
@@ -208,7 +208,7 @@ func (c *Client) Forget(ctx context.Context, cropID string) {
 		return
 	}
 	if err := c.do(ctx, http.MethodDelete, "/v1/learning/crops/"+cropID, nil, nil); err != nil {
-		slog.Warn("no se pudieron olvidar las lecturas del cultivo", "cropId", cropID, "err", err)
+		slog.Warn("could not forget crop readings in AI service", "cropId", cropID, "err", err)
 	}
 }
 
@@ -306,7 +306,7 @@ func (c *Client) doRaw(ctx context.Context, method, path string, body, out any) 
 	}
 	resp, err := c.http.Do(req)
 	if err != nil {
-		slog.Warn("falló la consulta al servicio de IA", "path", path, "err", err)
+		slog.Warn("AI service request failed", "path", path, "err", err)
 		return apperr.Unavailable(unavailableMsg)
 	}
 	defer resp.Body.Close()

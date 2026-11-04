@@ -70,16 +70,16 @@ func (p *Provisioner) kick(ctx context.Context, cropID string) {
 	}
 	clients, err := p.clientsByUsername(ctx, cropID)
 	if err != nil {
-		p.log.Warn("no se pudieron listar las sesiones del cultivo en el broker", "cropId", cropID, "err", err)
+		p.log.Warn("could not list crop sessions in broker", "cropId", cropID, "err", err)
 		return
 	}
 	for _, clientID := range clients {
 		if err := p.disconnect(ctx, clientID); err != nil {
-			p.log.Warn("no se pudo cortar la sesión en el broker", "cropId", cropID, "clientId", clientID, "err", err)
+			p.log.Warn("could not disconnect session in broker", "cropId", cropID, "clientId", clientID, "err", err)
 		}
 	}
 	if len(clients) > 0 {
-		p.log.Info("sesiones del cultivo cortadas en el broker", "cropId", cropID, "sesiones", len(clients))
+		p.log.Info("crop sessions disconnected in broker", "cropId", cropID, "sessions", len(clients))
 	}
 }
 
@@ -97,7 +97,7 @@ func (p *Provisioner) clientsByUsername(ctx context.Context, cropID string) ([]s
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("el broker respondió %d al listar sesiones: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("broker returned %d while listing sessions: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 	var parsed clientListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
@@ -127,7 +127,7 @@ func (p *Provisioner) disconnect(ctx context.Context, clientID string) error {
 	// 204 al desconectar, 404 si la sesión ya no existe: ambos son aceptables.
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return fmt.Errorf("el broker respondió %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return fmt.Errorf("broker returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 	return nil
 }

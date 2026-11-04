@@ -16,7 +16,7 @@ import (
 // CodeTTL es la vigencia de un código de vinculación o de compartir.
 const CodeTTL = 10 * time.Minute
 
-const linkNotFound = "El canal no está vinculado"
+const linkNotFound = "Channel is not linked"
 
 // DefaultEvents son los tipos que un vínculo nuevo recibe por defecto.
 var DefaultEvents = []notifications.Type{notifications.TypeAlert, notifications.TypeDevice, notifications.TypeAI}
@@ -167,10 +167,10 @@ func (s *Service) SendTest(ctx context.Context, userID, linkID string) error {
 	if err != nil {
 		return err
 	}
-	msg := ChannelMessage{Type: notifications.TypeInfo, Title: "Prueba de SmartPot",
-		Body: "Así te llegarán las alertas de tus cultivos. Puedes elegir cuáles recibir en tu perfil."}
+	msg := ChannelMessage{Type: notifications.TypeInfo, Title: "SmartPot test notification",
+		Body: "This is how crop alerts will reach you. You can configure alert preferences in your profile."}
 	if err := channel.Send(link.Address, msg); err != nil {
-		return apperr.BadRequest("No se pudo enviar el mensaje de prueba: " + err.Error())
+		return apperr.BadRequest("Could not send test message: " + err.Error())
 	}
 	s.Delivered(ctx, link)
 	return nil
@@ -229,7 +229,7 @@ func (s *Service) RequireAvailable(t Type) (NotificationChannel, error) {
 	if channel, ok := s.AvailableChannel(t); ok {
 		return channel, nil
 	}
-	return nil, apperr.Unavailable("El canal " + NameOf(t) + " no está configurado en este servidor")
+	return nil, apperr.Unavailable("Channel " + NameOf(t) + " is not configured on this server")
 }
 
 // Delivered registra una entrega exitosa.
@@ -245,7 +245,7 @@ func (s *Service) Failed(ctx context.Context, link *ChannelLink, permanent bool)
 	link.Failures++
 	if permanent || link.Failures >= 5 {
 		link.Enabled = false
-		slog.Info("canal pausado tras fallos", "type", link.Type, "failures", link.Failures)
+		slog.Info("channel paused after failures", "type", link.Type, "failures", link.Failures)
 	}
 	_ = s.repo.Save(ctx, link)
 }

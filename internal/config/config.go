@@ -265,14 +265,14 @@ func Load() (Config, error) {
 
 	// Secretos obligatorios, igual que en Java: sin ellos la API no arranca.
 	if len(cfg.Security.JWTSecret) < 32 {
-		fail("SMARTPOT_JWT_SECRET debe tener al menos 32 caracteres")
+		fail("SMARTPOT_JWT_SECRET must have at least 32 characters")
 	}
 	if key, err := base64.StdEncoding.DecodeString(cfg.Security.AESKey); err != nil || len(key) != 32 {
-		fail("SMARTPOT_AES_KEY debe ser Base64 de 32 bytes (AES-256)")
+		fail("SMARTPOT_AES_KEY must be a 32-byte Base64 string (AES-256)")
 	}
 
 	if len(errs) > 0 {
-		return Config{}, fmt.Errorf("configuración inválida:\n  - %s", strings.Join(errs, "\n  - "))
+		return Config{}, fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))
 	}
 	return cfg, nil
 }

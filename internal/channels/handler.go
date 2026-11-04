@@ -134,5 +134,5 @@ func parseType(raw string) (Type, error) {
 			return t, nil
 		}
 	}
-	return "", apperr.NotFound("El canal no existe")
+	return "", apperr.NotFound("Channel does not exist")
 }

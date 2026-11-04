@@ -28,10 +28,10 @@ const MaxPoolConns = 1000
 func Connect(ctx context.Context, url string, maxConns int) (*Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return nil, fmt.Errorf("DATABASE_URL inválida: %w", err)
+		return nil, fmt.Errorf("invalid DATABASE_URL: %w", err)
 	}
 	if maxConns > MaxPoolConns {
-		return nil, fmt.Errorf("DATABASE_MAX_CONNS no puede superar %d", MaxPoolConns)
+		return nil, fmt.Errorf("DATABASE_MAX_CONNS cannot exceed %d", MaxPoolConns)
 	}
 	if maxConns > 0 {
 		cfg.MaxConns = int32(maxConns)
@@ -39,7 +39,7 @@ func Connect(ctx context.Context, url string, maxConns int) (*Pool, error) {
 	cfg.MaxConnIdleTime = 5 * time.Minute
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("no se pudo crear el pool de PostgreSQL: %w", err)
+		return nil, fmt.Errorf("could not create PostgreSQL pool: %w", err)
 	}
 	return &Pool{Pool: pool}, nil
 }

@@ -32,7 +32,7 @@ func (m *Mode) UnmarshalJSON(b []byte) error {
 		*m = Mode(v)
 		return nil
 	default:
-		return fmt.Errorf("modo de simulación inválido: %q", v)
+		return fmt.Errorf("invalid simulation mode: %q", v)
 	}
 }
 

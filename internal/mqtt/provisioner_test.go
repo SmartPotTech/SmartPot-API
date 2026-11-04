@@ -52,10 +52,10 @@ func TestProvision_WithoutRotateDoesNothing(t *testing.T) {
 	b, srv := newFakeBroker("smartpot-abc")
 	defer srv.Close()
 	if err := newProvisioner(srv.URL).Provision(context.Background(), "abc", "key", false); err != nil {
-		t.Fatalf("Provision devolvió error: %v", err)
+		t.Fatalf("Provision returned error: %v", err)
 	}
 	if len(b.listed) != 0 || len(b.deleted) != 0 {
-		t.Fatalf("crear sin rotar no debe tocar el broker; listed=%v deleted=%v", b.listed, b.deleted)
+		t.Fatalf("create without rotate should not touch broker; listed=%v deleted=%v", b.listed, b.deleted)
 	}
 }
 
@@ -64,16 +64,16 @@ func TestProvision_RotateKicksSessions(t *testing.T) {
 	b, srv := newFakeBroker("smartpot-" + cropID)
 	defer srv.Close()
 	if err := newProvisioner(srv.URL).Provision(context.Background(), cropID, "key", true); err != nil {
-		t.Fatalf("Provision devolvió error: %v", err)
+		t.Fatalf("Provision returned error: %v", err)
 	}
 	if !b.authOK {
-		t.Error("la API debe autenticarse con Basic ante el broker")
+		t.Error("API must authenticate with Basic against broker")
 	}
 	if len(b.listed) != 1 || b.listed[0] != cropID {
-		t.Errorf("esperaba listar por el cultivo %s, obtuve %v", cropID, b.listed)
+		t.Errorf("expected listing for crop %s, obtuve %v", cropID, b.listed)
 	}
 	if len(b.deleted) != 1 || b.deleted[0] != "smartpot-"+cropID {
-		t.Errorf("esperaba desconectar la sesión del cultivo, obtuve %v", b.deleted)
+		t.Errorf("expected crop session disconnect, got %v", b.deleted)
 	}
 }
 
@@ -85,13 +85,13 @@ func TestDeprovision_KicksSessions(t *testing.T) {
 		t.Fatalf("Deprovision devolvió error: %v", err)
 	}
 	if len(b.deleted) != 1 || b.deleted[0] != "smartpot-sim-"+cropID {
-		t.Errorf("esperaba desconectar la sesión simulada, obtuve %v", b.deleted)
+		t.Errorf("expected simulated session disconnect, got %v", b.deleted)
 	}
 }
 
 func TestProvision_WithoutRESTConfigIsNoop(t *testing.T) {
 	p := NewProvisioner(config.MQTT{}, slog.New(slog.DiscardHandler))
 	if err := p.Deprovision(context.Background(), "abc"); err != nil {
-		t.Fatalf("sin API REST configurada no debe fallar: %v", err)
+		t.Fatalf("without configured REST API should not fail: %v", err)
 	}
 }

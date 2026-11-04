@@ -58,14 +58,14 @@ func (s *Service) Request(ctx context.Context, ownerID, cropID string, req Comma
 		return nil, err
 	}
 	if !s.publisher.IsEnabled() {
-		return nil, apperr.Unavailable("La comunicación con los dispositivos no está habilitada en este servidor")
+		return nil, apperr.Unavailable("Device communication is not enabled on this server")
 	}
 	inFlight, err := s.repo.ExistsInFlight(ctx, actuator.ID)
 	if err != nil {
 		return nil, err
 	}
 	if inFlight {
-		return nil, apperr.Conflict("Ya hay una orden en curso para este actuador: espera su confirmación")
+		return nil, apperr.Conflict("There is already a command in progress for this actuator: wait for confirmation")
 	}
 	if msg := s.unchanged(actuator, *req.Action, req.DurationSeconds); msg != "" {
 		return nil, apperr.Conflict(msg)
@@ -107,7 +107,7 @@ func (s *Service) RequestFromAgent(ctx context.Context, crop *crops.Crop, t actu
 // RequestBulk envía la misma orden a varios cultivos; cada uno se informa aparte.
 func (s *Service) RequestBulk(ctx context.Context, ownerID string, req BulkCommandRequest) (BulkCommandResponse, error) {
 	if !s.publisher.IsEnabled() {
-		return BulkCommandResponse{}, apperr.Unavailable("La comunicación con los dispositivos no está habilitada en este servidor")
+		return BulkCommandResponse{}, apperr.Unavailable("Device communication is not enabled on this server")
 	}
 	cropsList, err := s.targetCrops(ctx, ownerID, req.CropIds)
 	if err != nil {
@@ -122,21 +122,21 @@ func (s *Service) RequestBulk(ctx context.Context, ownerID string, req BulkComma
 		}
 		switch {
 		case actuator == nil:
-			results = append(results, skipped(crop, "El cultivo no tiene este actuador"))
+			results = append(results, skipped(crop, "The crop does not have this actuator"))
 		default:
 			inFlight, err := s.repo.ExistsInFlight(ctx, actuator.ID)
 			if err != nil {
 				return BulkCommandResponse{}, err
 			}
 			if inFlight {
-				results = append(results, skipped(crop, "Ya hay un comando en curso para este actuador"))
+				results = append(results, skipped(crop, "There is already a command in progress for this actuator"))
 				continue
 			}
 			if msg := s.unchanged(actuator, *req.Action, req.DurationSeconds); msg != "" {
 				results = append(results, skipped(crop, msg))
 				continue
 			}
-			cmd, err := s.create(ctx, crop, actuator, *req.Action, req.DurationSeconds, SourceUser, "Acción en bloque")
+			cmd, err := s.create(ctx, crop, actuator, *req.Action, req.DurationSeconds, SourceUser, "Bulk action")
 			if err != nil {
 				return BulkCommandResponse{}, err
 			}
@@ -213,7 +213,7 @@ func (s *Service) Acknowledge(ctx context.Context, cropID string, ack AckMessage
 	} else {
 		cmd.Status = StatusFailed
 		_ = s.repo.Save(ctx, cmd)
-		s.notifyFailure(ctx, cmd, "El dispositivo no pudo ejecutar el comando: "+orDefault(ack.Message))
+		s.notifyFailure(ctx, cmd, "The device could not execute the command: "+orDefault(ack.Message))
 	}
 }
 
@@ -242,17 +242,17 @@ func (s *Service) ExpireStale(ctx context.Context) {
 	limit := s.clock().Add(-s.timeout)
 	stale, err := s.repo.FindStaleSent(ctx, limit)
 	if err != nil {
-		slog.Warn("no se pudieron revisar comandos vencidos", "err", err)
+		slog.Warn("could not check expired commands", "err", err)
 		return
 	}
 	for i := range stale {
 		cmd := &stale[i]
 		now := s.clock()
 		cmd.Status = StatusExpired
-		cmd.Message = "El dispositivo no confirmó el comando a tiempo"
+		cmd.Message = "The device did not confirm the command in time"
 		cmd.CompletedAt = &now
 		_ = s.repo.Save(ctx, cmd)
-		s.notifyFailure(ctx, cmd, "El dispositivo no respondió al comando. Revisa que esté conectado.")
+		s.notifyFailure(ctx, cmd, "The device did not respond to the command. Verify that it is connected.")
 	}
 }
 
@@ -327,7 +327,7 @@ func (s *Service) dispatch(ctx context.Context, cmd *Command) (*Command, error) 
 		cmd.SentAt = &now
 	} else {
 		cmd.Status = StatusFailed
-		cmd.Message = "El broker MQTT no está disponible en este momento"
+		cmd.Message = "The MQTT broker is not available at this moment"
 		cmd.CompletedAt = &now
 	}
 	if err := s.repo.Save(ctx, cmd); err != nil {
@@ -343,7 +343,7 @@ func (s *Service) notifyFailure(ctx context.Context, cmd *Command, message strin
 		return
 	}
 	_, _ = s.notifier.NotifyOnce(ctx, "command-failure:"+crop.HexID(), failureNoticeCooldown, crop.OwnerID.Hex(),
-		crop.HexID(), notifications.TypeCommand, "Comando sin ejecutar en "+crop.Name, message)
+		crop.HexID(), notifications.TypeCommand, "Unexecuted command on "+crop.Name, message)
 }
 
 func skipped(crop *crops.Crop, reason string) BulkResult {
@@ -360,7 +360,7 @@ func truncate(value string) string {
 
 func orDefault(value string) string {
 	if strings.TrimSpace(value) == "" {
-		return "sin detalle"
+		return "without detail"
 	}
 	return truncate(value)
 }

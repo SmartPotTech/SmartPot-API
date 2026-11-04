@@ -31,7 +31,7 @@ func (h *Handler) Register(g *echo.Group) {
 func (h *Handler) listForCrop(c echo.Context) error {
 	limit, ok := queryInt(c, "limit", 30)
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	items, err := h.svc.List(c.Request().Context(), security.CurrentUserID(c), c.Param("cropId"), limit)
 	if err != nil {
@@ -55,7 +55,7 @@ func (h *Handler) send(c echo.Context) error {
 func (h *Handler) listForOwner(c echo.Context) error {
 	limit, ok := queryInt(c, "limit", 50)
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	items, err := h.svc.ListForOwner(c.Request().Context(), security.CurrentUserID(c), limit)
 	if err != nil {

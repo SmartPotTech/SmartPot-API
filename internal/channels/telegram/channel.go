@@ -48,7 +48,7 @@ func (c *Channel) LinkURL(code string) string {
 
 // Description describe el canal para la PWA.
 func (c *Channel) Description() string {
-	return "Recibe las alertas, los resúmenes y las acciones del asistente en un chat con el bot de SmartPot."
+	return "Receive alerts, digests, and assistant actions in a chat with the SmartPot bot."
 }
 
 // Requirements son las variables que el servidor necesita para ofrecer el canal.

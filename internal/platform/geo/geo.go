@@ -27,7 +27,7 @@ func (s *Setting) UnmarshalJSON(b []byte) error {
 		*s = Setting(v)
 		return nil
 	default:
-		return fmt.Errorf("ubicación inválida: %q", v)
+		return fmt.Errorf("invalid location setting: %q", v)
 	}
 }
 
@@ -51,7 +51,7 @@ func (e *Exposure) UnmarshalJSON(b []byte) error {
 		*e = Exposure(v)
 		return nil
 	default:
-		return fmt.Errorf("exposición inválida: %q", v)
+		return fmt.Errorf("invalid exposure: %q", v)
 	}
 }
 

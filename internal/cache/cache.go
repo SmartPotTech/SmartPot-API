@@ -22,7 +22,7 @@ const (
 )
 
 // ErrMiss lo devuelve un Backend cuando la llave no existe (no es una falla).
-var ErrMiss = errors.New("cache: llave no encontrada")
+var ErrMiss = errors.New("cache: key not found")
 
 // Cache es el puerto de entrada: lo que la aplicación necesita de la caché. Los
 // servicios dependen de esta interfaz, nunca de un sistema de caché concreto.

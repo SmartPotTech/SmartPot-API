@@ -112,7 +112,7 @@ func (s *Service) Series(ctx context.Context, ownerID, metric string, hours int)
 		return MetricSeriesResponse{}, apperr.BadRequest("Variable desconocida: " + metric)
 	}
 	if hours < 1 || hours > 168 {
-		return MetricSeriesResponse{}, apperr.BadRequest("El periodo debe estar entre 1 y 168 horas")
+		return MetricSeriesResponse{}, apperr.BadRequest("Period must be between 1 and 168 hours")
 	}
 
 	cacheKey := fmt.Sprintf("series:%s:%s:%d", ownerID, metric, hours)
@@ -171,7 +171,7 @@ func (s *Service) Fleet(ctx context.Context, ownerID string) (*ai.FleetResponse,
 			SharedIssues: []ai.SharedIssue{},
 			Groups:       []ai.Group{},
 			Actions:      []ai.FleetAction{},
-			Summary:      "Crea tu primer cultivo para que el asistente pueda compararlo.",
+			Summary:      "Create your first crop so the assistant can compare it.",
 		}, nil
 	}
 	input := make([]ai.FleetCrop, 0, len(cropsList))

@@ -23,7 +23,7 @@ type Encryptor struct {
 func NewEncryptor(aesKeyBase64 string) (*Encryptor, error) {
 	key, err := base64.StdEncoding.DecodeString(aesKeyBase64)
 	if err != nil || len(key) != 32 {
-		return nil, errors.New("SMARTPOT_AES_KEY debe ser Base64 de 32 bytes (AES-256)")
+		return nil, errors.New("SMARTPOT_AES_KEY must be 32-byte Base64 (AES-256)")
 	}
 	return &Encryptor{key: key}, nil
 }
@@ -47,7 +47,7 @@ func (e *Encryptor) Decrypt(cipherText string) (string, error) {
 	// El codificador de Java no pone relleno; aceptamos también valores con relleno.
 	decoded, err := base64.RawURLEncoding.DecodeString(strings.TrimRight(cipherText, "="))
 	if err != nil {
-		return "", errors.New("no se pudo descifrar el dato")
+		return "", errors.New("could not decrypt data")
 	}
 	gcm, err := e.gcm()
 	if err != nil {
@@ -59,7 +59,7 @@ func (e *Encryptor) Decrypt(cipherText string) (string, error) {
 	iv := decoded[:gcm.NonceSize()]
 	plain, err := gcm.Open(nil, iv, decoded[gcm.NonceSize():], nil)
 	if err != nil {
-		return "", errors.New("no se pudo descifrar el dato")
+		return "", errors.New("could not decrypt data")
 	}
 	return string(plain), nil
 }

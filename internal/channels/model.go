@@ -44,7 +44,7 @@ func (d *Delivery) UnmarshalJSON(b []byte) error {
 		*d = Delivery(s)
 		return nil
 	default:
-		return fmt.Errorf("modo de entrega inválido: %q", s)
+		return fmt.Errorf("invalid delivery mode: %q", s)
 	}
 }
 

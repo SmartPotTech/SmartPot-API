@@ -64,7 +64,7 @@ func TestSecurityOverrides(t *testing.T) {
 
 	list := paths["/api/v1/crops"].(echo.Map)["get"].(echo.Map)
 	if _, has := list["security"]; has {
-		t.Errorf("una ruta autenticada no debe fijar security propio (hereda el global): %v", list["security"])
+		t.Errorf("authenticated route must not set own security (inherits global): %v", list["security"])
 	}
 }
 
@@ -73,16 +73,16 @@ func TestPathParameters(t *testing.T) {
 	op := paths["/api/v1/crops/{cropId}/channels/{type}/recipients/{recipientId}"].(echo.Map)["delete"].(echo.Map)
 	params, ok := op["parameters"].([]echo.Map)
 	if !ok || len(params) != 3 {
-		t.Fatalf("se esperaban 3 parámetros de ruta, se obtuvo %v", op["parameters"])
+		t.Fatalf("expected 3 path parameters, got %v", op["parameters"])
 	}
 	want := map[string]bool{"cropId": true, "type": true, "recipientId": true}
 	for _, p := range params {
 		name := p["name"].(string)
 		if !want[name] {
-			t.Errorf("parámetro inesperado %q", name)
+			t.Errorf("unexpected parameter %q", name)
 		}
 		if p["in"] != "path" || p["required"] != true {
-			t.Errorf("parámetro %q mal definido: %v", name, p)
+			t.Errorf("parameter %q ill-defined: %v", name, p)
 		}
 	}
 }

@@ -53,7 +53,7 @@ func recovery(logger *slog.Logger) echo.MiddlewareFunc {
 				if r := recover(); r != nil {
 					req := c.Request()
 					rc := FromContext(c)
-					logger.Error("panico no controlado",
+					logger.Error("unhandled panic",
 						"requestId", rc.Trace().RequestID,
 						"method", req.Method,
 						"path", req.URL.Path,
@@ -61,7 +61,7 @@ func recovery(logger *slog.Logger) echo.MiddlewareFunc {
 					)
 					if !c.Response().Committed {
 						writeError(c, http.StatusInternalServerError,
-							"Ocurrió un error inesperado. Intenta de nuevo más tarde")
+							"An unexpected error occurred. Please try again later")
 					}
 				}
 			}()
@@ -188,11 +188,11 @@ func RespondError(c echo.Context, err error) {
 	var he *echo.HTTPError
 	if errors.As(err, &he) {
 		if he.Code == http.StatusNotFound {
-			writeError(c, http.StatusNotFound, "La ruta solicitada no existe")
+			writeError(c, http.StatusNotFound, "The requested route does not exist")
 			return
 		}
 		if he.Code == http.StatusMethodNotAllowed {
-			writeError(c, http.StatusMethodNotAllowed, "Método no permitido para esta ruta")
+			writeError(c, http.StatusMethodNotAllowed, "Method not allowed for this route")
 			return
 		}
 		msg := fmt.Sprintf("%v", he.Message)
@@ -200,7 +200,7 @@ func RespondError(c echo.Context, err error) {
 		return
 	}
 	writeError(c, http.StatusInternalServerError,
-		"Ocurrió un error inesperado. Intenta de nuevo más tarde")
+		"An unexpected error occurred. Please try again later")
 }
 
 func writeError(c echo.Context, status int, message string) {

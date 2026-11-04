@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	invalidCredentials = "Correo o contraseña incorrectos"
-	invalidReset       = "El enlace de recuperación no es válido o ya venció"
+	invalidCredentials = "Incorrect email or password"
+	invalidReset       = "Password reset link is invalid or has expired"
 )
 
 // Service implementa el registro, el inicio de sesión y la recuperación.
@@ -62,7 +62,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (AuthRespon
 		return AuthResponse{}, err
 	}
 	if exists {
-		return AuthResponse{}, apperr.Conflict("Ya existe una cuenta con ese correo")
+		return AuthResponse{}, apperr.Conflict("An account with this email already exists")
 	}
 	hash, err := security.HashPassword(req.Password)
 	if err != nil {
@@ -80,12 +80,12 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (AuthRespon
 	}
 	if err := s.users.Insert(ctx, u); err != nil {
 		if users.IsDuplicate(err) {
-			return AuthResponse{}, apperr.Conflict("Ya existe una cuenta con ese correo")
+			return AuthResponse{}, apperr.Conflict("An account with this email already exists")
 		}
 		return AuthResponse{}, err
 	}
-	if _, err := s.notifier.Notify(ctx, u.HexID(), "", notifications.TypeInfo, "¡Bienvenido a SmartPot!",
-		"Crea tu primer cultivo, real o virtual, para empezar a monitorearlo."); err != nil {
+	if _, err := s.notifier.Notify(ctx, u.HexID(), "", notifications.TypeInfo, "Welcome to SmartPot!",
+		"Create your first crop, real or virtual, to start monitoring it."); err != nil {
 		return AuthResponse{}, err
 	}
 	s.mailer.SendWelcome(u.Name, u.Email)
@@ -171,8 +171,8 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	if err := s.tokens.DeleteByUserID(ctx, u.HexID()); err != nil {
 		return err
 	}
-	if _, err := s.notifier.Notify(ctx, u.HexID(), "", notifications.TypeInfo, "Contraseña actualizada",
-		"Tu contraseña se cambió con el enlace de recuperación."); err != nil {
+	if _, err := s.notifier.Notify(ctx, u.HexID(), "", notifications.TypeInfo, "Password updated",
+		"Your password was updated using the recovery link."); err != nil {
 		return err
 	}
 	return nil
@@ -198,7 +198,7 @@ func (s *Service) CurrentSession(ctx context.Context, userID string, expiresAt t
 		return AuthResponse{}, err
 	}
 	if u == nil {
-		return AuthResponse{}, apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+		return AuthResponse{}, apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
 	}
 	return AuthResponse{ExpiresAt: expiresAt, User: users.ToResponse(u)}, nil
 }

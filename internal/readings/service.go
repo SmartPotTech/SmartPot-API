@@ -104,7 +104,7 @@ func (s *Service) StartBatchWorker(ctx context.Context) {
 			saved := batch
 			if err := s.repo.InsertBatch(flushCtx, batch); err != nil {
 				// Si falla el lote completo, se guarda una por una para no perder las válidas.
-				slog.Warn("falló la inserción en lote; se reintenta lectura por lectura", "count", len(batch), "err", err)
+				slog.Warn("batch insert failed; retrying reading by reading", "count", len(batch), "err", err)
 				saved = saved[:0:0]
 				for i := range batch {
 					if err := s.repo.Insert(flushCtx, &batch[i]); err != nil {
@@ -175,18 +175,18 @@ func (s *Service) StopBatchWorker() {
 // cultivo no existe o si llega más rápido que el intervalo mínimo.
 func (s *Service) RecordFromDevice(ctx context.Context, cropID string, measures Measures) (*Reading, error) {
 	if !s.crops.Exists(ctx, cropID) {
-		slog.Debug("telemetría descartada: el cultivo no existe", "cropId", cropID)
+		slog.Debug("telemetry dropped: crop does not exist", "cropId", cropID)
 		return nil, nil
 	}
 	online := true
 	s.crops.MarkDeviceSeen(ctx, cropID, &online)
 	if !s.cache.SetIfAbsent("reading:"+cropID, s.minInterval) {
-		slog.Debug("telemetría descartada por frecuencia", "cropId", cropID)
+		slog.Debug("telemetry dropped due to rate limit", "cropId", cropID)
 		return nil, nil
 	}
 	reading, err := s.store(ctx, cropID, measures, SourceMQTT)
 	if err != nil {
-		slog.Debug("telemetría descartada por rango", "cropId", cropID, "err", err)
+		slog.Debug("telemetry dropped due to out of range value", "cropId", cropID, "err", err)
 		return nil, nil
 	}
 	return reading, nil
@@ -382,7 +382,7 @@ func (s *Service) store(ctx context.Context, cropID string, measures Measures, s
 	}
 	oid, ok := objectid.Parse(cropID)
 	if !ok {
-		return nil, apperr.NotFound("El cultivo no existe")
+		return nil, apperr.NotFound("Crop does not exist")
 	}
 	reading := &Reading{ID: primitive.NewObjectID(), CropID: oid, MeasuredAt: s.clock(), Measures: measures, Source: source}
 	// El flujo en vivo (SSE) recibe la lectura validada de inmediato; la caché y los eventos, al quedar guardada.
@@ -393,7 +393,7 @@ func (s *Service) store(ctx context.Context, cropID string, measures Measures, s
 		case s.batchQueue <- *reading:
 			return reading, nil
 		default:
-			slog.Warn("cola de lote de lecturas saturada; guardando inmediatamente", "cropId", cropID)
+			slog.Warn("readings batch queue saturated; flushing immediately", "cropId", cropID)
 		}
 	}
 	if err := s.repo.Insert(ctx, reading); err != nil {
@@ -413,7 +413,7 @@ func (s *Service) window(from, to *time.Time) (time.Time, time.Time, error) {
 		start = *from
 	}
 	if start.After(end) {
-		return time.Time{}, time.Time{}, apperr.BadRequest("La fecha inicial debe ser anterior a la final")
+		return time.Time{}, time.Time{}, apperr.BadRequest("Start date must be before end date")
 	}
 	return start, end, nil
 }

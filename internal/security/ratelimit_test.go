@@ -40,28 +40,28 @@ func TestRateLimiter(t *testing.T) {
 	// Cupo general = 3: la cuarta petición se rechaza.
 	for i := 1; i <= 3; i++ {
 		if rec := send(http.MethodGet, "/api/v1/ping"); rec.Code != http.StatusOK {
-			t.Fatalf("petición %d: código %d, se esperaba 200", i, rec.Code)
+			t.Fatalf("request %d: code %d, expected 200", i, rec.Code)
 		}
 	}
 	rec := send(http.MethodGet, "/api/v1/ping")
 	if rec.Code != http.StatusTooManyRequests {
-		t.Fatalf("la cuarta petición: código %d, se esperaba 429", rec.Code)
+		t.Fatalf("fourth request: code %d, expected 429", rec.Code)
 	}
 	if rec.Header().Get("Retry-After") == "" {
-		t.Error("falta la cabecera Retry-After")
+		t.Error("missing Retry-After header")
 	}
-	if !strings.Contains(rec.Body.String(), "demasiadas solicitudes") {
-		t.Errorf("cuerpo inesperado: %s", rec.Body.String())
+	if !strings.Contains(rec.Body.String(), "Too many requests") {
+		t.Errorf("unexpected body: %s", rec.Body.String())
 	}
 
 	// Cupo de autenticación = 2: la tercera se rechaza (llave independiente).
 	for i := 1; i <= 2; i++ {
 		if rec := send(http.MethodPost, "/api/v1/auth/login"); rec.Code != http.StatusOK {
-			t.Fatalf("auth %d: código %d, se esperaba 200", i, rec.Code)
+			t.Fatalf("auth %d: code %d, expected 200", i, rec.Code)
 		}
 	}
 	if rec := send(http.MethodPost, "/api/v1/auth/login"); rec.Code != http.StatusTooManyRequests {
-		t.Errorf("tercera auth: código %d, se esperaba 429", rec.Code)
+		t.Errorf("third auth: code %d, expected 429", rec.Code)
 	}
 }
 
@@ -93,12 +93,12 @@ func TestRateLimiter_SpoofedXForwardedForMitigation(t *testing.T) {
 
 		if i < 2 {
 			if rec.Code != http.StatusOK {
-				t.Fatalf("intento %d con X-Forwarded-For %s: código %d, se esperaba 200", i+1, spoofedIP, rec.Code)
+				t.Fatalf("attempt %d with X-Forwarded-For %s: code %d, expected 200", i+1, spoofedIP, rec.Code)
 			}
 		} else {
 			// El 3er intento debe ser bloqueado con 429 a pesar de la IP falsificada
 			if rec.Code != http.StatusTooManyRequests {
-				t.Fatalf("intento %d con X-Forwarded-For %s no fue bloqueado: código %d, se esperaba 429 Too Many Requests (CVE-2026-118653)", i+1, spoofedIP, rec.Code)
+				t.Fatalf("attempt %d with X-Forwarded-For %s was not blocked: code %d, expected 429 Too Many Requests (CVE-2026-118653)", i+1, spoofedIP, rec.Code)
 			}
 		}
 	}

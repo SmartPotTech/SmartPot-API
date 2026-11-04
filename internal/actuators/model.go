@@ -36,27 +36,22 @@ type meta struct {
 }
 
 var typeMeta = map[Type]meta{
-	WaterPump:     {"La bomba de agua", true},
-	UVLight:       {"La luz ultravioleta", true},
-	Fan:           {"El ventilador", false},
-	Humidifier:    {"El humidificador", false},
-	NutrientDoser: {"El dosificador de nutrientes", false},
-	PhDoser:       {"El dosificador de pH", false},
+	WaterPump:     {"Water pump", true},
+	UVLight:       {"UV light", true},
+	Fan:           {"Fan", false},
+	Humidifier:    {"Humidifier", false},
+	NutrientDoser: {"Nutrient doser", false},
+	PhDoser:       {"pH doser", false},
 }
 
-// AlreadyIn arma el mensaje «La bomba de agua ya está encendida» / «El ventilador
-// ya está apagado».
+// AlreadyIn arma el mensaje «Water pump is already on» / «Fan is already off».
 func (t Type) AlreadyIn(on bool) string {
 	m := typeMeta[t]
-	state := "apagad"
+	state := "off"
 	if on {
-		state = "encendid"
+		state = "on"
 	}
-	suffix := "o"
-	if m.feminine {
-		suffix = "a"
-	}
-	return m.subject + " ya está " + state + suffix
+	return m.subject + " is already " + state
 }
 
 // UnmarshalJSON rechaza un tipo de actuador desconocido.
@@ -66,7 +61,7 @@ func (t *Type) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	if _, ok := typeMeta[Type(s)]; !ok {
-		return fmt.Errorf("tipo de actuador inválido: %q", s)
+		return fmt.Errorf("invalid actuator type: %q", s)
 	}
 	*t = Type(s)
 	return nil
@@ -105,7 +100,7 @@ type ActuatorRequest struct {
 // Validate exige el tipo.
 func (r ActuatorRequest) Validate() validation.Fields {
 	return validation.New().
-		Required("type", r.Type != nil, "El tipo de actuador es obligatorio").
+		Required("type", r.Type != nil, "Actuator type is required").
 		Result()
 }
 

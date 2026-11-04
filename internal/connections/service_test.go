@@ -92,14 +92,14 @@ func TestCreateAuthenticateAndRevoke(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.HasPrefix(created.Token, TokenPrefix) || len(created.Token) < 40 {
-		t.Fatalf("token con formato inesperado: %q", created.Token)
+		t.Fatalf("unexpected token format: %q", created.Token)
 	}
 	if created.Connection.Name != "Asistente" || !strings.HasPrefix(created.Token, created.Connection.Prefix) {
 		t.Fatalf("conexión mal armada: %+v", created.Connection)
 	}
 	for _, stored := range repo.items {
 		if strings.Contains(stored.TokenHash, created.Token) {
-			t.Fatal("el token no debe guardarse en claro")
+			t.Fatal("token must not be stored in plaintext")
 		}
 	}
 
@@ -111,17 +111,17 @@ func TestCreateAuthenticateAndRevoke(t *testing.T) {
 		t.Fatalf("el último uso se escribe a lo sumo una vez por minuto (escrituras: %d)", repo.touches)
 	}
 	if _, err := svc.AuthenticateConnection(ctx, "spt_inventado-pero-largo-de-sobra"); status(err) != 401 {
-		t.Fatalf("token desconocido debe dar 401, dio %v", err)
+		t.Fatalf("unknown token should return 401, got %v", err)
 	}
 
 	if err := svc.Revoke(ctx, primitive.NewObjectID().Hex(), created.Connection.ID); status(err) != 404 {
-		t.Fatalf("otra cuenta no puede revocarla: %v", err)
+		t.Fatalf("another account cannot revoke it: %v", err)
 	}
 	if err := svc.Revoke(ctx, user, created.Connection.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := svc.AuthenticateConnection(ctx, created.Token); status(err) != 401 {
-		t.Fatalf("una conexión revocada debe dar 401, dio %v", err)
+		t.Fatalf("a revoked connection should return 401, got %v", err)
 	}
 }
 
@@ -139,7 +139,7 @@ func TestExpiredConnectionAndLimit(t *testing.T) {
 	}
 	clock = now.Add(25 * time.Hour)
 	if _, err := svc.AuthenticateConnection(ctx, created.Token); status(err) != 401 {
-		t.Fatalf("una conexión vencida debe dar 401, dio %v", err)
+		t.Fatalf("an expired connection should return 401, got %v", err)
 	}
 	for i := 1; i < MaxPerUser; i++ {
 		if _, err := svc.Create(ctx, user, CreateRequest{Name: "Otra", Scope: ScopeRead}); err != nil {
@@ -147,7 +147,7 @@ func TestExpiredConnectionAndLimit(t *testing.T) {
 		}
 	}
 	if _, err := svc.Create(ctx, user, CreateRequest{Name: "Una más", Scope: ScopeRead}); status(err) != 409 {
-		t.Fatalf("superar el máximo debe dar 409, dio %v", err)
+		t.Fatalf("exceeding maximum should return 409, got %v", err)
 	}
 }
 

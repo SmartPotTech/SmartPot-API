@@ -16,7 +16,7 @@ import (
 const (
 	defaultDigestHours = 6
 	sharePrefix        = "c_"
-	recipientNotFound  = "Ese chat no recibe los avisos de este cultivo"
+	recipientNotFound  = "That chat does not receive alerts for this crop"
 )
 
 // CropChannelService gestiona los avisos de cada cultivo por los canales externos.
@@ -115,7 +115,7 @@ func (s *CropChannelService) ShareCode(ctx context.Context, ownerID, cropID stri
 		return LinkCodeResponse{}, err
 	}
 	if len(settings.Recipients) >= MaxRecipients {
-		return LinkCodeResponse{}, apperr.BadRequest("Puedes compartir un cultivo con hasta 10 chats")
+		return LinkCodeResponse{}, apperr.BadRequest("You can share a crop with up to 10 chats")
 	}
 	code := sharePrefix + randomCode()
 	s.cache.Put(shareKey(t, code), crop.HexID(), CodeTTL)

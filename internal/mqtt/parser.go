@@ -65,13 +65,13 @@ func isCompact(data []byte) bool {
 // ParseCompactBinary decodifica un paquete compacto v2 (o v1) verificando su CRC-8.
 func ParseCompactBinary(data []byte) (readings.Measures, error) {
 	if len(data) < 2 || data[0] != CompactBinaryMagic {
-		return readings.Measures{}, errors.New("magic byte inválido en paquete compacto")
+		return readings.Measures{}, errors.New("invalid magic byte in compact packet")
 	}
 	var m readings.Measures
 	switch {
 	case len(data) == compactV2Size && data[1] == 2:
 		if CRC8(data[:compactV2Size-1]) != data[compactV2Size-1] {
-			return readings.Measures{}, errors.New("fallo de checksum CRC-8 en paquete compacto")
+			return readings.Measures{}, errors.New("CRC-8 checksum mismatch in compact packet")
 		}
 		mask := binary.BigEndian.Uint16(data[8:10])
 		u16 := func(i int) float64 { return float64(binary.BigEndian.Uint16(data[i : i+2])) }
@@ -89,7 +89,7 @@ func ParseCompactBinary(data []byte) (readings.Measures, error) {
 		set(PresentSoilMoisture, &m.SoilMoisture, u16(24)/100)
 	case len(data) == compactV1Size:
 		if CRC8(data[:compactV1Size-1]) != data[compactV1Size-1] {
-			return readings.Measures{}, errors.New("fallo de checksum CRC-8 en paquete compacto")
+			return readings.Measures{}, errors.New("CRC-8 checksum mismatch in compact packet")
 		}
 		temp := float64(int16(binary.BigEndian.Uint16(data[8:10]))) / 100
 		hum := float64(binary.BigEndian.Uint16(data[10:12])) / 100
@@ -99,7 +99,7 @@ func ParseCompactBinary(data []byte) (readings.Measures, error) {
 		bright := float64(binary.BigEndian.Uint16(data[18:20]))
 		m = readings.Measures{Temperature: &temp, Humidity: &hum, Ph: &ph, Tds: &tds, SoilMoisture: &moist, Brightness: &bright}
 	default:
-		return readings.Measures{}, errors.New("longitud o versión inválida para paquete compacto")
+		return readings.Measures{}, errors.New("invalid length or version for compact packet")
 	}
 	if err := readings.ValidateRanges(m); err != nil {
 		return readings.Measures{}, err

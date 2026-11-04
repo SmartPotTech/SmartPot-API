@@ -33,7 +33,7 @@ func (a *Action) UnmarshalJSON(b []byte) error {
 		*a = Action(s)
 		return nil
 	default:
-		return fmt.Errorf("acción inválida: %q", s)
+		return fmt.Errorf("invalid action: %q", s)
 	}
 }
 
@@ -115,8 +115,8 @@ type CommandRequest struct {
 // Validate aplica las reglas de la versión en Java.
 func (r CommandRequest) Validate() validation.Fields {
 	v := validation.New().
-		NotBlank("actuatorId", r.ActuatorID, "El actuador es obligatorio").
-		Required("action", r.Action != nil, "La acción es obligatoria")
+		NotBlank("actuatorId", r.ActuatorID, "Actuator is required").
+		Required("action", r.Action != nil, "Action is required")
 	validateDuration(v, r.DurationSeconds)
 	return v.Result()
 }
@@ -133,10 +133,10 @@ type BulkCommandRequest struct {
 func (r BulkCommandRequest) Validate() validation.Fields {
 	v := validation.New()
 	if len(r.CropIds) > 20 {
-		v.Add("cropIds", "Selecciona como máximo 20 cultivos")
+		v.Add("cropIds", "Select at most 20 crops")
 	}
-	v.Required("actuatorType", r.ActuatorType != nil, "El tipo de actuador es obligatorio").
-		Required("action", r.Action != nil, "La acción es obligatoria")
+	v.Required("actuatorType", r.ActuatorType != nil, "Actuator type is required").
+		Required("action", r.Action != nil, "Action is required")
 	validateDuration(v, r.DurationSeconds)
 	return v.Result()
 }
@@ -146,9 +146,9 @@ func validateDuration(v *validation.Builder, seconds *int) {
 		return
 	}
 	if *seconds < 1 {
-		v.Add("durationSeconds", "La duración mínima es 1 segundo")
+		v.Add("durationSeconds", "Minimum duration is 1 second")
 	} else if *seconds > 3600 {
-		v.Add("durationSeconds", "La duración máxima es 1 hora")
+		v.Add("durationSeconds", "Maximum duration is 1 hour")
 	}
 }
 

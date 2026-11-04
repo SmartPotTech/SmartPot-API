@@ -23,9 +23,9 @@ type CropRequest struct {
 // Validate aplica las mismas reglas y mensajes que la versión en Java.
 func (r CropRequest) Validate() validation.Fields {
 	v := validation.New().
-		NotBlank("name", r.Name, "El nombre del cultivo es obligatorio").
-		Size("name", r.Name, 2, 60, "El nombre debe tener entre 2 y 60 caracteres").
-		Required("type", r.Type != nil, "El tipo de cultivo es obligatorio")
+		NotBlank("name", r.Name, "Crop name is required").
+		Size("name", r.Name, 2, 60, "Crop name must be between 2 and 60 characters").
+		Required("type", r.Type != nil, "Crop type is required")
 	if r.Virtual != nil {
 		for field, msg := range r.Virtual.Validate() {
 			v.Add("virtual."+field, msg)
@@ -71,12 +71,12 @@ func (r *PlacementRequest) validate(v *validation.Builder) {
 	if r.Location == nil {
 		return
 	}
-	v.NotBlank("placement.location.name", r.Location.Name, "Indica el nombre del lugar").
-		MaxSize("placement.location.name", r.Location.Name, 120, "El nombre del lugar es demasiado largo").
-		Required("placement.location.latitude", r.Location.Latitude != nil, "Indica la latitud").
-		Required("placement.location.longitude", r.Location.Longitude != nil, "Indica la longitud").
-		DecimalRange("placement.location.latitude", r.Location.Latitude, -90, 90, "La latitud está fuera de rango").
-		DecimalRange("placement.location.longitude", r.Location.Longitude, -180, 180, "La longitud está fuera de rango")
+	v.NotBlank("placement.location.name", r.Location.Name, "Location name is required").
+		MaxSize("placement.location.name", r.Location.Name, 120, "Location name is too long").
+		Required("placement.location.latitude", r.Location.Latitude != nil, "Latitude is required").
+		Required("placement.location.longitude", r.Location.Longitude != nil, "Longitude is required").
+		DecimalRange("placement.location.latitude", r.Location.Latitude, -90, 90, "Latitude is out of range").
+		DecimalRange("placement.location.longitude", r.Location.Longitude, -180, 180, "Longitude is out of range")
 }
 
 // AutomationRequest activa o desactiva el modo automático de un cultivo.
@@ -87,7 +87,7 @@ type AutomationRequest struct {
 // Validate exige el campo enabled.
 func (r AutomationRequest) Validate() validation.Fields {
 	return validation.New().
-		Required("enabled", r.Enabled != nil, "Indica si la automatización queda activa").
+		Required("enabled", r.Enabled != nil, "Indicate whether automation remains active").
 		Result()
 }
 
@@ -101,9 +101,9 @@ type BulkAutomationRequest struct {
 func (r BulkAutomationRequest) Validate() validation.Fields {
 	v := validation.New()
 	if len(r.CropIds) > 20 {
-		v.Add("cropIds", "Selecciona como máximo 20 cultivos")
+		v.Add("cropIds", "Select at most 20 crops")
 	}
-	v.Required("enabled", r.Enabled != nil, "Indica si la automatización queda activa")
+	v.Required("enabled", r.Enabled != nil, "Indicate whether automation remains active")
 	return v.Result()
 }
 

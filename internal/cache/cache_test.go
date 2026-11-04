@@ -21,33 +21,33 @@ func TestLocalIncrement(t *testing.T) {
 	s, advance := newLocalStore()
 	for want := int64(1); want <= 3; want++ {
 		if got := s.Increment("c", time.Minute); got != want {
-			t.Fatalf("Increment = %d, se esperaba %d", got, want)
+			t.Fatalf("Increment = %d, expected %d", got, want)
 		}
 	}
 	advance(time.Minute) // vence la ventana
 	if got := s.Increment("c", time.Minute); got != 1 {
-		t.Errorf("tras vencer, Increment = %d, se esperaba 1", got)
+		t.Errorf("after expiration, Increment = %d, expected 1", got)
 	}
 }
 
 func TestLocalSetIfAbsent(t *testing.T) {
 	s, advance := newLocalStore()
 	if !s.SetIfAbsent("lock", time.Minute) {
-		t.Fatal("la primera vez debía fijar la llave")
+		t.Fatal("first time should set key")
 	}
 	if s.SetIfAbsent("lock", time.Minute) {
-		t.Error("la segunda vez no debía fijarla")
+		t.Error("second time should not set key")
 	}
 	advance(time.Minute)
 	if !s.SetIfAbsent("lock", time.Minute) {
-		t.Error("tras vencer debía poder fijarla de nuevo")
+		t.Error("after expiration should set key again")
 	}
 }
 
 func TestLocalPutGetTake(t *testing.T) {
 	s, advance := newLocalStore()
 	if _, ok := s.Get("k"); ok {
-		t.Error("una llave inexistente no debía existir")
+		t.Error("non-existent key should not exist")
 	}
 	s.Put("k", "v", time.Minute)
 	if v, ok := s.Get("k"); !ok || v != "v" {
@@ -57,13 +57,13 @@ func TestLocalPutGetTake(t *testing.T) {
 		t.Errorf("Take = %q, %v", v, ok)
 	}
 	if _, ok := s.Get("k"); ok {
-		t.Error("Take debía borrar la llave")
+		t.Error("Take should delete key")
 	}
 
 	s.Put("exp", "v", time.Minute)
 	advance(time.Minute)
 	if _, ok := s.Get("exp"); ok {
-		t.Error("una llave vencida no debía leerse")
+		t.Error("expired key should not be read")
 	}
 }
 
@@ -74,7 +74,7 @@ func TestPurgeExpired(t *testing.T) {
 	advance(2 * time.Minute)
 	s.PurgeExpired()
 	if _, ok := s.Get("a"); ok {
-		t.Error("a debía purgarse")
+		t.Error("key a should be purged")
 	}
 	if _, ok := s.Get("b"); !ok {
 		t.Error("b no debía purgarse")

@@ -22,7 +22,7 @@ func NewSender(channels *Service, cropChannels *CropChannelService) *Sender {
 // ToOwner envía el mensaje al chat del dueño.
 func (s *Sender) ToOwner(ctx context.Context, channel NotificationChannel, link *ChannelLink, message ChannelMessage) {
 	if err := channel.Send(link.Address, message); err != nil {
-		slog.Warn("no se entregó la notificación", "type", link.Type, "err", err)
+		slog.Warn("notification could not be delivered", "type", link.Type, "err", err)
 		s.channels.Failed(ctx, link, permanent(err))
 		return
 	}
@@ -35,7 +35,7 @@ func (s *Sender) ToRecipients(ctx context.Context, channel NotificationChannel, 
 	copy(recipients, settings.Recipients)
 	for _, r := range recipients {
 		if err := channel.Send(r.Address, message); err != nil {
-			slog.Warn("no se entregó un aviso compartido", "type", settings.Type, "err", err)
+			slog.Warn("shared alert could not be delivered", "type", settings.Type, "err", err)
 			if permanent(err) {
 				s.cropChannels.RemoveAddress(ctx, settings, r.Address)
 			}

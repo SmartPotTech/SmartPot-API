@@ -37,15 +37,15 @@ func (h *Handler) Register(g *echo.Group) {
 func (h *Handler) list(c echo.Context) error {
 	from, ok := queryTime(c, "from")
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	to, ok := queryTime(c, "to")
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	limit, ok := queryIntPtr(c, "limit")
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	items, err := h.svc.List(c.Request().Context(), security.CurrentUserID(c), c.Param("cropId"), from, to, limit)
 	if err != nil {
@@ -64,7 +64,7 @@ func (h *Handler) latest(c echo.Context) error {
 		return err
 	}
 	if reading == nil {
-		return apperr.NotFound("El cultivo todavía no tiene lecturas")
+		return apperr.NotFound("The crop has no readings yet")
 	}
 	return c.JSON(http.StatusOK, ToResponse(reading))
 }
@@ -74,7 +74,7 @@ func (h *Handler) summary(c echo.Context) error {
 	if raw := c.QueryParam("hours"); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {
-			return apperr.BadRequest("Parámetro inválido o faltante")
+			return apperr.BadRequest("Invalid or missing parameter")
 		}
 		hours = n
 	}
@@ -88,11 +88,11 @@ func (h *Handler) summary(c echo.Context) error {
 func (h *Handler) export(c echo.Context) error {
 	from, ok := queryTime(c, "from")
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	to, ok := queryTime(c, "to")
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	cropID := c.Param("cropId")
 	csv, err := h.svc.ExportCSV(c.Request().Context(), security.CurrentUserID(c), cropID, from, to)

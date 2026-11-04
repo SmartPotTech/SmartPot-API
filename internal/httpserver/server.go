@@ -57,7 +57,7 @@ func ipExtractor(opt Options, logger *slog.Logger) echo.IPExtractor {
 	for _, cidr := range opt.TrustedProxies {
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
-			logger.Warn("rango de proxy de confianza inválido; se ignora", "cidr", cidr)
+			logger.Warn("invalid trusted proxy CIDR range; ignoring", "cidr", cidr)
 			continue
 		}
 		trust = append(trust, echo.TrustIPRange(network))

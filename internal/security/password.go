@@ -27,10 +27,10 @@ func PasswordMatches(plain, hash string) bool {
 // (límite de BCrypt) y al menos una mayúscula, una minúscula y un número.
 func ValidatePassword(password string) error {
 	if utf8.RuneCountInString(password) < 8 {
-		return apperr.BadRequest("La contraseña debe tener al menos 8 caracteres")
+		return apperr.BadRequest("Password must be at least 8 characters")
 	}
 	if len(password) > 72 {
-		return apperr.BadRequest("La contraseña es demasiado larga (máximo 72 bytes)")
+		return apperr.BadRequest("Password is too long (maximum 72 bytes)")
 	}
 	var upper, lower, digit bool
 	for _, r := range password {
@@ -44,7 +44,7 @@ func ValidatePassword(password string) error {
 		}
 	}
 	if !upper || !lower || !digit {
-		return apperr.BadRequest("La contraseña debe incluir una mayúscula, una minúscula y un número")
+		return apperr.BadRequest("Password must contain at least one uppercase letter, one lowercase letter, and one number")
 	}
 	return nil
 }

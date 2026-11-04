@@ -7,7 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const testSecret = "clave-de-prueba-de-al-menos-32-caracteres"
+const testSecret = "test-key-of-at-least-32-characters"
 
 func craft(t *testing.T, method jwt.SigningMethod, secret string, claims jwt.MapClaims) string {
 	t.Helper()
@@ -50,10 +50,10 @@ func TestParseRejectsInvalid(t *testing.T) {
 			tok, _ := svc.Issue("u", "e", "USER")
 			return tok.Value[:len(tok.Value)-2] + "xx"
 		}(),
-		"secreto incorrecto": craft(t, jwt.SigningMethodHS256, "otro-secreto-de-al-menos-32-caracteres-xx", jwt.MapClaims{
+		"wrong secret": craft(t, jwt.SigningMethodHS256, "another-secret-of-at-least-32-chars-xx", jwt.MapClaims{
 			"iss": JWTIssuer, "sub": "u", "exp": now.Add(time.Hour).Unix(),
 		}),
-		"issuer incorrecto": craft(t, jwt.SigningMethodHS256, testSecret, jwt.MapClaims{
+		"wrong issuer": craft(t, jwt.SigningMethodHS256, testSecret, jwt.MapClaims{
 			"iss": "otro", "sub": "u", "exp": now.Add(time.Hour).Unix(),
 		}),
 		"expirado": craft(t, jwt.SigningMethodHS256, testSecret, jwt.MapClaims{

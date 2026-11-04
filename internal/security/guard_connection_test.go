@@ -51,12 +51,12 @@ func TestGuardConnectionTokens(t *testing.T) {
 	}{
 		{"token desconocido", http.MethodGet, "/api/v1/crops", "spt_otro", http.StatusUnauthorized},
 		{"lectura consulta", http.MethodGet, "/api/v1/crops", "spt_lectura", http.StatusOK},
-		{"lectura no acciona", http.MethodPost, "/api/v1/crops/abc/commands", "spt_lectura", http.StatusForbidden},
-		{"control acciona", http.MethodPost, "/api/v1/crops/abc/commands", "spt_control", http.StatusOK},
-		{"credenciales del dispositivo", http.MethodGet, "/api/v1/crops/abc/device", "spt_control", http.StatusForbidden},
+		{"read does not trigger action", http.MethodPost, "/api/v1/crops/abc/commands", "spt_lectura", http.StatusForbidden},
+		{"control triggers action", http.MethodPost, "/api/v1/crops/abc/commands", "spt_control", http.StatusOK},
+		{"device credentials", http.MethodGet, "/api/v1/crops/abc/device", "spt_control", http.StatusForbidden},
 		{"no administra conexiones", http.MethodGet, "/api/v1/connections", "spt_control", http.StatusForbidden},
-		{"no cambia la cuenta", http.MethodPut, "/api/v1/users/me", "spt_control", http.StatusForbidden},
-		{"sí lee la cuenta", http.MethodGet, "/api/v1/users/me", "spt_lectura", http.StatusOK},
+		{"does not change account", http.MethodPut, "/api/v1/users/me", "spt_control", http.StatusForbidden},
+		{"reads account", http.MethodGet, "/api/v1/users/me", "spt_lectura", http.StatusOK},
 		{"nunca es administrador", http.MethodGet, "/api/v1/admin", "spt_control", http.StatusForbidden},
 	}
 	for _, tc := range cases {
@@ -66,7 +66,7 @@ func TestGuardConnectionTokens(t *testing.T) {
 			req.Header.Set("Authorization", "Bearer "+tc.token)
 			e.ServeHTTP(rec, req)
 			if rec.Code != tc.want {
-				t.Fatalf("código %d, se esperaba %d (%s)", rec.Code, tc.want, rec.Body.String())
+				t.Fatalf("code %d, expected %d (%s)", rec.Code, tc.want, rec.Body.String())
 			}
 		})
 	}
@@ -83,6 +83,6 @@ func TestGuardRejectsConnectionTokensWhenDisabled(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer spt_lo-que-sea")
 	e.ServeHTTP(rec, req)
 	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("código %d, se esperaba 401", rec.Code)
+		t.Fatalf("code %d, expected 401", rec.Code)
 	}
 }

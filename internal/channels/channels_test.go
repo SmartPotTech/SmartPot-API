@@ -26,12 +26,12 @@ func TestDeliveryUnmarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Errorf("%s: error inesperado: %v", c.in, err)
 			} else if d != c.want {
-				t.Errorf("%s: se obtuvo %q, se esperaba %q", c.in, d, c.want)
+				t.Errorf("%s: got %q, expected %q", c.in, d, c.want)
 			}
 			continue
 		}
 		if err == nil {
-			t.Errorf("%s: se esperaba error y no lo hubo", c.in)
+			t.Errorf("%s: expected error, got none", c.in)
 		}
 	}
 }
@@ -41,10 +41,10 @@ func TestDeliveryUnmarshalJSON(t *testing.T) {
 func TestCropChannelUpdateRequestRejectsUnknownDelivery(t *testing.T) {
 	var req CropChannelUpdateRequest
 	if err := json.Unmarshal([]byte(`{"delivery":"MONTHLY"}`), &req); err == nil {
-		t.Fatal("se esperaba error al deserializar un modo de entrega inválido")
+		t.Fatal("expected error deserializing invalid delivery mode")
 	}
 	if err := json.Unmarshal([]byte(`{"delivery":"DIGEST","digestHours":3}`), &req); err != nil {
-		t.Fatalf("un cuerpo válido no debe fallar: %v", err)
+		t.Fatalf("valid body should not fail: %v", err)
 	}
 	if req.Delivery == nil || *req.Delivery != DeliveryDigest {
 		t.Fatalf("delivery mal deserializado: %+v", req.Delivery)
@@ -59,29 +59,29 @@ func TestCropChannelUpdateRequestValidate(t *testing.T) {
 		req       CropChannelUpdateRequest
 		badFields []string
 	}{
-		{"vacío", CropChannelUpdateRequest{}, nil},
-		{"horas mínimas", CropChannelUpdateRequest{DigestHours: hours(1)}, nil},
-		{"horas máximas", CropChannelUpdateRequest{DigestHours: hours(24)}, nil},
-		{"horas bajo mínimo", CropChannelUpdateRequest{DigestHours: hours(0)}, []string{"digestHours"}},
-		{"horas sobre máximo", CropChannelUpdateRequest{DigestHours: hours(25)}, []string{"digestHours"}},
-		{"hora vacía", CropChannelUpdateRequest{DailySummaryAt: at("")}, nil},
-		{"hora válida", CropChannelUpdateRequest{DailySummaryAt: at("07:30")}, nil},
+		{"empty", CropChannelUpdateRequest{}, nil},
+		{"min hours", CropChannelUpdateRequest{DigestHours: hours(1)}, nil},
+		{"max hours", CropChannelUpdateRequest{DigestHours: hours(24)}, nil},
+		{"hours below min", CropChannelUpdateRequest{DigestHours: hours(0)}, []string{"digestHours"}},
+		{"hours above max", CropChannelUpdateRequest{DigestHours: hours(25)}, []string{"digestHours"}},
+		{"empty time", CropChannelUpdateRequest{DailySummaryAt: at("")}, nil},
+		{"valid time", CropChannelUpdateRequest{DailySummaryAt: at("07:30")}, nil},
 		{"medianoche", CropChannelUpdateRequest{DailySummaryAt: at("00:00")}, nil},
-		{"último minuto", CropChannelUpdateRequest{DailySummaryAt: at("23:59")}, nil},
-		{"hora sin cero", CropChannelUpdateRequest{DailySummaryAt: at("7:30")}, []string{"dailySummaryAt"}},
+		{"last minute", CropChannelUpdateRequest{DailySummaryAt: at("23:59")}, nil},
+		{"time without leading zero", CropChannelUpdateRequest{DailySummaryAt: at("7:30")}, []string{"dailySummaryAt"}},
 		{"hora 24", CropChannelUpdateRequest{DailySummaryAt: at("24:00")}, []string{"dailySummaryAt"}},
-		{"minuto inválido", CropChannelUpdateRequest{DailySummaryAt: at("12:60")}, []string{"dailySummaryAt"}},
-		{"texto", CropChannelUpdateRequest{DailySummaryAt: at("mañana")}, []string{"dailySummaryAt"}},
+		{"invalid minute", CropChannelUpdateRequest{DailySummaryAt: at("12:60")}, []string{"dailySummaryAt"}},
+		{"text", CropChannelUpdateRequest{DailySummaryAt: at("tomorrow")}, []string{"dailySummaryAt"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			res := c.req.Validate()
 			if len(res) != len(c.badFields) {
-				t.Fatalf("campos con error %v, se esperaban %v", res, c.badFields)
+				t.Fatalf("error fields %v, expected %v", res, c.badFields)
 			}
 			for _, f := range c.badFields {
 				if _, ok := res[f]; !ok {
-					t.Errorf("faltó el error del campo %q (%v)", f, res)
+					t.Errorf("missing error for field %q (%v)", f, res)
 				}
 			}
 		})
@@ -95,13 +95,13 @@ func TestChannelLinkUpdateRequestValidate(t *testing.T) {
 	six := events(notifications.TypeInfo, notifications.TypeAlert, notifications.TypeCommand,
 		notifications.TypeDevice, notifications.TypeAI, notifications.TypeInfo)
 	if res := (ChannelLinkUpdateRequest{Events: five}).Validate(); len(res) != 0 {
-		t.Errorf("cinco tipos deben ser válidos: %v", res)
+		t.Errorf("five types should be valid: %v", res)
 	}
 	if res := (ChannelLinkUpdateRequest{Events: six}).Validate(); res["events"] == "" {
 		t.Errorf("seis tipos deben dar error en events: %v", res)
 	}
 	if res := (ChannelLinkUpdateRequest{}).Validate(); len(res) != 0 {
-		t.Errorf("sin events debe ser válido: %v", res)
+		t.Errorf("empty events should be valid: %v", res)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestIsShareCode(t *testing.T) {
 	}
 	for code, want := range cases {
 		if got := IsShareCode(code); got != want {
-			t.Errorf("IsShareCode(%q) = %v, se esperaba %v", code, got, want)
+			t.Errorf("IsShareCode(%q) = %v, expected %v", code, got, want)
 		}
 	}
 }

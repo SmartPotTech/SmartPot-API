@@ -66,7 +66,7 @@ func (a *AutomationAgent) OnReading(event readings.ReadingRecordedEvent) {
 	if raw, ok := a.cache.Get(lastKey); ok {
 		var prev readings.Measures
 		if json.Unmarshal([]byte(raw), &prev) == nil && withinDeadband(prev, event.Reading.Measures) {
-			slog.Debug("evaluación omitida por banda muerta", "cropId", crop.HexID())
+			slog.Debug("evaluation skipped due to deadband", "cropId", crop.HexID())
 			return
 		}
 	}
@@ -74,9 +74,9 @@ func (a *AutomationAgent) OnReading(event readings.ReadingRecordedEvent) {
 	if err != nil {
 		var apiErr *apperr.Error
 		if errors.As(err, &apiErr) {
-			slog.Debug("evaluación omitida", "cropId", crop.HexID(), "err", err)
+			slog.Debug("evaluation skipped", "cropId", crop.HexID(), "err", err)
 		} else {
-			slog.Warn("el agente no pudo evaluar el cultivo", "cropId", crop.HexID(), "err", err)
+			slog.Warn("agent could not evaluate crop", "cropId", crop.HexID(), "err", err)
 		}
 		return
 	}
@@ -99,7 +99,7 @@ func (a *AutomationAgent) alertCriticalFindings(ctx context.Context, crop *crops
 			message += " " + item.Recommendation
 		}
 		_, _ = a.notifier.NotifyOnce(ctx, "diagnosis:"+crop.HexID()+":"+item.Parameter, alertCooldown,
-			crop.OwnerID.Hex(), crop.HexID(), notifications.TypeAlert, "Atención en "+crop.Name, message)
+			crop.OwnerID.Hex(), crop.HexID(), notifications.TypeAlert, "Attention needed on "+crop.Name, message)
 	}
 }
 
@@ -117,7 +117,7 @@ func (a *AutomationAgent) act(ctx context.Context, crop *crops.Crop, insight *In
 		cmd, ok := a.commands.RequestFromAgent(ctx, crop, actuatorType, commandAction, action.DurationSeconds, action.Reason)
 		if ok && cmd != nil {
 			_, _ = a.notifier.NotifyOnce(ctx, "agent:"+crop.HexID(), agentNoticeCd, crop.OwnerID.Hex(), crop.HexID(),
-				notifications.TypeAI, "El asistente actuó en "+crop.Name, action.Reason)
+				notifications.TypeAI, "The assistant acted on "+crop.Name, action.Reason)
 		}
 	}
 }

@@ -140,10 +140,10 @@ func TestAuthCookieLifecycle(t *testing.T) {
 	}
 	var rawJSON map[string]any
 	if err := json.Unmarshal(regRec.Body.Bytes(), &rawJSON); err != nil {
-		t.Fatalf("JSON inválido: %v", err)
+		t.Fatalf("invalid JSON: %v", err)
 	}
 	if _, hasToken := rawJSON["token"]; hasToken {
-		t.Fatalf("el JSON de registro no debe exponer el campo token: %v", rawJSON)
+		t.Fatalf("registration JSON must not expose token field: %v", rawJSON)
 	}
 
 	// 2. Login con remember=false emite cookie de sesión (MaxAge == 0) y funciona en /api/v1/auth/session.
@@ -166,7 +166,7 @@ func TestAuthCookieLifecycle(t *testing.T) {
 		}
 	}
 	if sessionCookie == nil || !sessionCookie.HttpOnly || sessionCookie.MaxAge != 0 {
-		t.Fatalf("cookie de sesión con remember=false inválida: %+v", sessionCookie)
+		t.Fatalf("invalid session cookie with remember=false: %+v", sessionCookie)
 	}
 
 	sessRec := httptest.NewRecorder()

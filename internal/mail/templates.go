@@ -23,28 +23,28 @@ type content struct {
 
 func welcome(name, loginURL string) content {
 	safeName := html.EscapeString(name)
-	body := paragraph("Hola "+safeName+",") +
-		paragraph("Tu cuenta de SmartPot está lista. Crea tu primer cultivo, real o virtual, y recibe "+
-			"recomendaciones del asistente de IA para mantenerlo en su rango ideal.") +
-		button("Ir a SmartPot", loginURL)
-	text := "Hola " + name + ",\n\nTu cuenta de SmartPot está lista. Ingresa en: " + loginURL
-	return content{html: layout("Bienvenido a SmartPot", body), text: text}
+	body := paragraph("Hello "+safeName+",") +
+		paragraph("Your SmartPot account is ready. Create your first crop, real or virtual, and receive "+
+			"AI assistant recommendations to keep it in its ideal range.") +
+		button("Go to SmartPot", loginURL)
+	text := "Hello " + name + ",\n\nYour SmartPot account is ready. Log in at: " + loginURL
+	return content{html: layout("Welcome to SmartPot", body), text: text}
 }
 
 func passwordReset(name, resetURL string, minutes int64) content {
 	safeName := html.EscapeString(name)
-	body := paragraph("Hola "+safeName+",") +
-		paragraph(fmt.Sprintf("Recibimos una solicitud para restablecer tu contraseña. El enlace vence en "+
-			"%d minutos y solo se puede usar una vez.", minutes)) +
-		button("Restablecer contraseña", resetURL) +
-		small("Si no pediste este cambio, ignora este correo: tu contraseña sigue igual.")
-	text := fmt.Sprintf("Hola %s,\n\nRestablece tu contraseña en: %s\nEl enlace vence en %d minutos. "+
-		"Si no pediste el cambio, ignora este correo.", name, resetURL, minutes)
-	return content{html: layout("Restablece tu contraseña", body), text: text}
+	body := paragraph("Hello "+safeName+",") +
+		paragraph(fmt.Sprintf("We received a request to reset your password. The link expires in "+
+			"%d minutes and can only be used once.", minutes)) +
+		button("Reset password", resetURL) +
+		small("If you did not request this change, please ignore this email: your password remains the same.")
+	text := fmt.Sprintf("Hello %s,\n\nReset your password at: %s\nThe link expires in %d minutes. "+
+		"If you did not request this change, please ignore this email.", name, resetURL, minutes)
+	return content{html: layout("Reset your password", body), text: text}
 }
 
 func layout(title, body string) string {
-	return "<!doctype html><html lang=\"es\"><body style=\"margin:0;background:" + colorSurface +
+	return "<!doctype html><html lang=\"en\"><body style=\"margin:0;background:" + colorSurface +
 		";font-family:Segoe UI,Arial,sans-serif;color:" + colorInk + "\">" +
 		"<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding:24px 0\">" +
 		"<tr><td align=\"center\"><table role=\"presentation\" width=\"560\" cellpadding=\"0\" cellspacing=\"0\" " +
@@ -55,7 +55,7 @@ func layout(title, body string) string {
 		"<tr><td style=\"padding:28px\"><h1 style=\"margin:0 0 16px;font-size:22px;color:" + colorPrimary + "\">" +
 		html.EscapeString(title) + "</h1>" + body + "</td></tr>" +
 		"<tr><td style=\"padding:16px 28px;background:" + colorSurface + ";font-size:12px;color:" + colorMuted + "\">" +
-		"SmartPot · Monitoreo y automatización de cultivos hidropónicos</td></tr>" +
+		"SmartPot · Hydroponic crop monitoring and automation</td></tr>" +
 		"</table></td></tr></table></body></html>"
 }
 

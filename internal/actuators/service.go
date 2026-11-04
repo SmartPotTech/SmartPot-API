@@ -8,7 +8,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
 )
 
-const notFound = "El actuador no existe en este cultivo"
+const notFound = "Actuator does not exist in this crop"
 
 // Crops es lo que el servicio de actuadores necesita de los cultivos.
 type Crops interface {
@@ -55,7 +55,7 @@ func (s *Service) Add(ctx context.Context, ownerID, cropID string, t Type) (*Act
 		return nil, err
 	}
 	if exists {
-		return nil, apperr.Conflict("El cultivo ya tiene un actuador de ese tipo")
+		return nil, apperr.Conflict("The crop already has an actuator of that type")
 	}
 	a := &Actuator{CropID: oid, Type: t, Active: false, CreatedAt: s.clock()}
 	if err := s.repo.Insert(ctx, a); err != nil {

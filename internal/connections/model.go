@@ -38,7 +38,7 @@ func (s *Scope) UnmarshalJSON(b []byte) error {
 		*s = Scope(raw)
 		return nil
 	default:
-		return fmt.Errorf("alcance inválido: %q", raw)
+		return fmt.Errorf("invalid scope: %q", raw)
 	}
 }
 
@@ -72,15 +72,15 @@ func (r CreateRequest) Validate() validation.Fields {
 	v := validation.New()
 	name := strings.TrimSpace(r.Name)
 	if name == "" {
-		v.Add("name", "Ponle un nombre a la conexión")
+		v.Add("name", "Connection name is required")
 	} else if utf8.RuneCountInString(name) > 60 {
-		v.Add("name", "El nombre admite como máximo 60 caracteres")
+		v.Add("name", "Connection name must be at most 60 characters")
 	}
 	if r.Scope != ScopeRead && r.Scope != ScopeControl {
 		v.Add("scope", "Elige solo lectura o control")
 	}
 	if r.ExpiresInDays != nil && (*r.ExpiresInDays < 1 || *r.ExpiresInDays > 365) {
-		v.Add("expiresInDays", "La vigencia debe estar entre 1 y 365 días")
+		v.Add("expiresInDays", "Expiration must be between 1 and 365 days")
 	}
 	return v.Result()
 }

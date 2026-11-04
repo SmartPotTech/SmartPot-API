@@ -133,7 +133,7 @@ func (s *TokenService) Guard() echo.MiddlewareFunc {
 			fromCookie := false
 			if header != "" {
 				if !strings.HasPrefix(header, "Bearer ") {
-					return apperr.Unauthorized("Inicia sesión para continuar")
+					return apperr.Unauthorized("Please log in to continue")
 				}
 				raw = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
 				if s.connections != nil && strings.HasPrefix(raw, connectionTokenPrefix) {
@@ -142,14 +142,14 @@ func (s *TokenService) Guard() echo.MiddlewareFunc {
 			} else {
 				cookie, err := c.Cookie(SessionCookieName)
 				if err != nil || strings.TrimSpace(cookie.Value) == "" {
-					return apperr.Unauthorized("Inicia sesión para continuar")
+					return apperr.Unauthorized("Please log in to continue")
 				}
 				raw = strings.TrimSpace(cookie.Value)
 				fromCookie = true
 			}
 			claims, err := s.Parse(raw)
 			if err != nil {
-				return apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+				return apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
 			}
 			if fromCookie {
 				expectedCSRF := s.CSRFToken(raw)
@@ -191,16 +191,16 @@ func isUnsafeMethod(method string) bool {
 func verifyCSRF(c echo.Context, expected string) error {
 	csrfCookie, err := c.Cookie(CSRFCookieName)
 	if err != nil || strings.TrimSpace(csrfCookie.Value) == "" {
-		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+		return apperr.Forbidden("Request rejected by CSRF protection")
 	}
 	cookieVal := strings.TrimSpace(csrfCookie.Value)
 	headerVal := strings.TrimSpace(c.Request().Header.Get(CSRFHeaderName))
 	if headerVal == "" {
-		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+		return apperr.Forbidden("Request rejected by CSRF protection")
 	}
 	if subtle.ConstantTimeCompare([]byte(cookieVal), []byte(headerVal)) != 1 ||
 		subtle.ConstantTimeCompare([]byte(headerVal), []byte(expected)) != 1 {
-		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+		return apperr.Forbidden("Request rejected by CSRF protection")
 	}
 	return nil
 }
@@ -230,15 +230,15 @@ func connectionAllowed(method, path, scope string) error {
 	read := method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions
 	switch {
 	case strings.HasPrefix(path, "/api/v1/connections"):
-		return apperr.Forbidden("Las conexiones solo se administran desde la aplicación")
+		return apperr.Forbidden("Connections can only be managed from the application")
 	case strings.HasPrefix(path, "/api/v1/users/me") && !read:
-		return apperr.Forbidden("Los datos de la cuenta solo se cambian desde la aplicación")
+		return apperr.Forbidden("Account details can only be changed from the application")
 	case strings.HasPrefix(path, "/api/v1/channels") && !read:
-		return apperr.Forbidden("Los canales de aviso solo se configuran desde la aplicación")
+		return apperr.Forbidden("Notification channels can only be configured from the application")
 	case hasSegment(path, "device"):
-		return apperr.Forbidden("Las credenciales del dispositivo solo se consultan desde la aplicación")
+		return apperr.Forbidden("Device credentials can only be retrieved from the application")
 	case scope != "CONTROL" && !read:
-		return apperr.Forbidden("Esta conexión es de solo lectura")
+		return apperr.Forbidden("This connection is read-only")
 	}
 	return nil
 }
@@ -257,7 +257,7 @@ func RequireRole(role string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if CurrentRole(c) != role {
-				return apperr.Forbidden("No tienes permiso para realizar esta acción")
+				return apperr.Forbidden("You do not have permission to perform this action")
 			}
 			return next(c)
 		}

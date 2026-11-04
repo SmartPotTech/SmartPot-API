@@ -37,11 +37,11 @@ func (f *fakeAI) EvaluateInsight(ctx context.Context, in *smartpotv1.JsonBody) (
 		return nil, status.Error(codes.Unauthenticated, "token")
 	}
 	if f.fail {
-		return nil, status.Error(codes.Unavailable, "caída")
+		return nil, status.Error(codes.Unavailable, "unavailable")
 	}
 	f.received = map[string]any{}
 	_ = json.Unmarshal(in.GetJson(), &f.received)
-	return &smartpotv1.JsonBody{Json: []byte(`{"cropType":"LETTUCE","summary":"vía gRPC","health":{"index":71.5}}`)}, nil
+	return &smartpotv1.JsonBody{Json: []byte(`{"cropType":"LETTUCE","summary":"via gRPC","health":{"index":71.5}}`)}, nil
 }
 
 func newTestClient(t *testing.T, ai *fakeAI, rest http.HandlerFunc) *Client {
@@ -71,24 +71,24 @@ func newTestClient(t *testing.T, ai *fakeAI, rest http.HandlerFunc) *Client {
 func TestInsightsTravelOverGRPCWithoutInventingZeros(t *testing.T) {
 	ai := &fakeAI{}
 	c := newTestClient(t, ai, func(w http.ResponseWriter, _ *http.Request) {
-		t.Error("con gRPC disponible no debía usarse REST")
+		t.Error("when gRPC is available REST should not be used")
 		w.WriteHeader(http.StatusInternalServerError)
 	})
 	zero := 0.0
 	resp, err := c.Insights(context.Background(), InsightRequest{CropType: "LETTUCE",
 		Measures: readings.Measures{Temperature: &zero}})
-	if err != nil || resp.Summary != "vía gRPC" || resp.Health == nil || resp.Health.Index != 71.5 {
-		t.Fatalf("respuesta inesperada: %+v %v", resp, err)
+	if err != nil || resp.Summary != "via gRPC" || resp.Health == nil || resp.Health.Index != 71.5 {
+		t.Fatalf("unexpected response: %+v %v", resp, err)
 	}
 	measures := ai.received["measures"].(map[string]any)
 	if v, ok := measures["temperature"]; !ok || v != 0.0 {
-		t.Fatalf("0 °C debía llegar como 0: %v", measures)
+		t.Fatalf("0 °C should arrive as 0: %v", measures)
 	}
 	if _, ok := measures["ph"]; ok {
-		t.Fatal("un sensor ausente no debía llegar como 0")
+		t.Fatal("missing sensor should not arrive as 0")
 	}
 	if _, ok := ai.received["localHour"]; ok {
-		t.Fatal("una hora ausente no debía llegar como medianoche")
+		t.Fatal("missing hour should not arrive as midnight")
 	}
 }
 
@@ -99,22 +99,22 @@ func TestInsightsFallBackToRESTWhenGRPCFails(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		_, _ = w.Write([]byte(`{"summary":"vía REST"}`))
+		_, _ = w.Write([]byte(`{"summary":"via REST"}`))
 	})
 	resp, err := c.Insights(context.Background(), InsightRequest{CropType: "LETTUCE"})
-	if err != nil || resp.Summary != "vía REST" {
-		t.Fatalf("debía responder REST: %+v %v", resp, err)
+	if err != nil || resp.Summary != "via REST" {
+		t.Fatalf("should respond via REST: %+v %v", resp, err)
 	}
 }
 
 func TestGRPCTargetPrefersExplicitConfiguration(t *testing.T) {
 	if got := grpcTarget(config.AI{GRPCSocket: "/tmp/ai.sock", GRPCAddr: "ai:50051"}); got != "unix:///tmp/ai.sock" {
-		t.Fatalf("destino %q", got)
+		t.Fatalf("target %q", got)
 	}
 	if got := grpcTarget(config.AI{GRPCAddr: "ai:50051"}); got != "ai:50051" {
-		t.Fatalf("destino %q", got)
+		t.Fatalf("target %q", got)
 	}
 	if got := grpcTarget(config.AI{}); got != "" && got != "unix://"+defaultSocket {
-		t.Fatal("sin configuración solo puede usar el socket compartido")
+		t.Fatal("without configuration it can only use the shared socket")
 	}
 }

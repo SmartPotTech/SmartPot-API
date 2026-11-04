@@ -49,11 +49,11 @@ func (c *Client) SendMessage(chatID, html, buttonText, url string) error {
 	}
 	status, respBody, err := c.call(c.http, "sendMessage", body)
 	if err != nil {
-		return &channels.DeliveryError{Message: "Telegram no respondió", Permanent: false}
+		return &channels.DeliveryError{Message: "Telegram did not respond", Permanent: false}
 	}
 	if status < 200 || status >= 300 {
 		permanent := status == http.StatusForbidden || strings.Contains(respBody, "chat not found")
-		return &channels.DeliveryError{Message: "Telegram rechazó el mensaje (" + itoa(status) + ")", Permanent: permanent}
+		return &channels.DeliveryError{Message: "Telegram rejected the message (" + itoa(status) + ")", Permanent: permanent}
 	}
 	return nil
 }
@@ -92,9 +92,9 @@ func (c *Client) DeleteWebhook() error {
 // SetCommands fija el menú de comandos del bot.
 func (c *Client) SetCommands() error {
 	_, _, err := c.call(c.http, "setMyCommands", map[string]any{"commands": []map[string]string{
-		{"command": "estado", "description": "Estado de tus cultivos"},
-		{"command": "desvincular", "description": "Dejar de recibir alertas aquí"},
-		{"command": "ayuda", "description": "Qué puedo hacer"},
+		{"command": "status", "description": "Status of your crops"},
+		{"command": "unlink", "description": "Stop receiving alerts here"},
+		{"command": "help", "description": "What I can do"},
 	}})
 	return err
 }

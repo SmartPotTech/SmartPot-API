@@ -25,16 +25,16 @@ type RegisterRequest struct {
 // Validate aplica las mismas reglas y mensajes que la versión en Java.
 func (r RegisterRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("name", r.Name, "El nombre es obligatorio").
-		Size("name", r.Name, 2, 40, "El nombre debe tener entre 2 y 40 caracteres").
-		Pattern("name", r.Name, personName, "El nombre solo puede tener letras y espacios").
-		NotBlank("lastName", r.LastName, "El apellido es obligatorio").
-		Size("lastName", r.LastName, 2, 60, "El apellido debe tener entre 2 y 60 caracteres").
-		Pattern("lastName", r.LastName, personName, "El apellido solo puede tener letras y espacios").
-		NotBlank("email", r.Email, "El correo es obligatorio").
-		Email("email", r.Email, "El correo no es válido").
-		MaxSize("email", r.Email, 254, "El correo es demasiado largo").
-		NotBlank("password", r.Password, "La contraseña es obligatoria").
+		NotBlank("name", r.Name, "Name is required").
+		Size("name", r.Name, 2, 40, "Name must be between 2 and 40 characters").
+		Pattern("name", r.Name, personName, "Name can only contain letters and spaces").
+		NotBlank("lastName", r.LastName, "Last name is required").
+		Size("lastName", r.LastName, 2, 60, "Last name must be between 2 and 60 characters").
+		Pattern("lastName", r.LastName, personName, "Last name can only contain letters and spaces").
+		NotBlank("email", r.Email, "Email is required").
+		Email("email", r.Email, "Invalid email address").
+		MaxSize("email", r.Email, 254, "Email is too long").
+		NotBlank("password", r.Password, "Password is required").
 		Result()
 }
 
@@ -53,10 +53,10 @@ func (r LoginRequest) RememberMe() bool {
 // Validate valida el inicio de sesión.
 func (r LoginRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("email", r.Email, "El correo es obligatorio").
-		MaxSize("email", r.Email, 254, "El correo es demasiado largo").
-		NotBlank("password", r.Password, "La contraseña es obligatoria").
-		MaxSize("password", r.Password, 200, "La contraseña es demasiado larga").
+		NotBlank("email", r.Email, "Email is required").
+		MaxSize("email", r.Email, 254, "Email is too long").
+		NotBlank("password", r.Password, "Password is required").
+		MaxSize("password", r.Password, 200, "Password is too long").
 		Result()
 }
 
@@ -68,8 +68,8 @@ type ForgotPasswordRequest struct {
 // Validate valida la solicitud de recuperación.
 func (r ForgotPasswordRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("email", r.Email, "El correo es obligatorio").
-		Email("email", r.Email, "El correo no es válido").
+		NotBlank("email", r.Email, "Email is required").
+		Email("email", r.Email, "Invalid email address").
 		Result()
 }
 
@@ -82,9 +82,9 @@ type ResetPasswordRequest struct {
 // Validate valida el restablecimiento.
 func (r ResetPasswordRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("token", r.Token, "El enlace de recuperación no es válido").
-		MaxSize("token", r.Token, 200, "El enlace de recuperación no es válido").
-		NotBlank("password", r.Password, "La nueva contraseña es obligatoria").
+		NotBlank("token", r.Token, "Password reset link is invalid").
+		MaxSize("token", r.Token, 200, "Password reset link is invalid").
+		NotBlank("password", r.Password, "New password is required").
 		Result()
 }
 

@@ -26,7 +26,7 @@ func TestValidatePassword(t *testing.T) {
 		}
 	}
 	if err := ValidatePassword("Aa1" + strings.Repeat("x", 70)); err == nil {
-		t.Error("una contraseña de más de 72 bytes debía fallar")
+		t.Error("password over 72 bytes should fail")
 	}
 }
 
@@ -43,8 +43,8 @@ func TestBCryptSpringVector(t *testing.T) {
 	if !PasswordMatches(password, hash) {
 		t.Error("PasswordMatches debía validar el hash de Spring")
 	}
-	if PasswordMatches("contraseña-incorrecta", hash) {
-		t.Error("PasswordMatches no debía validar una contraseña incorrecta")
+	if PasswordMatches("wrong-password", hash) {
+		t.Error("PasswordMatches should not validate wrong password")
 	}
 }
 

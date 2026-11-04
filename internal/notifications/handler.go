@@ -31,11 +31,11 @@ func (h *Handler) Register(g *echo.Group) {
 func (h *Handler) list(c echo.Context) error {
 	unreadOnly, ok := queryBool(c, "unreadOnly", false)
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	limit, ok := queryInt(c, "limit", 50)
 	if !ok {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	items, err := h.svc.List(c.Request().Context(), security.CurrentUserID(c), unreadOnly, limit)
 	if err != nil {

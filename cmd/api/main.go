@@ -136,7 +136,7 @@ func run() error {
 	// Asistente de IA: evaluación, agente de automatización y aprendizaje continuo.
 	timezone, err := time.LoadLocation(cfg.AI.Timezone)
 	if err != nil {
-		logger.Warn("zona horaria de la IA inválida; se usa UTC", "timezone", cfg.AI.Timezone, "err", err)
+		logger.Warn("invalid AI timezone; using UTC", "timezone", cfg.AI.Timezone, "err", err)
 		timezone = time.UTC
 	}
 	aiClient := ai.NewClient(cfg.AI, cacheStore, clock)
@@ -166,16 +166,16 @@ func run() error {
 	events.Subscribe(bus, func(e crops.DeletedEvent) {
 		ctx := context.Background()
 		if err := readingService.DeleteByCrop(ctx, e.CropID); err != nil {
-			logger.Warn("no se pudieron borrar las lecturas del cultivo", "cropId", e.CropID, "err", err)
+			logger.Warn("could not delete crop readings", "cropId", e.CropID, "err", err)
 		}
 		if err := commandService.DeleteByCrop(ctx, e.CropID); err != nil {
-			logger.Warn("no se pudieron borrar los comandos del cultivo", "cropId", e.CropID, "err", err)
+			logger.Warn("could not delete crop commands", "cropId", e.CropID, "err", err)
 		}
 		if err := actuatorService.DeleteByCrop(ctx, e.CropID); err != nil {
-			logger.Warn("no se pudieron borrar los actuadores del cultivo", "cropId", e.CropID, "err", err)
+			logger.Warn("could not delete crop actuators", "cropId", e.CropID, "err", err)
 		}
 		if err := notificationService.DeleteAllForCrop(ctx, e.CropID); err != nil {
-			logger.Warn("no se pudieron borrar las notificaciones del cultivo", "cropId", e.CropID, "err", err)
+			logger.Warn("could not delete crop notifications", "cropId", e.CropID, "err", err)
 		}
 	})
 	events.Subscribe(bus, func(e crops.DeletedEvent) { go virtualDeviceService.OnCropDeleted(e.CropID) })
@@ -270,13 +270,13 @@ func run() error {
 		ctx := context.Background()
 		now := clock()
 		if _, err := tokenRepo.DeleteExpired(ctx, now); err != nil {
-			logger.Warn("no se pudieron purgar los tokens vencidos", "err", err)
+			logger.Warn("could not purge expired tokens", "err", err)
 		}
 		if _, err := notificationRepo.DeleteOlderThan(ctx, now.Add(-90*24*time.Hour)); err != nil {
-			logger.Warn("no se pudieron purgar las notificaciones antiguas", "err", err)
+			logger.Warn("could not purge old notifications", "err", err)
 		}
 		if _, err := commandRepo.DeleteOlderThan(ctx, now.Add(-180*24*time.Hour)); err != nil {
-			logger.Warn("no se pudieron purgar los comandos antiguos", "err", err)
+			logger.Warn("could not purge old commands", "err", err)
 		}
 	})
 
@@ -291,7 +291,7 @@ func run() error {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		logger.Info("API escuchando", "addr", srv.Addr)
+		logger.Info("API listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
@@ -302,25 +302,25 @@ func run() error {
 
 	select {
 	case err := <-serverErr:
-		return fmt.Errorf("el servidor HTTP falló: %w", err)
+		return fmt.Errorf("HTTP server failed: %w", err)
 	case <-ctx.Done():
-		logger.Info("apagando (señal recibida)")
+		logger.Info("shutting down (signal received)")
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error("apagado del servidor con error", "err", err)
+		logger.Error("server shutdown error", "err", err)
 	}
 	stopJobs()
 	readingService.StopBatchWorker()
 	telegramListener.Stop()
 	gateway.Close()
 	if err := cacheStore.Close(); err != nil {
-		logger.Error("cierre de la caché con error", "err", err)
+		logger.Error("cache close error", "err", err)
 	}
 	pool.Close()
-	logger.Info("apagado completo")
+	logger.Info("shutdown complete")
 	return nil
 }
 
@@ -331,7 +331,7 @@ func runCropBackfill(logger *slog.Logger, vdRepo virtualdevices.Repository, crop
 	defer cancel()
 	vds, err := vdRepo.FindAll(ctx)
 	if err != nil {
-		logger.Warn("no se pudo completar el tipo de los cultivos anteriores", "err", err)
+		logger.Warn("could not backfill legacy crops", "err", err)
 		return
 	}
 	virtualCropIDs := make([]string, 0, len(vds))
@@ -352,7 +352,7 @@ func runCropBackfill(logger *slog.Logger, vdRepo virtualdevices.Repository, crop
 		placements = append(placements, crops.PlacementBackfill{CropID: cropID, Placement: placement})
 	}
 	if err := cropService.Backfill(ctx, virtualCropIDs, placements); err != nil {
-		logger.Warn("no se pudo completar el tipo de los cultivos anteriores", "err", err)
+		logger.Warn("could not backfill legacy crops", "err", err)
 	}
 }
 

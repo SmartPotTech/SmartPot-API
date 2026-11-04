@@ -143,6 +143,6 @@ func TestParseCompactBinaryV2RejectsCorruptCRC(t *testing.T) {
 	buf := compactV2(PresentTemperature, 2100, 0, 0, 0, 0, 0, 0)
 	buf[11] ^= 0xFF
 	if _, err := ParseCompactBinary(buf); err == nil {
-		t.Fatal("un CRC que no coincide debía rechazarse")
+		t.Fatal("mismatched CRC should be rejected")
 	}
 }

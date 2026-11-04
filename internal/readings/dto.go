@@ -75,7 +75,7 @@ func (r MeasuresRequest) ToMeasures() Measures {
 // suele ser un sensor dañado o mal calibrado. Devuelve error con mensaje en español.
 func ValidateRanges(m Measures) error {
 	if m.IsEmpty() {
-		return fmt.Errorf("La lectura no trae ningún valor")
+		return fmt.Errorf("Reading does not contain any measurement value")
 	}
 	checks := []struct {
 		name     string
@@ -87,8 +87,8 @@ func ValidateRanges(m Measures) error {
 		{"luz", m.Brightness, 0, 200000},
 		{"pH", m.Ph, 0, 14},
 		{"TDS", m.Tds, 0, 10000},
-		{"presión", m.Atmosphere, 300, 1100},
-		{"humedad del sustrato", m.SoilMoisture, 0, 100},
+		{"atmosphere", m.Atmosphere, 300, 1100},
+		{"soil moisture", m.SoilMoisture, 0, 100},
 	}
 	for _, c := range checks {
 		if c.value == nil {
@@ -96,7 +96,7 @@ func ValidateRanges(m Measures) error {
 		}
 		v := *c.value
 		if math.IsNaN(v) || math.IsInf(v, 0) || v < c.min || v > c.max {
-			return fmt.Errorf("El valor de %s (%s) está fuera del rango %s a %s",
+			return fmt.Errorf("Value for %s (%s) is out of range (%s to %s)",
 				c.name, trimFloat(v), trimFloat(c.min), trimFloat(c.max))
 		}
 	}

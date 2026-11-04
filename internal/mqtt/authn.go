@@ -44,7 +44,7 @@ type AuthnController struct {
 // NewAuthnController crea el controlador de autenticación de dispositivos con soporte de caché.
 func NewAuthnController(cfg config.MQTT, cropsSvc DeviceVerifier, store cache.Cache, topics *TopicResolver, logger *slog.Logger) *AuthnController {
 	if cfg.AuthnToken == "" {
-		logger.Warn("MQTT_AUTHN_TOKEN vacío: el broker no podrá autenticar dispositivos (se rechazarán todos)")
+		logger.Warn("MQTT_AUTHN_TOKEN is empty: broker will not be able to authenticate devices (all will be rejected)")
 	}
 	return &AuthnController{token: cfg.AuthnToken, crops: cropsSvc, cache: store, topics: topics, log: logger}
 }
@@ -115,7 +115,7 @@ func (c *AuthnController) authenticate(ctx echo.Context) error {
 	crop, err := c.crops.Find(ctx.Request().Context(), cropID)
 	if err != nil {
 		// Error real de la base: 5xx para que EMQX lo trate como "ignore" y no cachee un rechazo.
-		c.log.Warn("no se pudo verificar el dispositivo contra la base", "cropId", req.Username, "err", err)
+		c.log.Warn("could not verify device against database", "cropId", req.Username, "err", err)
 		return ctx.JSON(http.StatusServiceUnavailable, authnResponse{})
 	}
 	if crop == nil {

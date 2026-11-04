@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	simUnavailable = "El simulador de cultivos virtuales no está disponible en este momento"
-	simDisabled    = "Los cultivos virtuales no están habilitados en este servidor"
+	simUnavailable = "The virtual crop simulator is not available at this moment"
+	simDisabled    = "Virtual crops are not enabled on this server"
 )
 
 // SimulatorClient es el cliente de la API interna del simulador de dispositivos.
@@ -55,9 +55,9 @@ func (c *SimulatorClient) Put(ctx context.Context, cropID string, req SimulatorP
 	status, err := c.do(ctx, http.MethodPut, "/v1/pots/"+cropID, req, &pot)
 	if err != nil {
 		if status >= 400 && status < 500 {
-			return nil, apperr.BadRequest("El simulador rechazó la configuración: " + http.StatusText(status))
+			return nil, apperr.BadRequest("Simulator rejected configuration: " + http.StatusText(status))
 		}
-		slog.Warn("falló la simulación del cultivo virtual", "cropId", cropID, "err", err)
+		slog.Warn("virtual crop simulation failed", "cropId", cropID, "err", err)
 		return nil, apperr.Unavailable(simUnavailable)
 	}
 	return &pot, nil
@@ -93,7 +93,7 @@ func (c *SimulatorClient) Delete(ctx context.Context, cropID string) {
 		return
 	}
 	if status, err := c.do(ctx, http.MethodDelete, "/v1/pots/"+cropID, nil, nil); err != nil && status != http.StatusNotFound {
-		slog.Warn("no se pudo retirar la simulación del cultivo", "cropId", cropID, "status", status)
+		slog.Warn("could not remove crop simulation", "cropId", cropID, "status", status)
 	}
 }
 
@@ -105,7 +105,7 @@ func (c *SimulatorClient) Places(ctx context.Context, query string) ([]PlaceResp
 	var places []PlaceResponse
 	path := "/v1/places?" + url.Values{"q": {query}}.Encode()
 	if _, err := c.do(ctx, http.MethodGet, path, nil, &places); err != nil {
-		return nil, apperr.Unavailable("No se pudo consultar el buscador de lugares")
+		return nil, apperr.Unavailable("Could not query location service")
 	}
 	return places, nil
 }

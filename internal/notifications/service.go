@@ -11,7 +11,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
 )
 
-const notFound = "La notificación no existe"
+const notFound = "Notification does not exist"
 
 // Service implementa la lógica de notificaciones.
 type Service struct {
@@ -30,7 +30,7 @@ func NewService(repo Repository, store cache.Cache, bus *events.Bus, clock func(
 func (s *Service) Notify(ctx context.Context, userID, cropID string, t Type, title, message string) (*Notification, error) {
 	userOID, ok := objectid.Parse(userID)
 	if !ok {
-		return nil, errors.New("userId inválido")
+		return nil, errors.New("invalid userId")
 	}
 	n := Notification{
 		UserID:    userOID,

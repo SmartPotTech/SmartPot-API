@@ -25,7 +25,7 @@ type testPayload struct {
 }
 
 func (p *testPayload) Validate() validation.Fields {
-	return validation.New().NotBlank("name", p.Name, "el nombre no puede estar vacío").Result()
+	return validation.New().NotBlank("name", p.Name, "name cannot be empty").Result()
 }
 
 func TestHTTPServer_NotFound(t *testing.T) {
@@ -39,13 +39,13 @@ func TestHTTPServer_NotFound(t *testing.T) {
 	}
 	var resp apperr.Response
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("error deserializando respuesta JSON: %v", err)
+		t.Fatalf("error unmarshaling JSON response: %v", err)
 	}
 	if resp.Status != http.StatusNotFound {
 		t.Errorf("status esperado 404, obtenido %d", resp.Status)
 	}
-	if resp.Message != "La ruta solicitada no existe" {
-		t.Errorf("mensaje inesperado: %s", resp.Message)
+	if resp.Message != "The requested route does not exist" {
+		t.Errorf("unexpected message: %s", resp.Message)
 	}
 }
 
@@ -64,13 +64,13 @@ func TestHTTPServer_MethodNotAllowed(t *testing.T) {
 	}
 	var resp apperr.Response
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("error deserializando respuesta JSON: %v", err)
+		t.Fatalf("error unmarshaling JSON response: %v", err)
 	}
 	if resp.Status != http.StatusMethodNotAllowed {
 		t.Errorf("status esperado 405, obtenido %d", resp.Status)
 	}
-	if resp.Message != "Método no permitido para esta ruta" {
-		t.Errorf("mensaje inesperado: %s", resp.Message)
+	if resp.Message != "Method not allowed for this route" {
+		t.Errorf("unexpected message: %s", resp.Message)
 	}
 }
 
@@ -85,13 +85,13 @@ func TestHTTPServer_SecurityHeaders(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	if rec.Header().Get("Referrer-Policy") != "no-referrer" {
-		t.Errorf("Referrer-Policy incorrecta: %s", rec.Header().Get("Referrer-Policy"))
+		t.Errorf("unexpected Referrer-Policy: %s", rec.Header().Get("Referrer-Policy"))
 	}
 	if rec.Header().Get("X-Frame-Options") != "DENY" {
-		t.Errorf("X-Frame-Options incorrecto: %s", rec.Header().Get("X-Frame-Options"))
+		t.Errorf("unexpected X-Frame-Options: %s", rec.Header().Get("X-Frame-Options"))
 	}
 	if rec.Header().Get("X-Content-Type-Options") != "nosniff" {
-		t.Errorf("X-Content-Type-Options incorrecto: %s", rec.Header().Get("X-Content-Type-Options"))
+		t.Errorf("unexpected X-Content-Type-Options: %s", rec.Header().Get("X-Content-Type-Options"))
 	}
 }
 
@@ -106,14 +106,14 @@ func TestHTTPServer_Recovery(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("se esperaba status 500, se obtuvo %d", rec.Code)
+		t.Fatalf("expected status 500, got %d", rec.Code)
 	}
 	var resp apperr.Response
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("error deserializando respuesta JSON: %v", err)
+		t.Fatalf("error unmarshaling JSON response: %v", err)
 	}
-	if !strings.Contains(resp.Message, "error inesperado") {
-		t.Errorf("mensaje inesperado: %s", resp.Message)
+	if !strings.Contains(resp.Message, "unexpected error") {
+		t.Errorf("unexpected message: %s", resp.Message)
 	}
 }
 
@@ -132,7 +132,7 @@ func TestHTTPServer_BindAndExchangeableValidator(t *testing.T) {
 	recBadJSON := httptest.NewRecorder()
 	e.ServeHTTP(recBadJSON, reqBadJSON)
 	if recBadJSON.Code != http.StatusBadRequest {
-		t.Fatalf("se esperaba status 400 para JSON inválido, se obtuvo %d", recBadJSON.Code)
+		t.Fatalf("expected status 400 for invalid JSON, got %d", recBadJSON.Code)
 	}
 
 	// Validación fallida vía echo.Validator + HTTPErrorHandler centralizado
@@ -140,12 +140,12 @@ func TestHTTPServer_BindAndExchangeableValidator(t *testing.T) {
 	recInvalid := httptest.NewRecorder()
 	e.ServeHTTP(recInvalid, reqInvalid)
 	if recInvalid.Code != http.StatusBadRequest {
-		t.Fatalf("se esperaba status 400 para validación fallida, se obtuvo %d", recInvalid.Code)
+		t.Fatalf("expected status 400 for failed validation, got %d", recInvalid.Code)
 	}
 	var valResp apperr.Response
 	_ = json.Unmarshal(recInvalid.Body.Bytes(), &valResp)
 	if valResp.Fields["name"] == "" {
-		t.Errorf("se esperaba campo 'name' en errores de validación")
+		t.Errorf("expected field 'name' in validation errors")
 	}
 
 	// Éxito
@@ -153,7 +153,7 @@ func TestHTTPServer_BindAndExchangeableValidator(t *testing.T) {
 	recValid := httptest.NewRecorder()
 	e.ServeHTTP(recValid, reqValid)
 	if recValid.Code != http.StatusOK {
-		t.Fatalf("se esperaba status 200, se obtuvo %d", recValid.Code)
+		t.Fatalf("expected status 200, got %d", recValid.Code)
 	}
 }
 
@@ -170,10 +170,10 @@ func TestHTTPServer_TypedRequestContext(t *testing.T) {
 			ExpiresAt: exp,
 		})
 		if !rc.Identity().Authenticated || rc.UserID() != "usr-001" || rc.Email() != "demo@smartpot.app" || rc.Role() != "ADMIN" {
-			t.Fatalf("identidad tipada inválida: %+v", rc.Identity())
+			t.Fatalf("invalid typed identity: %+v", rc.Identity())
 		}
 		if rc.Trace().RequestID != "trace-abc-123" || rc.Trace().StartedAt.IsZero() {
-			t.Fatalf("traza de telemetría inválida: %+v", rc.Trace())
+			t.Fatalf("invalid telemetry trace: %+v", rc.Trace())
 		}
 		return c.NoContent(http.StatusOK)
 	})
@@ -206,7 +206,7 @@ func TestHTTPServer_RadixZeroAllocation(t *testing.T) {
 		t.Fatalf("se esperaban 0 asignaciones dinámicas en el árbol Radix, se obtuvieron %v", allocs)
 	}
 	if capturedCrop != "66f5a1000000000000000101" || capturedActuator != "66f5a1000000000000000201" {
-		t.Fatalf("parámetros mal extraídos: crop=%q actuator=%q", capturedCrop, capturedActuator)
+		t.Fatalf("misextracted parameters: crop=%q actuator=%q", capturedCrop, capturedActuator)
 	}
 }
 
@@ -272,7 +272,7 @@ func TestHTTPServer_EventStreamSkipsETagBuffer(t *testing.T) {
 		t.Fatalf("el flujo no llegó al cliente: %q", body)
 	}
 	if resp.Header.Get("ETag") != "" {
-		t.Fatal("un flujo de eventos no debe llevar ETag")
+		t.Fatal("event stream must not have ETag")
 	}
 }
 
@@ -284,11 +284,11 @@ func TestHTTPServer_ClientIPBehindTrustedProxy(t *testing.T) {
 		xff    string
 		want   string
 	}{
-		{"sin proxy se ignora la cabecera", Options{}, "10.0.0.2:5000", "1.2.3.4", "10.0.0.2"},
-		{"proxy privado de confianza", Options{TrustProxy: true}, "10.0.0.2:5000", "1.2.3.4", "1.2.3.4"},
-		{"par público no es de confianza", Options{TrustProxy: true}, "8.8.8.8:5000", "1.2.3.4", "8.8.8.8"},
-		{"rango explícito", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "172.18.0.5:80", "5.6.7.8", "5.6.7.8"},
-		{"fuera del rango explícito", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "10.0.0.2:80", "5.6.7.8", "10.0.0.2"},
+		{"without proxy header is ignored", Options{}, "10.0.0.2:5000", "1.2.3.4", "10.0.0.2"},
+		{"trusted private proxy", Options{TrustProxy: true}, "10.0.0.2:5000", "1.2.3.4", "1.2.3.4"},
+		{"untrusted public peer", Options{TrustProxy: true}, "8.8.8.8:5000", "1.2.3.4", "8.8.8.8"},
+		{"explicit range", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "172.18.0.5:80", "5.6.7.8", "5.6.7.8"},
+		{"outside explicit range", Options{TrustProxy: true, TrustedProxies: []string{"172.18.0.0/16"}}, "10.0.0.2:80", "5.6.7.8", "10.0.0.2"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -313,8 +313,8 @@ func TestHTTPServer_SpoofedForwardingHeadersAreIgnored(t *testing.T) {
 		remote string
 		want   string
 	}{
-		{"sin proxy", Options{}, "203.0.113.9:4000", "203.0.113.9"},
-		{"proxy activado pero par público", Options{TrustProxy: true}, "203.0.113.9:4000", "203.0.113.9"},
+		{"without proxy", Options{}, "203.0.113.9:4000", "203.0.113.9"},
+		{"proxy enabled but public peer", Options{TrustProxy: true}, "203.0.113.9:4000", "203.0.113.9"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

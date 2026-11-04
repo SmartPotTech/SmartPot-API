@@ -30,7 +30,7 @@ func TestDecryptStandardVector(t *testing.T) {
 	}
 	plain, err := enc.Decrypt(encoded)
 	if err != nil {
-		t.Fatalf("Decrypt del vector estándar falló: %v", err)
+		t.Fatalf("Decrypt of standard vector failed: %v", err)
 	}
 	if !bytes.Equal([]byte(plain), make([]byte, 16)) {
 		t.Errorf("el texto descifrado no son 16 bytes en cero: %x", plain)
@@ -73,6 +73,6 @@ func TestDecryptRejectsTampered(t *testing.T) {
 		t.Error("un texto cifrado manipulado debía fallar")
 	}
 	if _, err := enc.Decrypt("###"); err == nil {
-		t.Error("un Base64 inválido debía fallar")
+		t.Error("an invalid Base64 should fail")
 	}
 }

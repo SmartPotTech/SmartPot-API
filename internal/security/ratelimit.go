@@ -49,7 +49,7 @@ func (r *RateLimiter) Middleware() echo.MiddlewareFunc {
 				retryAfter := 60 - epoch%60
 				c.Response().Header().Set("Retry-After", strconv.FormatInt(retryAfter, 10))
 				return apperr.New(http.StatusTooManyRequests,
-					fmt.Sprintf("Enviaste demasiadas solicitudes. Intenta de nuevo en %d segundos", retryAfter))
+					fmt.Sprintf("Too many requests. Please try again in %d seconds", retryAfter))
 			}
 			return next(c)
 		}

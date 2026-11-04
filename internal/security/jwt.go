@@ -92,15 +92,15 @@ func (s *TokenService) Parse(tokenString string) (Claims, error) {
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil || !parsed.Valid {
-		return Claims{}, errors.New("token inválido")
+		return Claims{}, errors.New("invalid token")
 	}
 	claims, ok := parsed.Claims.(jwt.MapClaims)
 	if !ok {
-		return Claims{}, errors.New("token inválido")
+		return Claims{}, errors.New("invalid token")
 	}
 	sub, _ := claims["sub"].(string)
 	if sub == "" {
-		return Claims{}, errors.New("token sin sujeto")
+		return Claims{}, errors.New("token without subject")
 	}
 	email, _ := claims[emailClaim].(string)
 	role, _ := claims[roleClaim].(string)

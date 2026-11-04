@@ -57,7 +57,7 @@ func (h *Handler) pause(c echo.Context) error {
 func (h *Handler) places(c echo.Context) error {
 	query := c.QueryParam("q")
 	if query == "" {
-		return apperr.BadRequest("Parámetro inválido o faltante")
+		return apperr.BadRequest("Invalid or missing parameter")
 	}
 	places, err := h.svc.Places(c.Request().Context(), query)
 	if err != nil {

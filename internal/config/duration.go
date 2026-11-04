@@ -35,11 +35,11 @@ func parseISO(s string) (time.Duration, error) {
 		s = s[1:]
 	}
 	if s == "" || s[0] != 'P' {
-		return 0, errors.New("duración ISO-8601 inválida: falta 'P'")
+		return 0, errors.New("invalid ISO-8601 duration: missing 'P'")
 	}
 	s = s[1:]
 	if s == "" {
-		return 0, errors.New("duración ISO-8601 inválida: vacía tras 'P'")
+		return 0, errors.New("invalid ISO-8601 duration: empty after 'P'")
 	}
 
 	var total time.Duration
@@ -47,12 +47,12 @@ func parseISO(s string) (time.Duration, error) {
 	for len(s) > 0 {
 		if s[0] == 'T' {
 			if inTime {
-				return 0, errors.New("duración ISO-8601 inválida: 'T' duplicada")
+				return 0, errors.New("invalid ISO-8601 duration: duplicate 'T'")
 			}
 			inTime = true
 			s = s[1:]
 			if s == "" {
-				return 0, errors.New("duración ISO-8601 inválida: nada tras 'T'")
+				return 0, errors.New("invalid ISO-8601 duration: nothing after 'T'")
 			}
 			continue
 		}
@@ -62,14 +62,14 @@ func parseISO(s string) (time.Duration, error) {
 			i++
 		}
 		if i == 0 {
-			return 0, fmt.Errorf("duración ISO-8601 inválida: se esperaba un número en %q", s)
+			return 0, fmt.Errorf("invalid ISO-8601 duration: expected number in %q", s)
 		}
 		if i >= len(s) {
-			return 0, errors.New("duración ISO-8601 inválida: número sin unidad")
+			return 0, errors.New("invalid ISO-8601 duration: number without unit")
 		}
 		value, err := strconv.ParseFloat(s[:i], 64)
 		if err != nil {
-			return 0, fmt.Errorf("duración ISO-8601 inválida: número %q", s[:i])
+			return 0, fmt.Errorf("invalid ISO-8601 duration: number %q", s[:i])
 		}
 		unit := s[i]
 		s = s[i+1:]
@@ -84,14 +84,14 @@ func parseISO(s string) (time.Duration, error) {
 			case 'S':
 				factor = time.Second
 			default:
-				return 0, fmt.Errorf("duración ISO-8601 inválida: unidad de tiempo %q", string(unit))
+				return 0, fmt.Errorf("invalid ISO-8601 duration: time unit %q", string(unit))
 			}
 		} else {
 			switch unit {
 			case 'D':
 				factor = 24 * time.Hour
 			default:
-				return 0, fmt.Errorf("duración ISO-8601 inválida: unidad de fecha %q", string(unit))
+				return 0, fmt.Errorf("invalid ISO-8601 duration: date unit %q", string(unit))
 			}
 		}
 		total += time.Duration(value * float64(factor))

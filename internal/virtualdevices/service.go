@@ -59,14 +59,14 @@ func (s *Service) CheckCanCreate(ctx context.Context, ownerID string, req *Virtu
 	}
 	ownerOID, ok := objectid.Parse(ownerID)
 	if !ok {
-		return apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+		return apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
 	}
 	count, err := s.repo.CountByOwner(ctx, ownerOID)
 	if err != nil {
 		return err
 	}
 	if count >= MaxPerAccount {
-		return apperr.BadRequest("Puedes tener hasta 5 cultivos virtuales")
+		return apperr.BadRequest("You can have up to 5 virtual crops")
 	}
 	return validate(req, placement)
 }
@@ -87,7 +87,7 @@ func (s *Service) StartFor(ctx context.Context, cropID string, req *VirtualDevic
 		return err
 	}
 	s.pushQuietly(ctx, placed, config)
-	slog.Info("simulación del cultivo virtual iniciada", "cropId", cropID, "mode", config.Mode)
+	slog.Info("virtual crop simulation started", "cropId", cropID, "mode", config.Mode)
 	return nil
 }
 
@@ -171,7 +171,7 @@ func (s *Service) Pause(ctx context.Context, ownerID, cropID string) error {
 func (s *Service) Places(ctx context.Context, query string) ([]PlaceResponse, error) {
 	trimmed := strings.TrimSpace(query)
 	if len(trimmed) < 2 || len(trimmed) > 80 {
-		return nil, apperr.BadRequest("Escribe entre 2 y 80 caracteres para buscar un lugar")
+		return nil, apperr.BadRequest("Enter between 2 and 80 characters to search for a location")
 	}
 	return s.simulator.Places(ctx, trimmed)
 }
@@ -183,7 +183,7 @@ func (s *Service) Reconcile(ctx context.Context) {
 	}
 	pots, err := s.simulator.List(ctx)
 	if err != nil {
-		slog.Debug("reconciliación de cultivos virtuales omitida", "err", err)
+		slog.Debug("virtual crop reconciliation skipped", "err", err)
 		return
 	}
 	running := make(map[string]bool)
@@ -260,14 +260,14 @@ func (s *Service) getOwnedVirtual(ctx context.Context, ownerID, cropID string) (
 		return nil, err
 	}
 	if !crop.Virtual {
-		return nil, apperr.BadRequest("Este cultivo es real: sus lecturas llegan de su propio dispositivo")
+		return nil, apperr.BadRequest("This is a real crop: readings come from its physical device")
 	}
 	return crop, nil
 }
 
 func (s *Service) requireSimulator() error {
 	if !s.simulator.IsAvailable() {
-		return apperr.Unavailable("Los cultivos virtuales no están habilitados en este servidor")
+		return apperr.Unavailable("Virtual crops are not enabled on this server")
 	}
 	return nil
 }
@@ -299,14 +299,14 @@ func (s *Service) apply(ctx context.Context, crop *CropView, config *VirtualDevi
 
 func (s *Service) pushQuietly(ctx context.Context, crop *CropView, config *VirtualDevice) {
 	if _, err := s.push(ctx, crop, config); err != nil {
-		slog.Warn("no se pudo iniciar la simulación del cultivo", "cropId", crop.ID, "err", err)
+		slog.Warn("could not start crop simulation", "cropId", crop.ID, "err", err)
 	}
 }
 
 func (s *Service) push(ctx context.Context, crop *CropView, config *VirtualDevice) (*SimulatorPot, error) {
 	key, ok := s.crops.DeviceKey(ctx, crop.ID)
 	if !ok {
-		return nil, apperr.Conflict("El cultivo no tiene clave de dispositivo: créalo de nuevo")
+		return nil, apperr.Conflict("The crop does not have a device key: please create it again")
 	}
 	location := locationOf(crop, config)
 	var simLoc *SimLocation
@@ -337,7 +337,7 @@ func (s *Service) push(ctx context.Context, crop *CropView, config *VirtualDevic
 func validate(req *VirtualDeviceRequest, placement *geo.Placement) error {
 	placed := placement != nil && placement.Location != nil
 	if modeOf(req) == ModeWeather && (req == nil || req.Location == nil) && !placed {
-		return apperr.BadRequest("Elige una ubicación para que el cultivo siga su clima")
+		return apperr.BadRequest("Select a location so the crop follows its weather")
 	}
 	return nil
 }

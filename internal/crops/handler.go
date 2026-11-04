@@ -71,7 +71,7 @@ func (h *Handler) create(c echo.Context) error {
 			return err
 		}
 	} else if req.Virtual != nil {
-		return apperr.BadRequest("Solo los cultivos virtuales tienen simulación")
+		return apperr.BadRequest("Only virtual crops have simulation")
 	}
 	created, err := h.crops.Create(c.Request().Context(), ownerID, req)
 	if err != nil {

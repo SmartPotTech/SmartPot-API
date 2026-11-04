@@ -65,7 +65,7 @@ type ChannelLinkUpdateRequest struct {
 func (r ChannelLinkUpdateRequest) Validate() validation.Fields {
 	v := validation.New()
 	if r.Events != nil && len(*r.Events) > 5 {
-		v.Add("events", "Selecciona como máximo 5 tipos")
+		v.Add("events", "Select at most 5 event types")
 	}
 	return v.Result()
 }
@@ -105,13 +105,13 @@ func (r CropChannelUpdateRequest) Validate() validation.Fields {
 	v := validation.New()
 	if r.DigestHours != nil {
 		if *r.DigestHours < 1 {
-			v.Add("digestHours", "El resumen debe llegar al menos cada hora")
+			v.Add("digestHours", "Digest interval must be at least 1 hour")
 		} else if *r.DigestHours > 24 {
-			v.Add("digestHours", "El resumen debe llegar al menos una vez al día")
+			v.Add("digestHours", "Digest interval must be at most 24 hours")
 		}
 	}
 	if r.DailySummaryAt != nil && !dailySummaryPattern.MatchString(*r.DailySummaryAt) {
-		v.Add("dailySummaryAt", "Usa el formato HH:mm, por ejemplo 07:30")
+		v.Add("dailySummaryAt", "Use HH:mm format, for example 07:30")
 	}
 	return v.Result()
 }

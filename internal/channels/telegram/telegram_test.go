@@ -65,11 +65,11 @@ func TestWebhookReceive(t *testing.T) {
 		want   int
 	}{
 		{"secreto correcto", enabled, "s3cr3t", `{}`, http.StatusOK},
-		{"secreto incorrecto", enabled, "otro", `{}`, http.StatusNotFound},
-		{"sin secreto", enabled, "", `{}`, http.StatusNotFound},
-		{"bot no configurado", disabled, "s3cr3t", `{}`, http.StatusNotFound},
+		{"wrong secret", enabled, "otro", `{}`, http.StatusNotFound},
+		{"without secret", enabled, "", `{}`, http.StatusNotFound},
+		{"bot not configured", disabled, "s3cr3t", `{}`, http.StatusNotFound},
 		{"modo sondeo", polling, "s3cr3t", `{}`, http.StatusNotFound},
-		{"cuerpo inválido", enabled, "s3cr3t", `{roto`, http.StatusBadRequest},
+		{"invalid body", enabled, "s3cr3t", `{roto`, http.StatusBadRequest},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestWebhookReceive(t *testing.T) {
 			// (el secreto bloquea o el cuerpo va vacío), y HandleSafely se recupera.
 			wc := NewWebhookController(c.cfg, NewListener(c.cfg, NewClient(c.cfg), nil))
 			if code := serveWebhook(wc, c.secret, c.body); code != c.want {
-				t.Errorf("estado %d, se esperaba %d", code, c.want)
+				t.Errorf("status %d, expected %d", code, c.want)
 			}
 		})
 	}

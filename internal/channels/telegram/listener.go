@@ -37,11 +37,11 @@ func (l *Listener) Start() {
 		return
 	}
 	if err := l.client.SetCommands(); err != nil {
-		slog.Warn("Telegram no respondió al configurar el bot", "err", err)
+		slog.Warn("Telegram did not respond when configuring bot", "err", err)
 	}
 	if l.webhook() {
 		if err := l.client.SetWebhook(l.cfg.WebhookURL, l.cfg.WebhookSecret); err != nil {
-			slog.Warn("Telegram: no se pudo registrar el webhook", "err", err)
+			slog.Warn("Telegram: could not register webhook", "err", err)
 		} else {
 			slog.Info("Telegram: webhook registrado", "url", l.cfg.WebhookURL)
 		}
@@ -49,7 +49,7 @@ func (l *Listener) Start() {
 	}
 	_ = l.client.DeleteWebhook()
 	go l.poll()
-	slog.Info("Telegram: recibiendo mensajes por sondeo largo")
+	slog.Info("Telegram: receiving messages via long polling")
 }
 
 // Stop detiene la recepción de mensajes.
@@ -62,7 +62,7 @@ func (l *Listener) Stop() {
 func (l *Listener) HandleSafely(update Update) {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Warn("no se pudo atender un mensaje de Telegram", "panic", r)
+			slog.Warn("could not handle Telegram message", "panic", r)
 		}
 	}()
 	l.bot.Handle(update)

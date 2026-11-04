@@ -47,7 +47,7 @@ func (t *Type) UnmarshalJSON(b []byte) error {
 		*t = Type(s)
 		return nil
 	default:
-		return fmt.Errorf("tipo de notificación inválido: %q", s)
+		return fmt.Errorf("invalid notification type: %q", s)
 	}
 }
 

@@ -41,12 +41,12 @@ type UpdateProfileRequest struct {
 // Validate aplica las mismas reglas y mensajes que la versión en Java.
 func (r UpdateProfileRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("name", r.Name, "El nombre es obligatorio").
-		Size("name", r.Name, 2, 40, "El nombre debe tener entre 2 y 40 caracteres").
-		Pattern("name", r.Name, personName, "El nombre solo puede tener letras y espacios").
-		NotBlank("lastName", r.LastName, "El apellido es obligatorio").
-		Size("lastName", r.LastName, 2, 60, "El apellido debe tener entre 2 y 60 caracteres").
-		Pattern("lastName", r.LastName, personName, "El apellido solo puede tener letras y espacios").
+		NotBlank("name", r.Name, "Name is required").
+		Size("name", r.Name, 2, 40, "Name must be between 2 and 40 characters").
+		Pattern("name", r.Name, personName, "Name can only contain letters and spaces").
+		NotBlank("lastName", r.LastName, "Last name is required").
+		Size("lastName", r.LastName, 2, 60, "Last name must be between 2 and 60 characters").
+		Pattern("lastName", r.LastName, personName, "Last name can only contain letters and spaces").
 		Result()
 }
 
@@ -59,7 +59,7 @@ type ChangePasswordRequest struct {
 // Validate exige que ambos campos estén presentes (la política se aplica aparte).
 func (r ChangePasswordRequest) Validate() validation.Fields {
 	return validation.New().
-		NotBlank("currentPassword", r.CurrentPassword, "La contraseña actual es obligatoria").
-		NotBlank("newPassword", r.NewPassword, "La nueva contraseña es obligatoria").
+		NotBlank("currentPassword", r.CurrentPassword, "Current password is required").
+		NotBlank("newPassword", r.NewPassword, "New password is required").
 		Result()
 }

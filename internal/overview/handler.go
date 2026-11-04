@@ -43,7 +43,7 @@ func (h *Handler) series(c echo.Context) error {
 	if raw := c.QueryParam("hours"); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {
-			return apperr.BadRequest("Parámetro inválido o faltante")
+			return apperr.BadRequest("Invalid or missing parameter")
 		}
 		hours = n
 	}

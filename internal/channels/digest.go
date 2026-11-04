@@ -19,7 +19,7 @@ const digestLines = 8
 
 var digestKinds = map[notifications.Type]string{
 	notifications.TypeAlert:   "Alerta",
-	notifications.TypeDevice:  "Conexión",
+	notifications.TypeDevice:  "Connection",
 	notifications.TypeAI:      "Asistente",
 	notifications.TypeCommand: "Orden",
 	notifications.TypeInfo:    "Aviso",
@@ -53,12 +53,12 @@ func (d *Digest) Run(ctx context.Context) {
 	now := d.clock()
 	enabled, err := d.repo.FindEnabled(ctx)
 	if err != nil {
-		slog.Warn("no se pudieron revisar los resúmenes", "err", err)
+		slog.Warn("could not process digests", "err", err)
 		return
 	}
 	for i := range enabled {
 		if err := d.process(ctx, &enabled[i], now); err != nil {
-			slog.Warn("no se pudo preparar el resumen del cultivo", "cropId", enabled[i].CropID.Hex(), "err", err)
+			slog.Warn("could not prepare crop digest", "cropId", enabled[i].CropID.Hex(), "err", err)
 		}
 	}
 }
@@ -137,9 +137,9 @@ func (d *Digest) dueToday(at string, now time.Time) *time.Time {
 }
 
 func (d *Digest) digest(crop *crops.Crop, items []notifications.Notification, hours int) ChannelMessage {
-	window := "las últimas " + fmt.Sprintf("%d", hours) + " horas"
+	window := "the last " + fmt.Sprintf("%d", hours) + " hours"
 	if hours == 1 {
-		window = "la última hora"
+		window = "the last hour"
 	}
 	lines := []string{fmt.Sprintf("%d %s en %s:", len(items), plural(len(items), "aviso", "avisos"), window)}
 	limit := len(items)
@@ -150,9 +150,9 @@ func (d *Digest) digest(crop *crops.Crop, items []notifications.Notification, ho
 		lines = append(lines, "• "+item.CreatedAt.In(d.zone).Format("15:04")+" "+digestKinds[item.Type]+": "+item.Title)
 	}
 	if len(items) > digestLines {
-		lines = append(lines, fmt.Sprintf("… y %d más en la app.", len(items)-digestLines))
+		lines = append(lines, fmt.Sprintf("… and %d more in the app.", len(items)-digestLines))
 	}
-	return ChannelMessage{Type: notifications.TypeInfo, Title: "Resumen de «" + crop.Name + "»",
+	return ChannelMessage{Type: notifications.TypeInfo, Title: "Digest for «" + crop.Name + "»",
 		Body: strings.Join(lines, "\n"), URL: d.url(crop)}
 }
 
@@ -160,14 +160,14 @@ func (d *Digest) summary(ctx context.Context, crop *crops.Crop, now time.Time) (
 	dayAgo := now.Add(-24 * time.Hour)
 	lines := []string{}
 	if crop.Health == nil {
-		lines = append(lines, "Salud: aún sin evaluar")
+		lines = append(lines, "Health: not evaluated yet")
 	} else {
 		lines = append(lines, fmt.Sprintf("Salud: %s (%d/100)", crop.Health.Label, int(math.Round(crop.Health.Index))))
 	}
 	if crop.Device != nil && crop.Device.Online {
-		lines = append(lines, "Conexión: en línea")
+		lines = append(lines, "Connection: online")
 	} else {
-		lines = append(lines, "Conexión: sin conexión")
+		lines = append(lines, "Connection: offline")
 	}
 	if latest, err := d.readings.Latest(ctx, crop.HexID()); err == nil && latest != nil {
 		lines = append(lines, describe(latest.Measures))
@@ -181,9 +181,9 @@ func (d *Digest) summary(ctx context.Context, crop *crops.Crop, now time.Time) (
 	if err != nil {
 		return ChannelMessage{}, err
 	}
-	lines = append(lines, fmt.Sprintf("Últimas 24 h: %d %s y %d %s", alerts, plural(int(alerts), "alerta", "alertas"),
-		orders, plural(int(orders), "orden", "órdenes")))
-	return ChannelMessage{Type: notifications.TypeInfo, Title: "Resumen diario de «" + crop.Name + "»",
+	lines = append(lines, fmt.Sprintf("Last 24 h: %d %s and %d %s", alerts, plural(int(alerts), "alert", "alerts"),
+		orders, plural(int(orders), "command", "commands")))
+	return ChannelMessage{Type: notifications.TypeInfo, Title: "Daily summary for «" + crop.Name + "»",
 		Body: strings.Join(lines, "\n"), URL: d.url(crop)}, nil
 }
 
@@ -206,9 +206,9 @@ func describe(m readings.Measures) string {
 		parts = append(parts, fmt.Sprintf("luz %d lux", int(math.Round(*m.Brightness))))
 	}
 	if len(parts) == 0 {
-		return "Última lectura: sin datos"
+		return "Latest reading: no data"
 	}
-	return "Última lectura: " + strings.Join(parts, " · ")
+	return "Latest reading: " + strings.Join(parts, " · ")
 }
 
 func plural(n int, one, many string) string {

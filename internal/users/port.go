@@ -21,7 +21,7 @@ type Repository interface {
 
 // ErrDuplicateEmail lo devuelve el adaptador cuando el correo ya existe (viola el índice único). El servicio lo
 // detecta con IsDuplicate sin conocer el motor de base de datos.
-var ErrDuplicateEmail = errors.New("el correo ya está registrado")
+var ErrDuplicateEmail = errors.New("email is already registered")
 
 // IsDuplicate indica si el error es por correo duplicado.
 func IsDuplicate(err error) bool {
