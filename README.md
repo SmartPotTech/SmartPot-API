@@ -1,5 +1,248 @@
 # SmartPot-API-Go
 
+[English](#english) | [Español](#español)
+
+<a id="english"></a>
+## Project Status
+
+[![Go CI](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml)
+[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml)
+
+## Description
+
+SmartPot-API-Go is the core of **SmartPot** rewritten in **Go 1.26** with **Echo**: a REST and MQTT API that connects hydroponic crops, real or virtual, with the web application. It receives telemetry via **MQTT**, persists it in **PostgreSQL + TimescaleDB**, sends commands to actuators, manages device credentials on the broker, and queries the **AI assistant** to diagnose each crop and, when permitted by the user, act autonomously.
+
+It provides a **seamless** migration from the Spring Boot version: it preserves all external contracts — REST routes, JSON payloads, error handling, MQTT topics and broker provisioning, cache keys, SMTP, and HTTP calls to AI, simulator, and Telegram — ensuring the web client, broker, hardware devices, AI, and simulator operate **without disruption**. The database is an internal detail behind a port: the API is the control plane and the persistence engine (**PostgreSQL + TimescaleDB**) can be swapped without touching the business domain. The cache follows the same pattern: behind the `Cache` port is an adapter (**Valkey**, the open-source Redis replacement) that can be swapped without altering services. Existing JWT tokens and device keys remain valid (same HS256 secret, cost-12 BCrypt, and AES-256-GCM). Internally it leverages Go concurrency: the MQTT client, Telegram bot, scheduled workers, and in-memory event bus run in parallel without thread pools or cron daemons.
+
+```mermaid
+flowchart LR
+  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API-Go<br/>:8091"]
+  esp["Real crop<br/>ESP32 or Wokwi"] -->|"MQTT"| broker["SmartPot-Broker"]
+  broker <-->|"telemetry · commands · ACK"| api
+  api --> db[("PostgreSQL<br/>+ TimescaleDB")]
+  api --> cache[("Valkey")]
+  api --> mail["Mailpit / SMTP"]
+  api -->|"evaluation · continual learning"| ai["SmartPot-AI"]
+  api -->|"virtual crops & weather"| sim["SmartPot-DataGenerator"]
+  sim -->|"MQTT"| broker
+  api -->|"notifications & digests"| tg["Telegram"]
+
+  classDef core fill:#067A52,stroke:#06281C,color:#fff;
+  classDef ext fill:#DDF5EA,stroke:#067A52,color:#17261F;
+  class api core;
+  class web,esp,broker,db,cache,mail,ai,sim,tg ext;
+```
+
+## Project Structure
+
+Code is organized inside `internal/`, one package per domain. Each domain packages `handler.go`, `service.go`, `model.go`, `dto.go`, and `port.go` — the `Repository` interface required by the service from the data layer; implementations reside separately in `internal/storage/postgres`. Thus domain logic remains unaware of database specifics (hexagonal architecture / ports and adapters). The cache layer follows the same standard: services depend on `cache.Cache` and external access is handled via `cache.Backend` implemented in `internal/cache/valkey`. `cmd/api` serves as the entry point wiring components and launching the HTTP/MQTT listeners.
+
+```text
+cmd/api/                 # Entry point: configuration loading, dependency wiring, and runtime bootstrap
+internal/
+├── config/              # Environment loading and ISO-8601 duration parser (PT5M, P7D)
+├── httpserver/          # Echo engine, typed RequestContext (sync.Pool), decoupled validator, centralized HTTPErrorHandler
+├── security/            # JWT HS256, BCrypt, AES-GCM, CORS, rate limiter, and typed guards
+├── cache/               # Cache + Backend ports and resilient in-memory fallback store
+├── cache/valkey/        # Valkey (open Redis replacement) Backend adapter via go-redis
+├── storage/postgres/    # Repository adapters for PostgreSQL + TimescaleDB (pool and SQL)
+├── mqtt/                # Paho client, v1 topics, telemetry parser, and Mosquitto/EMQX provisioning
+├── mail/                # Welcome and password reset notifications
+├── openapi/             # OpenAPI 3 document at /v3/api-docs and Swagger UI at /docs
+├── platform/            # Cross-cutting concerns: event bus, validation, ObjectId, geo, and logging
+├── actuators/           # Pump, UV light, fan, humidifier, and doser management
+├── ai/                  # AI service client, health evaluation, autonomous agent, and continual learning
+├── auth/                # Registration, authentication, and password recovery
+├── channels/            # External notification channels (Telegram) and interactive bot
+├── commands/            # MQTT commands: PENDING → SENT → EXECUTED | FAILED | EXPIRED
+├── crops/               # Real and virtual crops, cultivation form, automation mode, and credentials
+├── health/              # /health probes for orchestrators and load balancers
+├── notifications/       # Crop alerts, device status, and assistant activity notices
+├── overview/            # Dashboard: aggregate statistics, comparative time series, and fleet analysis
+├── readings/            # Telemetry readings, statistical summaries, and CSV export
+├── users/               # Account profile, password updates, and account deletion
+└── virtualdevices/      # Virtual crop simulation: configuration, pausing, and simulator proxy
+```
+
+Key HTTP layer architecture decisions (`internal/httpserver` & `internal/security`):
+
+- **Compile-time Typed Context (`*httpserver.RequestContext`).** Each HTTP request wraps the raw context in a pooled `RequestContext` (`sync.Pool`) providing typed fields for identity (`Identity`) and tracing (`TelemetryTrace`), eliminating stringly typed lookups (`c.Get`/`c.Set`).
+- **Explicit Error Returns and Centralized `HTTPErrorHandler`.** Handlers return idiomatic `error` (`*apperr.Error` or `*apperr.ValidationError`), processed centrally into standardized JSON responses.
+- **Linear Middleware Composition.** Functional pipeline `func(next echo.HandlerFunc) echo.HandlerFunc` for logging, panic recovery, security headers, CORS, rate limiting, and auth guards.
+- **Zero-Allocation Radix Router.** Route resolution and parameter extraction run on Echo's radix tree without dynamic heap allocations.
+- **Interchangeable Validation (`echo.Validator`).** Decoupled validation interface delegating to `platform/validation`.
+
+## REST Contract
+
+Local base `http://localhost:8091`, production `https://api.smartpot.app`. Business routes reside under `/api/v1` and require `Authorization: Bearer <token>`. Interactive Swagger UI is hosted at `/docs` and the OpenAPI spec at `/v3/api-docs`.
+
+| Method          | Route                                                                                                                    | Access             |
+|-----------------|--------------------------------------------------------------------------------------------------------------------------|--------------------|
+| GET             | `/health` → `{"status","database","broker","cache","ai","simulator"}` (503 on database down)                              | Public             |
+| POST            | `/api/v1/auth/register` `{name,lastName,email,password}` → `{token,expiresAt,user}`                                      | Public             |
+| POST            | `/api/v1/auth/login` `{email,password}`                                                                                  | Public             |
+| POST            | `/api/v1/auth/password/forgot` `{email}` → 202                                                                           | Public             |
+| POST            | `/api/v1/auth/password/reset` `{token,password}` → 204                                                                   | Public             |
+| GET             | `/api/v1/crop-profiles` (optimal ranges per crop species)                                                                | Public             |
+| GET PUT DELETE  | `/api/v1/users/me` (PUT `{name,lastName}`)                                                                               | JWT                |
+| PUT             | `/api/v1/users/me/password` `{currentPassword,newPassword}`                                                              | JWT                |
+| GET POST        | `/api/v1/crops` (POST `{name,type,kind,form,placement?,virtual?}`; returns device key once for real crops)              | JWT                |
+| PUT             | `/api/v1/crops/automation` `{cropIds?,enabled}` (bulk automation toggle)                                                 | JWT                |
+| GET PUT DELETE  | `/api/v1/crops/{id}` (PUT `{name,type,form?,placement?}`)                                                                | JWT, owner only    |
+| PUT             | `/api/v1/crops/{id}/automation` `{enabled}`                                                                              | JWT, owner only    |
+| GET             | `/api/v1/crops/{id}/weather` (location weather; 204 if unlocated or unavailable)                                          | JWT, owner only    |
+| GET             | `/api/v1/crops/{id}/device` (broker host, username, and topic prefixes; 204 for virtual crops)                           | JWT, owner only    |
+| POST            | `/api/v1/crops/{id}/device/key` (rotates key and disconnects active broker session; real crops only)                      | JWT, owner only    |
+| GET POST        | `/api/v1/crops/{id}/readings` (`from`, `to`, `limit`)                                                                    | JWT, owner only    |
+| GET             | `/api/v1/crops/{id}/readings/latest`, `/summary?hours=24`, `/export` (CSV)                                               | JWT, owner only    |
+| GET POST DELETE | `/api/v1/crops/{id}/actuators`, `/actuators/{actuatorId}`                                                                | JWT, owner only    |
+| GET POST        | `/api/v1/crops/{id}/commands` (POST `{actuatorId,action,durationSeconds}` → 202; 409 on state conflict)                    | JWT, owner only    |
+| GET             | `/api/v1/crops/{id}/insights` (AI assistant diagnosis and predictions)                                                   | JWT, owner only    |
+| GET             | `/api/v1/overview` (account totals and crops with latest telemetry)                                                      | JWT                |
+| GET             | `/api/v1/overview/series?metric=temperature&hours=24` (comparative interval averages)                                    | JWT                |
+| GET             | `/api/v1/overview/fleet` (fleet ranking, shared issues, clusters, and bulk recommendations)                              | JWT                |
+| GET             | `/api/v1/commands?limit=50` (command history across all crops)                                                           | JWT                |
+| POST            | `/api/v1/commands/bulk` `{cropIds?,actuatorType,action,durationSeconds}` → 202 per crop status (`SENT`, `SKIPPED`, `FAILED`) | JWT            |
+| GET             | `/api/v1/notifications` (`unreadOnly`, `limit`), `/unread-count`                                                         | JWT                |
+| PUT DELETE      | `/api/v1/notifications/{id}/read`, `/read-all`, `/{id}`                                                                  | JWT                |
+| GET             | `/api/v1/channels` (configured notification channels and links)                                                          | JWT                |
+| POST            | `/api/v1/channels/telegram/link` → `{code,url,expiresAt}` (single-use linking code, 10 minutes)                          | JWT                |
+| PUT POST DELETE | `/api/v1/channels/links/{id}` `{enabled?,events?}`, `/links/{id}/test`, `/links/{id}`                                    | JWT, owner only    |
+| POST            | `/api/v1/channels/telegram/webhook` (webhook mode, authenticated with `X-Telegram-Bot-Api-Secret-Token`)                 | Telegram           |
+| GET PUT         | `/api/v1/crops/{id}/channels`, `/channels/{type}` `{enabled?,events?,delivery?,digestHours?,dailySummaryAt?}`            | JWT, owner only    |
+| POST DELETE     | `/api/v1/crops/{id}/channels/{type}/recipients` → `{code,url,expiresAt}` (chat sharing link), `/recipients/{recipientId}`| JWT, owner only |
+| GET PUT DELETE  | `/api/v1/crops/{id}/virtual-device` (virtual crops only; PUT updates mode, DELETE pauses)                                 | JWT, owner only    |
+| GET             | `/api/v1/virtual-devices/places?q=` (weather location search)                                                            | JWT                |
+| GET             | `/api/v1/ai/learning` (continual learning model status: aggregated species metrics)                                      | JWT                |
+
+- Supported Species: `TOMATO`, `LETTUCE`, `STRAWBERRY`, `BASIL`, `SPINACH`, `PEPPER`.
+- Crop Kind: `REAL` or `VIRTUAL`, immutable upon creation (`REAL` by default; 400 on modification attempt).
+- Cultivation Form: `POT`, `NFT`, `TOWER`, `RAFT` (`POT` by default; updates UI illustration).
+- Placement: `setting` `INDOOR` or `OUTDOOR`, `exposure` `FULL_SUN`, `PARTIAL_SUN`, or `SHADE`, plus location.
+- Actuator Types: `WATER_PUMP`, `UV_LIGHT`, `FAN`, `HUMIDIFIER`, `NUTRIENT_DOSER`, `PH_DOSER`. Real crops initialize with pump, UV light, and fan; virtual crops initialize with all six.
+- Password Policy: 8 characters to 72 bytes requiring uppercase, lowercase, and numbers (BCrypt cost 12).
+- Privacy: Queries on crops belonging to other accounts return **404**, preventing ID enumeration.
+- Rate Limits: 300 requests/min per IP, 10 requests/min for `/api/v1/auth/*` (429 with `Retry-After`).
+
+## MQTT
+
+The message broker is [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/SmartPot-Broker-EMQX), delegating device authentication to the API (`POST /internal/mqtt/authn` using shared secret `MQTT_AUTHN_TOKEN`). The API validates the crop device key (AES-256-GCM encrypted) and returns an ACL constrained to its specific topics. The verification cache stores an HMAC of the key. Devices connect with **username = crop ID** and **password = device key**; rotating or deleting keys terminates active EMQX sessions.
+
+| Topic                               | Direction                                | Payload                                                                                                        |
+|-------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| `smartpot/v1/{cropId}/telemetry`    | Device → API                             | `{"temperature":24.5,"humidity":61,"brightness":710,"ph":6.1,"tds":820,"atmosphere":1012.8,"soilMoisture":55}` |
+| `smartpot/v1/{cropId}/commands`     | API → Device                             | `{"id":"…","actuator":"WATER_PUMP","action":"ACTIVATE","durationSeconds":30}`                                  |
+| `smartpot/v1/{cropId}/commands/ack` | Device → API                             | `{"id":"…","status":"EXECUTED","message":"Water pump active for 15 s"}`                                        |
+| `smartpot/v1/{cropId}/status`       | Device (retained / LWT)                  | `online` / `offline`                                                                                           |
+
+Telemetry can also arrive as **compact binary v2 packets** (27 bytes, same topic) containing sensor presence bitmasks, 32-bit light, and pressure fields (`internal/mqtt/parser.go`). Telemetry outside valid physical ranges is dropped; each crop records at most one sample per 5 seconds. Commands without an ACK within 2 minutes transition to `EXPIRED`.
+
+## AI Assistant
+
+Incoming readings trigger the autonomous agent, evaluating crops every 30 seconds when automation is enabled (every 5 minutes otherwise). Readings are forwarded to [SmartPot-AI](https://github.com/SmartPotTech/SmartPot-AI) alongside historical series and actuator states. The AI service responds with a fuzzy health index, expert rule diagnoses, learned model predictions, and recommended actions. The API persists health status, issues notifications for critical conditions, and under **automation mode** executes actions with a 10-minute actuator cooldown.
+
+Readings from real crops are buffered for **continual learning**: every minute the API delivers batches to the AI engine (`/v1/learning/readings`) with local hour context. Fleet insights aggregate time-series data with TimescaleDB `time_bucket` to generate cross-crop rankings and collective actions.
+
+## Telegram Notifications
+
+PWA alerts and notifications are forwarded to linked **external channels**. Channels implement `NotificationChannel`, allowing modular addition of Slack or WhatsApp integrations. Currently Telegram is supported natively:
+
+1. The PWA requests a linking token (`POST /api/v1/channels/telegram/link`) and opens `https://t.me/<bot>?start=<code>`.
+2. The bot parses `/start <code>`, validates the one-time code, and associates the chat with the user's account.
+3. Interactive `/status` lists crops, and `/unlink` detaches the chat.
+
+In development `TELEGRAM_MODE=polling` runs long-polling; production uses `webhook` with signature verification.
+
+## AI Assistant Connections (MCP)
+
+Users can generate personal connection tokens (`spt_...`) from the PWA (Profile › Connections) to interface with external AI agents such as [SmartPot-MCP](https://github.com/SmartPotTech/SmartPot-MCP): `GET/POST /api/v1/connections` and `DELETE /api/v1/connections/{id}`. Tokens are revealed once upon creation; hashes are stored securely.
+
+| Scope     | Permissions                                                |
+|-----------|------------------------------------------------------------|
+| `READ`    | Read-only queries (`GET`)                                  |
+| `CONTROL` | Create, update, delete crops and trigger actuators         |
+
+Connection tokens are strictly blocked from changing user account settings, managing other tokens, viewing device credentials, or accessing admin operations.
+
+## Real and Virtual Crops
+
+Crops specify their data origin upon creation:
+- **Real Crops** generate a unique device key for ESP32 firmware running on hardware or simulated via Wokwi.
+- **Virtual Crops** require no hardware: [SmartPot-DataGenerator](https://github.com/SmartPotTech/SmartPot-DataGenerator) executes continuous simulations using internal credentials. Virtual crops can be paused, resumed, and configured with manual or weather-based environmental profiles (up to 5 virtual crops per user).
+
+## Installation Guide
+
+### One-Command Deployment
+
+The container image is publicly available at `ghcr.io/smartpottech/smartpot-api-go`. The full platform can be started with a single command without downloading source code:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SmartPotTech/.github/main/docker/demo-beta/compose.yaml | docker compose -f - up -d --wait
+```
+
+Access http://localhost:5173 with credentials `demo@smartpot.app` / `SmartPot2026`. Stop with `docker compose -p smartpot-demo-beta down` (add `-v` to wipe data). See the [demo beta guide](https://github.com/SmartPotTech/.github/tree/main/docker/demo-beta).
+
+### Prerequisites
+
+- Go 1.26 (or Docker)
+- PostgreSQL + TimescaleDB ([SmartPot-DB-Postgre](https://github.com/SmartPotTech/SmartPot-DB-Postgre))
+- Valkey ([SmartPot-Cache-Valkey](https://github.com/SmartPotTech/SmartPot-Cache-Valkey))
+- Mailpit, MQTT broker, and AI service: complete stack available in [SmartPotTech/.github](https://github.com/SmartPotTech/.github)
+
+### Development
+
+```bash
+cp .env.example .env    # Configure secrets and connection parameters
+go run ./cmd/api
+```
+
+`SMARTPOT_JWT_SECRET` (at least 32 characters) and `SMARTPOT_AES_KEY` (32-byte Base64 key) are mandatory.
+
+### Testing
+
+```bash
+go test ./...
+```
+
+The test suite covers encryption/decryption parity, JWT handling, password policies, telemetry ranges, MQTT topics and provisioning, command timeouts, actuator switches (409 conflict detection), agricultural thresholds, agent rules, continual learning pipelines, Telegram bot handlers, OpenAPI schemas, and caching behaviors.
+
+### Docker Image
+
+```bash
+docker build -t smartpot-api-go .
+docker pull ghcr.io/smartpottech/smartpot-api-go:latest
+```
+
+The Dockerfile builds a statically linked binary copied into a minimal `scratch` image (no shell, package manager, or network binaries). Runs under UID 1000 with a read-only root filesystem and embedded `healthcheck` command.
+
+## Documentation
+
+- OpenAPI interactive Swagger UI: `/docs`
+- OpenAPI JSON specification: `/v3/api-docs`
+- Platform architecture & protocol docs: [Platform Documentation](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md)
+
+Global platform diagrams:
+- [Complete Architecture](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_01_Architecture.svg)
+- [Operational Sequence](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_02_Operation_Sequence.svg)
+- [State Machines](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_05_State_Machines.svg)
+- [Domain Model](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_06_Domain_Model.svg)
+
+## Transport and Performance
+
+- **gRPC AI Service with REST Fallback.** Configured via `AI_GRPC_SOCKET` (UNIX domain socket) or `AI_GRPC_ADDR` (HTTP/2 internal TCP). Falls back seamlessly to REST HTTP/1.1 if gRPC is unavailable.
+- **Server-Sent Events (SSE).** `GET /api/v1/crops/{cropId}/stream` delivers real-time telemetry events (`X-Accel-Buffering: no` compatible).
+- **Batch Telemetry Ingestion.** MQTT telemetry is ingested in batches of up to 100 readings or every 10 ms using PostgreSQL binary `COPY`.
+- **Deadband Filtering.** The autonomous agent avoids redundant AI evaluations if environmental variations remain below deadband thresholds (0.1 °C, 0.4% RH, 0.03 pH, 15 ppm, 0.5% moisture, 0.5 hPa, 5% light).
+- **Reverse Proxy Support.** When `TRUST_PROXY=true`, client IP addresses are resolved from `X-Forwarded-For` strictly against configured `TRUSTED_PROXY_CIDRS`.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<a id="español"></a>
 ## Estado del Proyecto
 
 [![Go CI](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml)
