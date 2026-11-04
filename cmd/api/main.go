@@ -231,13 +231,15 @@ func run() error {
 
 	// Rutas públicas y autenticadas bajo /api/v1.
 	v1 := engine.Group("/api/v1")
-	auth.NewHandler(authService).Register(v1)
+	authHandler := auth.NewHandler(authService)
+	authHandler.Register(v1)
 	aiHandler := ai.NewHandler(insightService, aiClient)
 	aiHandler.RegisterPublic(v1)
 	telegramWebhook.Register(v1)
 
 	authed := v1.Group("")
 	authed.Use(tokenService.Guard())
+	authHandler.RegisterAuthed(authed)
 	users.NewHandler(userService).Register(authed)
 	notifications.NewHandler(notificationService).Register(authed)
 	crops.NewHandler(cropService, readingService, virtualDeviceService, weatherService).Register(authed)

@@ -61,5 +61,6 @@ func (h *Handler) delete(c echo.Context) error {
 	if err := h.svc.DeleteAccount(c.Request().Context(), security.CurrentUserID(c)); err != nil {
 		return err
 	}
+	security.ClearSessionCookies(c)
 	return c.NoContent(http.StatusNoContent)
 }

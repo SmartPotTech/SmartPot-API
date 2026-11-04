@@ -34,7 +34,7 @@ func (r *RateLimiter) Middleware() echo.MiddlewareFunc {
 			if c.Request().Method == http.MethodOptions || path == "/health" {
 				return next(c)
 			}
-			authRoute := strings.HasPrefix(path, "/api/v1/auth/")
+			authRoute := strings.HasPrefix(path, "/api/v1/auth/") && path != "/api/v1/auth/logout" && path != "/api/v1/auth/session"
 			limit := r.generalLimit
 			scope := "all:"
 			if authRoute {

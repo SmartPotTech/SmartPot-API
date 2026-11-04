@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/validation"
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/users"
 )
 
@@ -41,6 +42,12 @@ func (r RegisterRequest) Validate() validation.Fields {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Remember *bool  `json:"remember,omitempty"`
+}
+
+// RememberMe indica si la cookie de sesión debe persistir hasta la expiración del JWT.
+func (r LoginRequest) RememberMe() bool {
+	return r.Remember == nil || *r.Remember
 }
 
 // Validate valida el inicio de sesión.
@@ -81,9 +88,10 @@ func (r ResetPasswordRequest) Validate() validation.Fields {
 		Result()
 }
 
-// AuthResponse es la respuesta de registro e inicio de sesión.
+// AuthResponse es la respuesta de registro, inicio de sesión y consulta de sesión.
+// El token JWT viaja exclusivamente en la cookie HttpOnly smartpot_session.
 type AuthResponse struct {
-	Token     string             `json:"token"`
-	ExpiresAt time.Time          `json:"expiresAt"`
-	User      users.UserResponse `json:"user"`
+	Issued    security.IssuedToken `json:"-"`
+	ExpiresAt time.Time            `json:"expiresAt"`
+	User      users.UserResponse   `json:"user"`
 }

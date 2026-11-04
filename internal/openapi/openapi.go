@@ -26,6 +26,8 @@ var routes = []route{
 
 	{"POST", "/api/v1/auth/register", "Autenticación", "Crear una cuenta", true},
 	{"POST", "/api/v1/auth/login", "Autenticación", "Iniciar sesión", true},
+	{"POST", "/api/v1/auth/logout", "Autenticación", "Cerrar sesión", true},
+	{"GET", "/api/v1/auth/session", "Autenticación", "Ver sesión actual", false},
 	{"POST", "/api/v1/auth/password/forgot", "Autenticación", "Solicitar restablecer la contraseña", true},
 	{"POST", "/api/v1/auth/password/reset", "Autenticación", "Restablecer la contraseña con el enlace", true},
 

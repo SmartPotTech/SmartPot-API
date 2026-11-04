@@ -14,6 +14,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/users"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -182,7 +183,24 @@ func (s *Service) authResponse(u *users.User) (AuthResponse, error) {
 	if err != nil {
 		return AuthResponse{}, err
 	}
-	return AuthResponse{Token: issued.Value, ExpiresAt: issued.ExpiresAt, User: users.ToResponse(u)}, nil
+	return AuthResponse{Issued: issued, ExpiresAt: issued.ExpiresAt, User: users.ToResponse(u)}, nil
+}
+
+// SetSessionCookies escribe la cookie HttpOnly con el JWT y el token CSRF en la respuesta HTTP.
+func (s *Service) SetSessionCookies(c echo.Context, resp AuthResponse, remember bool) {
+	s.jwt.SetSessionCookies(c, resp.Issued, remember)
+}
+
+// CurrentSession devuelve los datos vigentes del usuario autenticado y la expiración de su sesión.
+func (s *Service) CurrentSession(ctx context.Context, userID string, expiresAt time.Time) (AuthResponse, error) {
+	u, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return AuthResponse{}, err
+	}
+	if u == nil {
+		return AuthResponse{}, apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+	}
+	return AuthResponse{ExpiresAt: expiresAt, User: users.ToResponse(u)}, nil
 }
 
 func randomToken() (string, error) {

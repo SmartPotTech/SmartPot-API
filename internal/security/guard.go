@@ -2,8 +2,10 @@ package security
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/httpserver"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
@@ -37,23 +39,136 @@ func (s *TokenService) UseConnections(a ConnectionAuthenticator) {
 	s.connections = a
 }
 
-// Guard devuelve el middleware que exige un token JWT válido (o un token de conexión, si está habilitado) e
-// inyecta la identidad y las credenciales verificadas en el RequestContext tipado en tiempo de compilación (sin
-// usar mapas de strings ni conversiones any).
+// SetSessionCookies escribe la cookie HttpOnly de sesión, la cookie CSRF y la cabecera X-CSRF-Token.
+func (s *TokenService) SetSessionCookies(c echo.Context, issued IssuedToken, remember bool) {
+	secure := isSecureRequest(c)
+	domain := cookieDomain(c)
+	csrf := s.CSRFToken(issued.Value)
+	sessionCookie := &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    issued.Value,
+		Path:     "/",
+		Domain:   domain,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	}
+	csrfCookie := &http.Cookie{
+		Name:     CSRFCookieName,
+		Value:    csrf,
+		Path:     "/",
+		Domain:   domain,
+		HttpOnly: false,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	}
+	if remember {
+		exp := issued.ExpiresAt.UTC()
+		maxAge := int(exp.Sub(s.now().UTC()).Seconds())
+		if maxAge < 1 {
+			maxAge = 1
+		}
+		sessionCookie.Expires = exp
+		sessionCookie.MaxAge = maxAge
+		csrfCookie.Expires = exp
+		csrfCookie.MaxAge = maxAge
+	}
+	c.SetCookie(sessionCookie)
+	c.SetCookie(csrfCookie)
+	c.Response().Header().Set(CSRFHeaderName, csrf)
+}
+
+// ClearSessionCookies elimina las cookies de sesión y CSRF en el navegador.
+func ClearSessionCookies(c echo.Context) {
+	secure := isSecureRequest(c)
+	domain := cookieDomain(c)
+	expired := time.Unix(0, 0).UTC()
+	c.SetCookie(&http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		Domain:   domain,
+		Expires:  expired,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+	c.SetCookie(&http.Cookie{
+		Name:     CSRFCookieName,
+		Value:    "",
+		Path:     "/",
+		Domain:   domain,
+		Expires:  expired,
+		MaxAge:   -1,
+		HttpOnly: false,
+		Secure:   secure,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func isSecureRequest(c echo.Context) bool {
+	return c.Scheme() == "https" || strings.EqualFold(c.Request().Header.Get("X-Forwarded-Proto"), "https")
+}
+
+func cookieDomain(c echo.Context) string {
+	host := c.Request().Host
+	if idx := strings.IndexByte(host, ':'); idx != -1 {
+		host = host[:idx]
+	}
+	if host == "smartpot.app" || strings.HasSuffix(host, ".smartpot.app") {
+		return "smartpot.app"
+	}
+	return ""
+}
+
+// Guard devuelve el middleware que exige una sesión válida en cookie HttpOnly (con verificación CSRF en escrituras)
+// o un token Bearer (para conexiones personales spt_) e inyecta la identidad tipada en el RequestContext.
 func (s *TokenService) Guard() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			header := c.Request().Header.Get("Authorization")
-			if !strings.HasPrefix(header, "Bearer ") {
-				return apperr.Unauthorized("Inicia sesión para continuar")
-			}
-			raw := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
-			if s.connections != nil && strings.HasPrefix(raw, connectionTokenPrefix) {
-				return s.guardConnection(c, raw, next)
+			req := c.Request()
+			header := req.Header.Get("Authorization")
+			var raw string
+			fromCookie := false
+			if header != "" {
+				if !strings.HasPrefix(header, "Bearer ") {
+					return apperr.Unauthorized("Inicia sesión para continuar")
+				}
+				raw = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+				if s.connections != nil && strings.HasPrefix(raw, connectionTokenPrefix) {
+					return s.guardConnection(c, raw, next)
+				}
+			} else {
+				cookie, err := c.Cookie(SessionCookieName)
+				if err != nil || strings.TrimSpace(cookie.Value) == "" {
+					return apperr.Unauthorized("Inicia sesión para continuar")
+				}
+				raw = strings.TrimSpace(cookie.Value)
+				fromCookie = true
 			}
 			claims, err := s.Parse(raw)
 			if err != nil {
 				return apperr.Unauthorized("Tu sesión no es válida o expiró. Inicia sesión de nuevo")
+			}
+			if fromCookie {
+				expectedCSRF := s.CSRFToken(raw)
+				c.Response().Header().Set(CSRFHeaderName, expectedCSRF)
+				if isUnsafeMethod(req.Method) {
+					if err := verifyCSRF(c, expectedCSRF); err != nil {
+						return err
+					}
+				} else if csrfCookie, err := c.Cookie(CSRFCookieName); err != nil || csrfCookie.Value != expectedCSRF {
+					c.SetCookie(&http.Cookie{
+						Name:     CSRFCookieName,
+						Value:    expectedCSRF,
+						Path:     "/",
+						Domain:   cookieDomain(c),
+						HttpOnly: false,
+						Secure:   isSecureRequest(c),
+						SameSite: http.SameSiteLaxMode,
+					})
+				}
 			}
 			rc := httpserver.FromContext(c)
 			rc.SetIdentity(httpserver.Identity{
@@ -67,6 +182,27 @@ func (s *TokenService) Guard() echo.MiddlewareFunc {
 			return next(rc)
 		}
 	}
+}
+
+func isUnsafeMethod(method string) bool {
+	return method != http.MethodGet && method != http.MethodHead && method != http.MethodOptions
+}
+
+func verifyCSRF(c echo.Context, expected string) error {
+	csrfCookie, err := c.Cookie(CSRFCookieName)
+	if err != nil || strings.TrimSpace(csrfCookie.Value) == "" {
+		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+	}
+	cookieVal := strings.TrimSpace(csrfCookie.Value)
+	headerVal := strings.TrimSpace(c.Request().Header.Get(CSRFHeaderName))
+	if headerVal == "" {
+		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+	}
+	if subtle.ConstantTimeCompare([]byte(cookieVal), []byte(headerVal)) != 1 ||
+		subtle.ConstantTimeCompare([]byte(headerVal), []byte(expected)) != 1 {
+		return apperr.Forbidden("Solicitud rechazada por protección CSRF")
+	}
+	return nil
 }
 
 func (s *TokenService) guardConnection(c echo.Context, raw string, next echo.HandlerFunc) error {

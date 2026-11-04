@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/httpserver"
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
 	"github.com/labstack/echo/v4"
 )
 
-// Handler expone las rutas públicas de autenticación.
+// Handler expone las rutas de autenticación.
 type Handler struct {
 	svc *Service
 }
@@ -17,13 +18,19 @@ func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Register monta las rutas bajo el grupo público /api/v1.
+// Register monta las rutas públicas bajo el grupo /api/v1.
 func (h *Handler) Register(g *echo.Group) {
 	a := g.Group("/auth")
 	a.POST("/register", h.register)
 	a.POST("/login", h.login)
+	a.POST("/logout", h.logout)
 	a.POST("/password/forgot", h.forgot)
 	a.POST("/password/reset", h.reset)
+}
+
+// RegisterAuthed monta la consulta de sesión activa bajo el grupo autenticado /api/v1.
+func (h *Handler) RegisterAuthed(g *echo.Group) {
+	g.GET("/auth/session", h.session)
 }
 
 func (h *Handler) register(c echo.Context) error {
@@ -35,6 +42,7 @@ func (h *Handler) register(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	h.svc.SetSessionCookies(c, resp, true)
 	return c.JSON(http.StatusCreated, resp)
 }
 
@@ -44,6 +52,21 @@ func (h *Handler) login(c echo.Context) error {
 		return err
 	}
 	resp, err := h.svc.Login(c.Request().Context(), req)
+	if err != nil {
+		return err
+	}
+	h.svc.SetSessionCookies(c, resp, req.RememberMe())
+	return c.JSON(http.StatusOK, resp)
+}
+
+func (h *Handler) logout(c echo.Context) error {
+	security.ClearSessionCookies(c)
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) session(c echo.Context) error {
+	id := security.CurrentIdentity(c)
+	resp, err := h.svc.CurrentSession(c.Request().Context(), id.UserID, id.ExpiresAt)
 	if err != nil {
 		return err
 	}

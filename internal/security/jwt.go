@@ -1,6 +1,9 @@
 package security
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -12,6 +15,13 @@ const (
 	JWTIssuer  = "smartpot-api"
 	roleClaim  = "role"
 	emailClaim = "email"
+
+	// SessionCookieName es la cookie HttpOnly que transporta el JWT de la sesión.
+	SessionCookieName = "smartpot_session"
+	// CSRFCookieName es la cookie de doble envío vinculada al JWT de la sesión.
+	CSRFCookieName = "smartpot_csrf"
+	// CSRFHeaderName es la cabecera que debe coincidir con CSRFCookieName en peticiones de escritura.
+	CSRFHeaderName = "X-CSRF-Token"
 )
 
 // TokenService emite y valida tokens JWT HS256. Usa el mismo secreto, issuer y
@@ -52,6 +62,15 @@ func (s *TokenService) Issue(userID, email, role string) (IssuedToken, error) {
 		return IssuedToken{}, err
 	}
 	return IssuedToken{Value: signed, ExpiresAt: exp}, nil
+}
+
+// CSRFToken deriva el token CSRF vinculado con HMAC-SHA256 al JWT de la sesión.
+func (s *TokenService) CSRFToken(sessionToken string) string {
+	mac := hmac.New(sha256.New, s.secret)
+	mac.Write([]byte("csrf:"))
+	mac.Write([]byte(sessionToken))
+	sum := mac.Sum(nil)
+	return hex.EncodeToString(sum[:16])
 }
 
 // Claims son los datos que la API lee del token.
