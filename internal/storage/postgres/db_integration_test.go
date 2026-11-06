@@ -233,6 +233,47 @@ func TestIntegrationSaveAndDeviceKeyPreserveLiveDeviceState(t *testing.T) {
 	}
 }
 
+func TestIntegrationSeriesAveragesIgnoreNullBiasedCagg(t *testing.T) {
+	pool := integrationPool(t)
+	ctx := context.Background()
+	repo := NewReadingRepository(pool)
+	crop := seedCrop(t, pool, seedUser(t, pool), crops.KindReal)
+	base := time.Now().UTC().Truncate(time.Hour).Add(-time.Hour)
+	temp := func(v float64) *float64 { return &v }
+	humidity := func(v float64) *float64 { return &v }
+
+	rows := []readings.Reading{
+		{CropID: crop.ID, MeasuredAt: base.Add(10 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Temperature: temp(50)}},
+		{CropID: crop.ID, MeasuredAt: base.Add(15 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Humidity: humidity(50)}},
+		{CropID: crop.ID, MeasuredAt: base.Add(20 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Humidity: humidity(60)}},
+		{CropID: crop.ID, MeasuredAt: base.Add(70 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Temperature: temp(0)}},
+		{CropID: crop.ID, MeasuredAt: base.Add(75 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Temperature: temp(0)}},
+		{CropID: crop.ID, MeasuredAt: base.Add(80 * time.Second), Source: readings.SourceMQTT,
+			Measures: readings.Measures{Temperature: temp(0)}},
+	}
+	for i := range rows {
+		rows[i].ID = primitive.NewObjectID()
+		if err := repo.Insert(ctx, &rows[i]); err != nil {
+			t.Fatalf("insert reading: %v", err)
+		}
+	}
+
+	// El promedio exacto sobre temperaturas no nulas es (50+0+0+0)/4 = 12.5.
+	// Reagrupar avg_temperature por reading_count daría 25, el sesgo de D7.
+	buckets, err := repo.SeriesAverages(ctx, []primitive.ObjectID{crop.ID}, "temperature", base, 15)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(buckets) != 1 || buckets[0].Value != 12.5 {
+		t.Fatalf("weighted average must ignore NULL-temperature rows: %+v", buckets)
+	}
+}
+
 func TestIntegrationLatestByCropIDsAndSeriesAverages(t *testing.T) {
 	pool := integrationPool(t)
 	ctx := context.Background()

@@ -275,8 +275,9 @@ func alignToBucket(from time.Time, bucketMinutes int) time.Time {
 
 // SeriesAverages calcula promedios por cultivo e intervalo. Para ventanas
 // cortas de varios cultivos usa la hipertabla (índice BRIN); para un cultivo o
-// ventanas largas, las vistas continuas. La ponderación usa count_<métrica>
-// cuando la vista lo expone y, si no, descarta los baldes sin dato.
+// ventanas largas, las vistas continuas. La reponderación solo usa una vista si
+// expone count_<métrica>: sin ese contador, reading_count incluye las filas con
+// la métrica nula y sesga el resultado (D7), así que se consulta el crudo.
 func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primitive.ObjectID, metric string, from time.Time, bucketMinutes int) ([]readings.Bucket, error) {
 	col, ok := metricColumn[metric]
 	if !ok || len(cropIDs) == 0 || bucketMinutes < 1 {
@@ -302,19 +303,18 @@ func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primit
 	if len(cropIDs) > 1 && bucketMinutes < 60 {
 		caggTable = ""
 	}
+	// Sin count_<métrica> la reagrupación desde la vista continua sería sesgada;
+	// el crudo da el promedio exacto y sigue usando el índice BRIN.
+	if caggTable != "" && !r.hasCountColumn(ctx, caggTable, col) {
+		caggTable = ""
+	}
 
 	if caggTable != "" {
 		caggCol := "avg_" + col
-		weight := "reading_count"
-		filter := caggCol + " IS NOT NULL"
-		if r.hasCountColumn(ctx, caggTable, col) {
-			// Ponderación exacta por cantidad de muestras no nulas de esa métrica.
-			weight = "count_" + col
-			filter = weight + " > 0"
-		}
+		weight := "count_" + col
 		sqlCagg := "SELECT crop_id, time_bucket(make_interval(mins => $2), bucket) AS b, " +
 			"sum(" + caggCol + " * " + weight + ") / nullif(sum(" + weight + "), 0) " +
-			"FROM " + caggTable + " WHERE crop_id = ANY($1) AND bucket >= $3 AND " + filter + " " +
+			"FROM " + caggTable + " WHERE crop_id = ANY($1) AND bucket >= $3 AND " + weight + " > 0 " +
 			"GROUP BY crop_id, b ORDER BY b ASC"
 		if out, err := r.queryBuckets(ctx, sqlCagg, hexes, bucketMinutes, from); err == nil && len(out) > 0 {
 			return out, nil

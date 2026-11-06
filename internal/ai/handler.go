@@ -2,6 +2,7 @@ package ai
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
 	"github.com/labstack/echo/v4"
@@ -52,7 +53,7 @@ func (h *Handler) learning(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	c.Response().Header().Set("Cache-Control", "private, max-age=60")
+	c.Response().Header().Set("Cache-Control", "private, max-age="+strconv.Itoa(int(learningTTL.Seconds())))
 	return c.Blob(http.StatusOK, "application/json; charset=utf-8", []byte(body))
 }
 

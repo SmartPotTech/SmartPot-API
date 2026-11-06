@@ -28,7 +28,9 @@ const (
 	unavailableMsg = "The AI assistant is not available at this moment"
 	disabledMsg    = "The AI assistant is disabled on this server"
 	profilesTTL    = time.Hour
-	learningTTL    = time.Minute
+	// El estado del aprendizaje cambia rápido al recuperarse el Trainer; 60 s en
+	// Valkey más 60 s en el navegador dejaban la API en enabled:false hasta 2 min.
+	learningTTL = 10 * time.Second
 	// La salud positiva se cachea poco y la negativa menos aún: no se puede
 	// reportar ai:DOWN durante 26 s después de que la IA ya se recuperó.
 	healthUpTTL     = 10 * time.Second
@@ -44,8 +46,11 @@ type Client struct {
 	token   string
 	timeout time.Duration
 	http    *http.Client
-	cache   cache.Cache
-	clock   func() time.Time
+	// learningHTTP da al lote de aprendizaje un presupuesto mayor que el proxy
+	// de la IA hacia el Trainer (10 s), para no abortar un guardado exitoso (H-11).
+	learningHTTP *http.Client
+	cache        cache.Cache
+	clock        func() time.Time
 
 	cb *CircuitBreaker
 	sf *Singleflight
@@ -72,16 +77,17 @@ func NewClient(cfg config.AI, store cache.Cache, clock func() time.Time) *Client
 		grpcTimeout = cfg.Timeout
 	}
 	c := &Client{
-		enabled:     cfg.Enabled,
-		baseURL:     strings.TrimRight(cfg.BaseURL, "/"),
-		token:       cfg.Token,
-		timeout:     cfg.Timeout,
-		http:        &http.Client{Timeout: cfg.Timeout},
-		cache:       store,
-		clock:       clock,
-		grpcTimeout: grpcTimeout,
-		cb:          NewCircuitBreaker(5, 10*time.Second, clock),
-		sf:          NewSingleflight(),
+		enabled:      cfg.Enabled,
+		baseURL:      strings.TrimRight(cfg.BaseURL, "/"),
+		token:        cfg.Token,
+		timeout:      cfg.Timeout,
+		http:         &http.Client{Timeout: cfg.Timeout},
+		learningHTTP: &http.Client{Timeout: cfg.Timeout + 6*time.Second},
+		cache:        store,
+		clock:        clock,
+		grpcTimeout:  grpcTimeout,
+		cb:           NewCircuitBreaker(5, 10*time.Second, clock),
+		sf:           NewSingleflight(),
 	}
 	if !cfg.Enabled {
 		return c
@@ -370,7 +376,11 @@ func (c *Client) doRaw(ctx context.Context, method, path string, body, out any) 
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	resp, err := c.http.Do(req)
+	client := c.http
+	if path == "/v1/learning/readings" {
+		client = c.learningHTTP
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		slog.Warn("AI service request failed", "path", path, "err", err)
 		return apperr.Unavailable(unavailableMsg)
