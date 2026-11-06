@@ -43,7 +43,7 @@ func (l *Listener) Start() {
 		if err := l.client.SetWebhook(l.cfg.WebhookURL, l.cfg.WebhookSecret); err != nil {
 			slog.Warn("Telegram: could not register webhook", "err", err)
 		} else {
-			slog.Info("Telegram: webhook registrado", "url", l.cfg.WebhookURL)
+			slog.Info("Telegram: webhook registered", "url", l.cfg.WebhookURL)
 		}
 		return
 	}

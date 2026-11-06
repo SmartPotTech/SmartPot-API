@@ -136,7 +136,7 @@ func (h *Handler) streamSSE(c echo.Context) error {
 
 	flusher := http.NewResponseController(w.Writer)
 	// retry fija en 5 s la reconexión del cliente; el comentario inicial abre el flujo en los proxies.
-	if _, err := fmt.Fprint(w, "retry: 5000\n: conectado\n\n"); err != nil {
+	if _, err := fmt.Fprint(w, "retry: 5000\n: connected\n\n"); err != nil {
 		return nil
 	}
 	if err := flusher.Flush(); err != nil {

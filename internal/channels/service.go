@@ -127,7 +127,7 @@ func (s *Service) CompleteLink(ctx context.Context, t Type, code, address, displ
 	if err := s.repo.Save(ctx, link); err != nil {
 		return nil, false
 	}
-	slog.Info("canal vinculado", "type", t, "userId", userID)
+	slog.Info("channel linked", "type", t, "userId", userID)
 	return link, true
 }
 
