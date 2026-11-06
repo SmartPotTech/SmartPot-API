@@ -203,9 +203,17 @@ go run ./cmd/api
 
 ```bash
 go test ./...
+go test -race ./...   # requires CGO and a C compiler
 ```
 
-The test suite covers encryption/decryption parity, JWT handling, password policies, telemetry ranges, MQTT topics and provisioning, command timeouts, actuator switches (409 conflict detection), agricultural thresholds, agent rules, continual learning pipelines, Telegram bot handlers, OpenAPI schemas, and caching behaviors.
+The test suite covers encryption/decryption parity, JWT handling and revocation, password policies, telemetry ranges, MQTT topics, retention and provisioning, the conditional command state machine, account quotas, actuator switches (409 conflict detection), agricultural thresholds, agent rules, continual learning pipelines, Telegram bot handlers, OpenAPI schemas, and caching behaviors.
+
+The PostgreSQL adapters also have opt-in integration tests against a real TimescaleDB:
+
+```bash
+SMARTPOT_TEST_DATABASE_URL='postgres://user:pass@localhost:5432/smartpot?sslmode=disable' \
+  go test -tags=integration ./internal/storage/postgres
+```
 
 ### Docker Image
 
@@ -234,7 +242,16 @@ Global platform diagrams:
 - **Server-Sent Events (SSE).** `GET /api/v1/crops/{cropId}/stream` delivers real-time telemetry events (`X-Accel-Buffering: no` compatible).
 - **Batch Telemetry Ingestion.** MQTT telemetry is ingested in batches of up to 100 readings or every 10 ms using PostgreSQL binary `COPY`.
 - **Deadband Filtering.** The autonomous agent avoids redundant AI evaluations if environmental variations remain below deadband thresholds (0.1 °C, 0.4% RH, 0.03 pH, 15 ppm, 0.5% moisture, 0.5 hPa, 5% light).
-- **Reverse Proxy Support.** When `TRUST_PROXY=true`, client IP addresses are resolved from `X-Forwarded-For` strictly against configured `TRUSTED_PROXY_CIDRS`.
+- **Reverse Proxy Support.** When `TRUST_PROXY=true` (or the production alias `SERVER_TRUST_PROXY`), client IP addresses are resolved from `X-Forwarded-For` strictly against `TRUSTED_PROXY_CIDRS` (alias `SERVER_TRUSTED_PROXIES`).
+
+## Reliability and Concurrency Guarantees
+
+- **Atomic command state machine.** Transitions use conditional `UPDATE ... RETURNING`; a fast ACK is never overwritten by dispatch or expiration. The partial unique index `commands_one_inflight_per_actuator` is the authority and maps to `409 Conflict`.
+- **Atomic account quotas.** Crop creation takes `pg_advisory_xact_lock` per owner and counts total and virtual crops inside the same transaction (20 total, 5 virtual).
+- **Batch latest readings.** `/crops`, `/overview`, and fleet analysis resolve every crop's latest reading with one `DISTINCT ON` query plus Valkey, removing the N+1.
+- **Ordered MQTT shutdown.** SIGTERM closes SSE streams first, stops accepting messages, drains the shard queues and the readings batch queue, and only then disconnects from the broker. Retained telemetry and ACKs are discarded; retained status (LWT) is processed.
+- **AI resilience.** The circuit breaker opens after 5 consecutive failures, gRPC and REST share one operation budget, gRPC has a 1.5 s deadline with immediate REST fallback, and singleflight is panic-safe and keyed by reading and crop version.
+- **Session security.** JWTs carry a `jti` and a per-user version; logout revokes the current token and password changes/resets invalidate every previous token. MQTT authentication requires the exact lowercase crop ID and a crop-bound client ID.
 
 ## License
 
@@ -514,13 +531,22 @@ La API lee `.env` desde la carpeta del proyecto. `SMARTPOT_JWT_SECRET` (al menos
 
 ```bash
 go test ./...
+go test -race ./...   # requiere CGO y un compilador de C
 ```
 
-Cubren el cifrado (incluido descifrar un texto cifrado por la versión en Java), JWT, la política de contraseñas, los
-rangos de medida, los tópicos y la telemetría MQTT, el aprovisionamiento en el broker, los comandos y su expiración, los
-switches (409), las reglas de cultivo y clima, el agente de automatización, el envío de lecturas para el aprendizaje,
-los canales y los avisos por cultivo, el bot de Telegram (códigos de un solo uso, webhook firmado, escape de HTML), el
-documento OpenAPI, la caché con respaldo local y la seguridad de dueño en los controladores.
+Cubren el cifrado (incluido descifrar un texto cifrado por la versión en Java), JWT y su revocación, la política de
+contraseñas, los rangos de medida, los tópicos, la retención y la telemetría MQTT, el aprovisionamiento en el broker,
+la máquina de estados condicional de comandos, las cuotas de cuenta, los switches (409), las reglas de cultivo y clima,
+el agente de automatización, el envío de lecturas para el aprendizaje, los canales y los avisos por cultivo, el bot de
+Telegram (códigos de un solo uso, webhook firmado, escape de HTML), el documento OpenAPI, la caché con respaldo local
+y la seguridad de dueño en los controladores.
+
+Los adaptadores de PostgreSQL tienen además pruebas de integración opcionales contra TimescaleDB real:
+
+```bash
+SMARTPOT_TEST_DATABASE_URL='postgres://usuario:clave@localhost:5432/smartpot?sslmode=disable' \
+  go test -tags=integration ./internal/storage/postgres
+```
 
 ### Imagen Docker
 
@@ -565,8 +591,28 @@ la plataforma completa en una sola imagen ampliable:
 - **Banda muerta.** El agente no vuelve a consultar a la IA si ninguna variable cambió más que su umbral desde la
   última evaluación (0,1 °C, 0,4 % HR, 0,03 pH, 15 ppm, 0,5 % de sustrato, 0,5 hPa, 5 % de luz); al menos cada
   15 minutos reevalúa.
-- **Detrás de un proxy.** Con `TRUST_PROXY=true` la IP del cliente sale de `X-Forwarded-For` solo si la conexión
-  llega desde `TRUSTED_PROXY_CIDRS` (por defecto, redes privadas); así el límite de tasa es por cliente.
+- **Detrás de un proxy.** Con `TRUST_PROXY=true` (o el alias de producción `SERVER_TRUST_PROXY`) la IP del cliente
+  sale de `X-Forwarded-For` solo si la conexión llega desde `TRUSTED_PROXY_CIDRS` (alias
+  `SERVER_TRUSTED_PROXIES`); así el límite de tasa es por cliente.
+
+## Fiabilidad y concurrencia
+
+- **Máquina de estados de comandos atómica.** Las transiciones usan `UPDATE ... RETURNING` condicional; un ACK rápido
+  nunca lo pisa el despacho ni la expiración. El índice único parcial `commands_one_inflight_per_actuator` es la
+  autoridad y se traduce a `409 Conflict`.
+- **Cuotas de cuenta atómicas.** La creación de un cultivo toma `pg_advisory_xact_lock` por dueño y cuenta los cultivos
+  totales y virtuales dentro de la misma transacción (20 totales, 5 virtuales).
+- **Última lectura en lote.** `/crops`, `/overview` y el análisis de flota resuelven la última lectura de todos los
+  cultivos con una sola consulta `DISTINCT ON` más Valkey, sin N+1.
+- **Apagado ordenado de MQTT.** Ante SIGTERM se cierran primero los flujos SSE, se deja de aceptar mensajes, se drenan
+  las colas de los shards y la cola de lecturas por lotes, y solo entonces se desconecta el broker. La telemetría y
+  los ACK retenidos se descartan; el estado retenido (LWT) sí se procesa.
+- **Resiliencia de IA.** El circuit breaker abre tras 5 fallos consecutivos, gRPC y REST comparten un único
+  presupuesto, gRPC tiene un deadline de 1,5 s con respaldo REST inmediato y el singleflight resiste pánicos y se
+  versiona por lectura y por cultivo.
+- **Seguridad de sesión.** Los JWT llevan `jti` y una versión por usuario; el logout revoca el token actual y el cambio
+  o restablecimiento de contraseña invalida todos los anteriores. La autenticación MQTT exige el id del cultivo en
+  minúsculas exacto y un clientid ligado al cultivo.
 
 ## Licencia
 
