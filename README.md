@@ -127,7 +127,7 @@ Local base `http://localhost:8091`, production `https://api.smartpot.app`. Busin
 
 ## MQTT
 
-The message broker is [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/SmartPot-Broker-EMQX), delegating device authentication to the API (`POST /internal/mqtt/authn` using shared secret `MQTT_AUTHN_TOKEN`). The API validates the crop device key (AES-256-GCM encrypted) and returns an ACL constrained to its specific topics. The verification cache stores an HMAC of the key. Devices connect with **username = crop ID** and **password = device key**; rotating or deleting keys terminates active EMQX sessions.
+The message broker is [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/SmartPot-Broker-EMQX), delegating device authentication to the API (`POST /internal/mqtt/authn` using shared secret `MQTT_AUTHN_TOKEN`). The API validates the crop device key (AES-256-GCM encrypted) and returns an ACL constrained to its specific topics. The verification cache stores an HMAC of the key. Devices connect with **username = crop ID**, **password = device key**, and **client ID = `smartpot-{cropId}`** (real device) or **`smartpot-sim-{cropId}`** (simulator); rotating or deleting keys terminates active EMQX sessions.
 
 | Topic                               | Direction                                | Payload                                                                                                        |
 |-------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------|
@@ -135,6 +135,7 @@ The message broker is [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/Sma
 | `smartpot/v1/{cropId}/commands`     | API → Device                             | `{"id":"…","actuator":"WATER_PUMP","action":"ACTIVATE","durationSeconds":30}`                                  |
 | `smartpot/v1/{cropId}/commands/ack` | Device → API                             | `{"id":"…","status":"EXECUTED","message":"Water pump active for 15 s"}`                                        |
 | `smartpot/v1/{cropId}/status`       | Device (retained / LWT)                  | `online` / `offline`                                                                                           |
+| `smartpot/v1/{cropId}/capabilities` | Device → API                             | Validated hardware declaration (`schema`, firmware, hardware, sensors, actuators); retained in the crop       |
 
 Telemetry can also arrive as **compact binary v2 packets** (27 bytes, same topic) containing sensor presence bitmasks, 32-bit light, and pressure fields (`internal/mqtt/parser.go`). Telemetry outside valid physical ranges is dropped; each crop records at most one sample per 5 seconds. Commands without an ACK within 2 minutes transition to `EXPIRED`.
 
@@ -417,14 +418,16 @@ usan `Authorization: Bearer <token>`. La documentación interactiva está en `/d
 El broker es [SmartPot-Broker-EMQX](https://github.com/SmartPotTech/SmartPot-Broker-EMQX), que delega la autenticación
 de cada dispositivo en la API (`POST /internal/mqtt/authn`, con el secreto compartido `MQTT_AUTHN_TOKEN`): la API
 verifica la clave del cultivo (guardada cifrada con AES-256-GCM) y responde un ACL acotado a sus tópicos. La caché de
-esa verificación solo guarda un HMAC de la clave. El dispositivo se conecta con **usuario = id del cultivo** y la
-**clave del dispositivo**; al rotar o borrar la clave, la API corta sus sesiones en EMQX.
+esa verificación solo guarda un HMAC de la clave. El dispositivo se conecta con **usuario = id del cultivo**, la
+**clave del dispositivo** y **client ID = `smartpot-{cropId}`** (dispositivo real) o **`smartpot-sim-{cropId}`**
+(simulador); al rotar o borrar la clave, la API corta sus sesiones en EMQX.
 
 | Tópico                              | Sentido                                  | Carga                                                                                                          |
 |-------------------------------------|------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 | `smartpot/v1/{cropId}/telemetry`    | Dispositivo → API                        | `{"temperature":24.5,"humidity":61,"brightness":710,"ph":6.1,"tds":820,"atmosphere":1012.8,"soilMoisture":55}` |
 | `smartpot/v1/{cropId}/commands`     | API → dispositivo                        | `{"id":"…","actuator":"WATER_PUMP","action":"ACTIVATE","durationSeconds":30}`                                  |
 | `smartpot/v1/{cropId}/commands/ack` | Dispositivo → API                        | `{"id":"…","status":"EXECUTED","message":"Bomba de agua encendida por 15 s"}`                                  |
+| `smartpot/v1/{cropId}/capabilities` | Dispositivo → API                        | Declaración de hardware validada (`schema`, firmware, hardware, sensores, actuadores); se guarda en el cultivo |
 | `smartpot/v1/{cropId}/status`       | Dispositivo (retenido y última voluntad) | `online` / `offline`                                                                                           |
 
 La telemetría también puede llegar como **paquete compacto v2** (27 bytes, mismo tópico): máscara de presencia por
