@@ -165,13 +165,15 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		Server: Server{
-			Port:           envInt("PORT", 8091),
-			LogLevel:       env("LOG_LEVEL", "INFO"),
-			WebBaseURL:     env("WEB_BASE_URL", "http://localhost:5173"),
-			PublicAPIURL:   publicAPIURL,
-			DocsEnabled:    envBool("API_DOCS_ENABLED", true),
-			TrustProxy:     envBool("TRUST_PROXY", envBool("SMARTPOT_TRUST_PROXY", false)),
-			TrustedProxies: envList("TRUSTED_PROXY_CIDRS", ""),
+			Port:         envInt("PORT", 8091),
+			LogLevel:     env("LOG_LEVEL", "INFO"),
+			WebBaseURL:   env("WEB_BASE_URL", "http://localhost:5173"),
+			PublicAPIURL: publicAPIURL,
+			DocsEnabled:  envBool("API_DOCS_ENABLED", true),
+			// Se aceptan los nombres de producción SERVER_* además de los neutrales.
+			TrustProxy: envBool("TRUST_PROXY", envBool("SERVER_TRUST_PROXY",
+				envBool("SMARTPOT_TRUST_PROXY", false))),
+			TrustedProxies: envListFallback("TRUSTED_PROXY_CIDRS", "SERVER_TRUSTED_PROXIES", ""),
 		},
 		Security: Security{
 			JWTSecret:               os.Getenv("SMARTPOT_JWT_SECRET"),
@@ -317,6 +319,14 @@ func envBool(key string, def bool) bool {
 		}
 	}
 	return def
+}
+
+// envListFallback usa la variable nueva si existe; si no, el alias antiguo.
+func envListFallback(primary, fallback, def string) []string {
+	if v, ok := os.LookupEnv(primary); ok && strings.TrimSpace(v) != "" {
+		return envList(primary, def)
+	}
+	return envList(fallback, def)
 }
 
 func envList(key, def string) []string {

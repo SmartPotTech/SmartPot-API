@@ -13,11 +13,15 @@ import (
 // dominio (cultivos, notificaciones, canales…) registra el suyo en el arranque.
 type AccountDeleter func(ctx context.Context, userID string) error
 
+// SessionRevoker invalida los JWT emitidos para un usuario (cambio de clave).
+type SessionRevoker func(ctx context.Context, userID string) error
+
 // Service implementa la lógica de la cuenta.
 type Service struct {
 	repo     Repository
 	clock    func() time.Time
 	deleters []AccountDeleter
+	revokers []SessionRevoker
 }
 
 // NewService crea el servicio de usuarios.
@@ -28,6 +32,11 @@ func NewService(repo Repository, clock func() time.Time) *Service {
 // AddAccountDeleter registra un borrador de datos para el borrado en cascada.
 func (s *Service) AddAccountDeleter(d AccountDeleter) {
 	s.deleters = append(s.deleters, d)
+}
+
+// AddSessionRevoker registra el revocador de JWT al cambiar la contraseña.
+func (s *Service) AddSessionRevoker(r SessionRevoker) {
+	s.revokers = append(s.revokers, r)
 }
 
 // NormalizeEmail recorta y pasa a minúsculas el correo.
@@ -80,7 +89,15 @@ func (s *Service) ChangePassword(ctx context.Context, userID string, req ChangeP
 	}
 	u.PasswordHash = hash
 	u.UpdatedAt = s.clock()
-	return s.repo.Update(ctx, u)
+	if err := s.repo.Update(ctx, u); err != nil {
+		return err
+	}
+	for _, revoke := range s.revokers {
+		if err := revoke(ctx, u.HexID()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteAccount borra la cuenta con todos sus datos (cultivos, lecturas,
@@ -92,6 +109,12 @@ func (s *Service) DeleteAccount(ctx context.Context, userID string) error {
 	}
 	for _, del := range s.deleters {
 		if err := del(ctx, userID); err != nil {
+			return err
+		}
+	}
+	// Un token de una cuenta borrada no debe seguir sirviendo durante 7 días.
+	for _, revoke := range s.revokers {
+		if err := revoke(ctx, u.HexID()); err != nil {
 			return err
 		}
 	}

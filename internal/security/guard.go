@@ -235,6 +235,10 @@ func connectionAllowed(method, path, scope string) error {
 		return apperr.Forbidden("Account details can only be changed from the application")
 	case strings.HasPrefix(path, "/api/v1/channels") && !read:
 		return apperr.Forbidden("Notification channels can only be configured from the application")
+	case strings.HasPrefix(path, "/api/v1/crops/") && hasSegment(path, "channels"):
+		// Los canales por cultivo exponen datos de otras cuentas y no forman
+		// parte del alcance de una conexión spt_ (M-09).
+		return apperr.Forbidden("Crop notification channels can only be managed from the application")
 	case hasSegment(path, "device"):
 		return apperr.Forbidden("Device credentials can only be retrieved from the application")
 	case scope != "CONTROL" && !read:

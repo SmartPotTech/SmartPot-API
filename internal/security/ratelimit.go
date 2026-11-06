@@ -31,7 +31,11 @@ func (r *RateLimiter) Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			path := c.Request().URL.Path
-			if c.Request().Method == http.MethodOptions || path == "/health" {
+			// /internal/mqtt/authn lo llama el broker por cada CONNECT: su propio
+			// limitador por username vive en AuthnController. Si compartiera el
+			// cubo global, una ráfaga MQTT bloquearía toda la flota con 429 (H-02).
+			if c.Request().Method == http.MethodOptions || path == "/health" ||
+				path == "/internal/mqtt/authn" {
 				return next(c)
 			}
 			authRoute := strings.HasPrefix(path, "/api/v1/auth/") && path != "/api/v1/auth/logout" && path != "/api/v1/auth/session"

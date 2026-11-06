@@ -171,11 +171,25 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	if err := s.tokens.DeleteByUserID(ctx, u.HexID()); err != nil {
 		return err
 	}
+	// Un reset invalida los JWT emitidos antes del cambio (H-04 de Audit_05).
+	s.jwt.BumpUserVersion(u.HexID())
 	if _, err := s.notifier.Notify(ctx, u.HexID(), "", notifications.TypeInfo, "Password updated",
 		"Your password was updated using the recovery link."); err != nil {
 		return err
 	}
 	return nil
+}
+
+// Logout revoca el token presentado (jti) y borra las cookies del navegador.
+func (s *Service) Logout(c echo.Context) {
+	raw := ""
+	if header := c.Request().Header.Get("Authorization"); strings.HasPrefix(header, "Bearer ") {
+		raw = strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+	} else if cookie, err := c.Cookie(security.SessionCookieName); err == nil {
+		raw = strings.TrimSpace(cookie.Value)
+	}
+	s.jwt.Revoke(raw)
+	security.ClearSessionCookies(c)
 }
 
 func (s *Service) authResponse(u *users.User) (AuthResponse, error) {

@@ -48,7 +48,7 @@ func main() {
 		os.Exit(healthcheck())
 	}
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "error fatal al arrancar:", err)
+		fmt.Fprintln(os.Stderr, "fatal startup error:", err)
 		os.Exit(1)
 	}
 }
@@ -60,7 +60,7 @@ func run() error {
 	}
 
 	logger := logging.Setup(cfg.Server.LogLevel)
-	logger.Info("iniciando SmartPot-API", "port", cfg.Server.Port)
+	logger.Info("starting SmartPot-API", "port", cfg.Server.Port)
 
 	clock := func() time.Time { return time.Now().UTC() }
 
@@ -83,6 +83,9 @@ func run() error {
 	bus := events.NewBus()
 
 	tokenService := security.NewTokenService(cfg.Security.JWTSecret, cfg.Security.JWTExpiration)
+	// Revocación server-side de JWT: jti en logout y versión por usuario al
+	// cambiar o restablecer la contraseña.
+	tokenService.UseSessionStore(cacheStore)
 	encryptor, err := security.NewEncryptor(cfg.Security.AESKey)
 	if err != nil {
 		return err
@@ -152,6 +155,10 @@ func run() error {
 	events.Subscribe(bus, func(e crops.DeletedEvent) { go learningFeed.OnCropDeleted(e) })
 
 	userService := users.NewService(userRepo, clock)
+	userService.AddSessionRevoker(func(_ context.Context, userID string) error {
+		tokenService.BumpUserVersion(userID)
+		return nil
+	})
 	userService.AddAccountDeleter(notificationService.DeleteAllForUser)
 	userService.AddAccountDeleter(tokenRepo.DeleteByUserID)
 	userService.AddAccountDeleter(cropService.DeleteAllOwnedBy)
@@ -307,15 +314,21 @@ func run() error {
 		logger.Info("shutting down (signal received)")
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	// 1) Cerrar los flujos SSE activos: si no, srv.Shutdown espera hasta 20 s
+	// y Docker puede enviar SIGKILL a los 10 s (H-17).
+	readingService.CloseStreams()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("server shutdown error", "err", err)
 	}
-	stopJobs()
-	readingService.StopBatchWorker()
-	telegramListener.Stop()
+	// 2) Dejar de aceptar MQTT, drenar los shards y recién entonces desconectar.
 	gateway.Close()
+	// 3) Vaciar la cola de lecturas por lotes con la base todavía disponible.
+	readingService.StopBatchWorker()
+	stopJobs()
+	telegramListener.Stop()
+	_ = aiClient.Close()
 	if err := cacheStore.Close(); err != nil {
 		logger.Error("cache close error", "err", err)
 	}

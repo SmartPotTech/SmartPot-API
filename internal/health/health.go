@@ -5,6 +5,8 @@ package health
 
 import (
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -17,6 +19,9 @@ type Checker struct {
 	Cache     func() bool // true = UP
 	AI        func() (enabled, healthy bool)
 	Simulator func() (available, healthy bool)
+	// CacheTTL evita que una ráfaga pública dispare sondas pesadas en cada
+	// llamada; 5 s por defecto.
+	CacheTTL time.Duration
 }
 
 type response struct {
@@ -28,11 +33,25 @@ type response struct {
 	Simulator string `json:"simulator"`
 }
 
-// Handler devuelve el manejador Echo de /health.
+// Handler devuelve el manejador Echo de /health con el resultado cacheado.
 func (h Checker) Handler() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		database := call(h.Database)
+	ttl := h.CacheTTL
+	if ttl <= 0 {
+		ttl = 5 * time.Second
+	}
+	var mu sync.Mutex
+	var cached response
+	var cachedStatus int
+	var cachedAt time.Time
 
+	return func(c echo.Context) error {
+		mu.Lock()
+		defer mu.Unlock()
+		if !cachedAt.IsZero() && time.Since(cachedAt) < ttl {
+			return c.JSON(cachedStatus, cached)
+		}
+
+		database := call(h.Database)
 		body := response{
 			Status:    upDown(database),
 			Database:  upDown(database),
@@ -46,6 +65,7 @@ func (h Checker) Handler() echo.HandlerFunc {
 		if !database {
 			status = http.StatusServiceUnavailable
 		}
+		cached, cachedStatus, cachedAt = body, status, time.Now()
 		return c.JSON(status, body)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/cache"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -38,6 +39,42 @@ func TestIssueAndParse(t *testing.T) {
 	}
 	if !issued.ExpiresAt.After(time.Now()) {
 		t.Error("ExpiresAt debía estar en el futuro")
+	}
+}
+
+func TestLogoutRevokesTheIssuedJTI(t *testing.T) {
+	svc := NewTokenService(testSecret, time.Hour)
+	svc.UseSessionStore(cache.NewStore(nil))
+	issued, err := svc.Issue("user-123", "a@b.com", "USER")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Parse(issued.Value); err != nil {
+		t.Fatalf("the new token must be valid: %v", err)
+	}
+	svc.Revoke(issued.Value)
+	if _, err := svc.Parse(issued.Value); err == nil {
+		t.Fatal("a token revoked at logout must be rejected with 401")
+	}
+}
+
+func TestPasswordChangeInvalidatesPreviousTokens(t *testing.T) {
+	svc := NewTokenService(testSecret, time.Hour)
+	svc.UseSessionStore(cache.NewStore(nil))
+	old, err := svc.Issue("user-123", "a@b.com", "USER")
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc.BumpUserVersion("user-123")
+	if _, err := svc.Parse(old.Value); err == nil {
+		t.Fatal("a token issued before a password change must be rejected")
+	}
+	fresh, err := svc.Issue("user-123", "a@b.com", "USER")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Parse(fresh.Value); err != nil {
+		t.Fatalf("a token issued after the change must be valid: %v", err)
 	}
 }
 

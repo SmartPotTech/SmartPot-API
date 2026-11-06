@@ -60,7 +60,7 @@ func (h *Handler) login(c echo.Context) error {
 }
 
 func (h *Handler) logout(c echo.Context) error {
-	security.ClearSessionCookies(c)
+	h.svc.Logout(c)
 	return c.NoContent(http.StatusNoContent)
 }
 

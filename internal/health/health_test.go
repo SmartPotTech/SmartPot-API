@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -34,6 +36,27 @@ func TestHealthChecker_UP(t *testing.T) {
 	}
 	if resp.Status != "UP" || resp.Database != "UP" || resp.Cache != "UP" {
 		t.Errorf("respuesta inesperada: %+v", resp)
+	}
+}
+
+func TestHealthCheckerCachesProbesForBursts(t *testing.T) {
+	var probes atomic.Int32
+	checker := Checker{
+		Database: func() bool { probes.Add(1); return true },
+		CacheTTL: time.Minute,
+	}
+	e := echo.New()
+	e.GET("/health", checker.Handler())
+
+	for i := 0; i < 5; i++ {
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("request %d: expected 200, got %d", i, rec.Code)
+		}
+	}
+	if got := probes.Load(); got != 1 {
+		t.Fatalf("a burst must reuse the cached probe; got %d probe calls", got)
 	}
 }
 
