@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -21,7 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// MaxCropsPerUser es el máximo de cultivos por cuenta.
+// MaxCropsPerUser es el m├íximo de cultivos por cuenta.
 const MaxCropsPerUser = 20
 
 const (
@@ -42,13 +41,13 @@ type ActuatorSeeder interface {
 	SeedDefaults(ctx context.Context, cropID string, virtual bool) error
 }
 
-// Notifier envía los avisos de desconexión con enfriamiento.
+// Notifier env├¡a los avisos de desconexi├│n con enfriamiento.
 type Notifier interface {
 	NotifyOnce(ctx context.Context, cooldownKey string, cooldown time.Duration,
 		userID, cropID string, t notifications.Type, title, message string) (bool, error)
 }
 
-// MQTTPublic son los datos públicos del broker que se entregan al dispositivo.
+// MQTTPublic son los datos p├║blicos del broker que se entregan al dispositivo.
 type MQTTPublic struct {
 	Host         string
 	Port         int
@@ -63,7 +62,7 @@ type CreatedCrop struct {
 	Credentials *DeviceCredentialsResponse
 }
 
-// Service implementa la lógica de los cultivos.
+// Service implementa la l├│gica de los cultivos.
 type Service struct {
 	repo        Repository
 	encryptor   *security.Encryptor
@@ -127,8 +126,8 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	// El cupo se comprueba y se inserta en una sola transacción con bloqueo por
-	// dueño: las ráfagas concurrentes no pueden superar 20 cultivos ni 5 virtuales.
+	// El cupo se comprueba y se inserta en una sola transacci├│n con bloqueo por
+	// due├▒o: las r├ífagas concurrentes no pueden superar 20 cultivos ni 5 virtuales.
 	if err := s.repo.InsertWithQuota(ctx, crop, MaxCropsPerUser, virtualdevices.MaxPerAccount); err != nil {
 		switch {
 		case errors.Is(err, ErrCropLimit):
@@ -156,7 +155,7 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 	return CreatedCrop{Crop: crop, Credentials: creds}, nil
 }
 
-// List devuelve los cultivos del dueño.
+// List devuelve los cultivos del due├▒o.
 func (s *Service) List(ctx context.Context, ownerID string) ([]Crop, error) {
 	ownerOID, ok := objectid.Parse(ownerID)
 	if !ok {
@@ -165,7 +164,7 @@ func (s *Service) List(ctx context.Context, ownerID string) ([]Crop, error) {
 	return s.repo.ListByOwner(ctx, ownerOID)
 }
 
-// GetOwned devuelve un cultivo comprobando el dueño (404 si no existe o es de otro).
+// GetOwned devuelve un cultivo comprobando el due├▒o (404 si no existe o es de otro).
 func (s *Service) GetOwned(ctx context.Context, ownerID, cropID string) (*Crop, error) {
 	if err := objectid.Require(cropID, notFound); err != nil {
 		return nil, err
@@ -182,7 +181,7 @@ func (s *Service) GetOwned(ctx context.Context, ownerID, cropID string) (*Crop, 
 	return crop, nil
 }
 
-// Find busca un cultivo por id, sin comprobar dueño (nil si no existe).
+// Find busca un cultivo por id, sin comprobar due├▒o (nil si no existe).
 func (s *Service) Find(ctx context.Context, cropID string) (*Crop, error) {
 	oid, ok := objectid.Parse(cropID)
 	if !ok {
@@ -222,7 +221,7 @@ func (s *Service) Update(ctx context.Context, ownerID, cropID string, req CropRe
 	return crop, nil
 }
 
-// SetLocation cambia solo la ubicación del cultivo (la simulación la comparte).
+// SetLocation cambia solo la ubicaci├│n del cultivo (la simulaci├│n la comparte).
 func (s *Service) SetLocation(ctx context.Context, crop *Crop, location geo.Location) (*Crop, error) {
 	var placement geo.Placement
 	if crop.Placement == nil {
@@ -242,7 +241,7 @@ func (s *Service) SetLocation(ctx context.Context, crop *Crop, location geo.Loca
 	return crop, nil
 }
 
-// SetAutomation activa o desactiva el modo automático de un cultivo.
+// SetAutomation activa o desactiva el modo autom├ítico de un cultivo.
 func (s *Service) SetAutomation(ctx context.Context, ownerID, cropID string, enabled bool) (*Crop, error) {
 	crop, err := s.GetOwned(ctx, ownerID, cropID)
 	if err != nil {
@@ -256,7 +255,7 @@ func (s *Service) SetAutomation(ctx context.Context, ownerID, cropID string, ena
 	return crop, nil
 }
 
-// SetAutomationBulk aplica el modo automático a varios cultivos; sin ids, a todos.
+// SetAutomationBulk aplica el modo autom├ítico a varios cultivos; sin ids, a todos.
 func (s *Service) SetAutomationBulk(ctx context.Context, ownerID string, cropIDs []string, enabled bool) ([]Crop, error) {
 	var crops []Crop
 	if len(cropIDs) == 0 {
@@ -290,7 +289,7 @@ func (s *Service) SetAutomationBulk(ctx context.Context, ownerID string, cropIDs
 	return crops, nil
 }
 
-// DeviceInfo devuelve los datos de conexión del dispositivo (sin la clave).
+// DeviceInfo devuelve los datos de conexi├│n del dispositivo (sin la clave).
 func (s *Service) DeviceInfo(ctx context.Context, ownerID, cropID string) (DeviceCredentialsResponse, error) {
 	crop, err := s.getOwnedReal(ctx, ownerID, cropID)
 	if err != nil {
@@ -299,7 +298,7 @@ func (s *Service) DeviceInfo(ctx context.Context, ownerID, cropID string) (Devic
 	return s.credentials(crop, ""), nil
 }
 
-// RotateDeviceKey genera una nueva clave y desconecta la sesión anterior.
+// RotateDeviceKey genera una nueva clave y desconecta la sesi├│n anterior.
 func (s *Service) RotateDeviceKey(ctx context.Context, ownerID, cropID string) (DeviceCredentialsResponse, error) {
 	crop, err := s.getOwnedReal(ctx, ownerID, cropID)
 	if err != nil {
@@ -320,8 +319,8 @@ func (s *Service) RotateDeviceKey(ctx context.Context, ownerID, cropID string) (
 	if err := s.repo.UpdateDeviceKey(ctx, crop.ID, cipher, now, now); err != nil {
 		return DeviceCredentialsResponse{}, err
 	}
-	// La caché de autenticación del broker se invalida ANTES de cortar sesiones:
-	// así ninguna reconexión puede validar la clave anterior.
+	// La cach├® de autenticaci├│n del broker se invalida ANTES de cortar sesiones:
+	// as├¡ ninguna reconexi├│n puede validar la clave anterior.
 	s.bus.Publish(DeviceKeyRotatedEvent{CropID: crop.HexID()})
 	if err := s.provisioner.Provision(ctx, crop.HexID(), key, true); err != nil {
 		slog.Warn("could not re-provision device", "cropId", crop.HexID(), "err", err)
@@ -342,7 +341,7 @@ func (s *Service) DeviceKey(crop *Crop) (string, bool) {
 	return key, true
 }
 
-// Delete borra un cultivo del dueño con todos sus datos.
+// Delete borra un cultivo del due├▒o con todos sus datos.
 func (s *Service) Delete(ctx context.Context, ownerID, cropID string) error {
 	crop, err := s.GetOwned(ctx, ownerID, cropID)
 	if err != nil {
@@ -410,8 +409,8 @@ func (s *Service) MarkDeviceSeen(ctx context.Context, cropID string, online *boo
 	}
 }
 
-// UpdateDeviceStatus marca el dispositivo en línea o no y avisa al desconectarse.
-// Si el estado no cambió no se escribe ni se notifica: una ráfaga de mensajes de
+// UpdateDeviceStatus marca el dispositivo en l├¡nea o no y avisa al desconectarse.
+// Si el estado no cambi├│ no se escribe ni se notifica: una r├ífaga de mensajes de
 // estado del mismo cultivo no satura el pool de PostgreSQL (C-07).
 func (s *Service) UpdateDeviceStatus(ctx context.Context, cropID string, online bool) {
 	crop, err := s.Find(ctx, cropID)
@@ -425,11 +424,11 @@ func (s *Service) UpdateDeviceStatus(ctx context.Context, cropID string, online 
 	if !online {
 		_, _ = s.notifier.NotifyOnce(ctx, "offline:"+cropID, time.Hour, crop.OwnerID.Hex(), cropID,
 			notifications.TypeDevice, "Crop disconnected",
-			"«"+crop.Name+"» lost connection with SmartPot.")
+			"┬½"+crop.Name+"┬╗ lost connection with SmartPot.")
 	}
 }
 
-// UpdateHealth guarda la última evaluación de salud del cultivo.
+// UpdateHealth guarda la ├║ltima evaluaci├│n de salud del cultivo.
 func (s *Service) UpdateHealth(ctx context.Context, cropID string, health CropHealth) {
 	oid, ok := objectid.Parse(cropID)
 	if !ok {
@@ -450,7 +449,7 @@ func (s *Service) Exists(ctx context.Context, cropID string) (bool, error) {
 	return crop != nil, nil
 }
 
-// RequireOwned comprueba el dueño del cultivo (implementa readings.Crops).
+// RequireOwned comprueba el due├▒o del cultivo (implementa readings.Crops).
 func (s *Service) RequireOwned(ctx context.Context, ownerID, cropID string) error {
 	_, err := s.GetOwned(ctx, ownerID, cropID)
 	return err
