@@ -89,6 +89,43 @@ func TestDeprovision_KicksSessions(t *testing.T) {
 	}
 }
 
+func TestProvisionPaginatesAllSessions(t *testing.T) {
+	cropID := "6718f0a1b2c3d4e5f6a7b8c9"
+	var mu sync.Mutex
+	var pages, deleted []string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v5/clients", func(w http.ResponseWriter, r *http.Request) {
+		page := r.URL.Query().Get("page")
+		mu.Lock()
+		pages = append(pages, page)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		if page == "1" {
+			_, _ = w.Write([]byte(`{"data":[{"clientid":"smartpot-` + cropID + `"}],"meta":{"hasnext":true}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"data":[{"clientid":"smartpot-sim-` + cropID + `"}],"meta":{"hasnext":false}}`))
+	})
+	mux.HandleFunc("/api/v5/clients/", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		deleted = append(deleted, strings.TrimPrefix(r.URL.Path, "/api/v5/clients/"))
+		mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	if err := newProvisioner(srv.URL).Provision(context.Background(), cropID, "key", true); err != nil {
+		t.Fatalf("Provision: %v", err)
+	}
+	if len(pages) != 2 || pages[0] != "1" || pages[1] != "2" {
+		t.Fatalf("expected two pages, got %v", pages)
+	}
+	if len(deleted) != 2 {
+		t.Fatalf("expected both sessions to be disconnected, got %v", deleted)
+	}
+}
+
 func TestProvision_WithoutRESTConfigIsNoop(t *testing.T) {
 	p := NewProvisioner(config.MQTT{}, slog.New(slog.DiscardHandler))
 	if err := p.Deprovision(context.Background(), "abc"); err != nil {

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,6 +82,9 @@ var deny = authnResponse{Result: "deny"}
 const (
 	deviceKeyCachePrefix = "crop:key-hmac:"
 	deviceKeyCacheTTL    = 5 * time.Minute
+	// Cada cultivo tiene su propio cubo: una ráfaga de un dispositivo no puede
+	// bloquear la autenticación de toda la flota.
+	authnRatePerMinute = 30
 )
 
 func (c *AuthnController) authenticate(ctx echo.Context) error {
@@ -92,12 +96,25 @@ func (c *AuthnController) authenticate(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, deny)
 	}
 
-	// El usuario MQTT es el id del cultivo; se normaliza para que la llave de caché y el ACL coincidan siempre.
-	oid, ok := objectid.Parse(strings.TrimSpace(req.Username))
+	// El usuario MQTT debe ser EXACTAMENTE el ObjectId hexadecimal en minúsculas.
+	// Aceptar mayúsculas o espacios permitía que el filtro de desconexión de EMQX
+	// no encontrara la sesión vieja y la revocación de clave quedara eludida (H-01).
+	oid, ok := objectid.Parse(req.Username)
 	if !ok || req.Password == "" {
 		return ctx.JSON(http.StatusOK, deny)
 	}
 	cropID := oid.Hex()
+	if req.Username != cropID {
+		return ctx.JSON(http.StatusOK, deny)
+	}
+	// El clientid queda ligado al cultivo: impide el takeover de una sesión
+	// ajena con un id predecible (M-06).
+	if req.ClientID != "smartpot-"+cropID && req.ClientID != "smartpot-sim-"+cropID {
+		return ctx.JSON(http.StatusOK, deny)
+	}
+	if !c.allowAttempt(req.Username) {
+		return ctx.JSON(http.StatusOK, deny)
+	}
 
 	// La caché evita ir a PostgreSQL en cada reconexión, pero solo guarda un HMAC de la clave: quien lea Valkey
 	// no obtiene credenciales de dispositivo.
@@ -155,8 +172,19 @@ func (c *AuthnController) deviceACL(cropID string) []aclRule {
 		{Permission: "allow", Action: "publish", Topic: c.topics.Status(cropID)},
 		{Permission: "allow", Action: "publish", Topic: c.topics.CommandAck(cropID)},
 		{Permission: "allow", Action: "subscribe", Topic: c.topics.Commands(cropID)},
+		{Permission: "allow", Action: "publish", Topic: c.topics.Capabilities(cropID)},
 		{Permission: "deny", Action: "all", Topic: "#"},
 	}
+}
+
+// allowAttempt aplica una ventana fija de un minuto por usuario de dispositivo.
+// Si la caché no está disponible, la caché local del Store sigue contando.
+func (c *AuthnController) allowAttempt(username string) bool {
+	if c.cache == nil {
+		return true
+	}
+	epoch := time.Now().Unix() / 60
+	return c.cache.Increment("authn:rate:"+username+":"+strconv.FormatInt(epoch, 10), time.Minute) <= authnRatePerMinute
 }
 
 func (c *AuthnController) authorized(token string) bool {

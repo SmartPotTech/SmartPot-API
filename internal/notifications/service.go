@@ -54,10 +54,13 @@ func (s *Service) Notify(ctx context.Context, userID, cropID string, t Type, tit
 // durante el enfriamiento.
 func (s *Service) NotifyOnce(ctx context.Context, cooldownKey string, cooldown time.Duration,
 	userID, cropID string, t Type, title, message string) (bool, error) {
-	if !s.cache.SetIfAbsent("notify:"+cooldownKey, cooldown) {
+	key := "notify:" + cooldownKey
+	if !s.cache.SetIfAbsent(key, cooldown) {
 		return false, nil
 	}
 	if _, err := s.Notify(ctx, userID, cropID, t, title, message); err != nil {
+		// Si el INSERT falla, se libera el enfriamiento para no perder el aviso.
+		s.cache.Delete(key)
 		return false, err
 	}
 	return true, nil

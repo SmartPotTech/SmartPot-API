@@ -54,7 +54,7 @@ func NewGateway(cfg config.MQTT, topics *TopicResolver, logger *slog.Logger) *Ga
 		stopSignal:  make(chan struct{}),
 	}
 	if !cfg.Enabled {
-		logger.Info("MQTT deshabilitado: la API no recibirá telemetría ni enviará comandos")
+		logger.Info("MQTT is disabled: the API will not receive telemetry or send commands")
 		return g
 	}
 
@@ -70,7 +70,8 @@ func NewGateway(cfg config.MQTT, topics *TopicResolver, logger *slog.Logger) *Ga
 		SetConnectTimeout(connectTimeout).
 		SetOnConnectHandler(g.onConnected).
 		SetConnectionLostHandler(func(_ paho.Client, err error) {
-			logger.Warn("se perdió la conexión con el broker MQTT", "err", err)
+			g.connected.Store(false)
+			logger.Warn("lost connection to the MQTT broker", "err", err)
 		}).
 		SetDefaultPublishHandler(g.onMessage)
 	if cfg.Username != "" {
@@ -105,7 +106,7 @@ func (g *Gateway) Start() {
 	for i := range g.shards {
 		g.shards[i] = make(chan mqttJob, perShard)
 	}
-	g.log.Info("iniciando worker pool de MQTT", "workers", numWorkers, "queueCapacity", perShard*numWorkers)
+	g.log.Info("starting MQTT worker pool", "workers", numWorkers, "queueCapacity", perShard*numWorkers)
 	for i := range numWorkers {
 		g.workerWg.Add(1)
 		go g.worker(i)
@@ -114,7 +115,9 @@ func (g *Gateway) Start() {
 	g.client.Connect()
 }
 
-// Close drena los mensajes pendientes en el worker pool y cierra la conexión al broker.
+// Close deja de aceptar mensajes nuevos, drena por completo las colas de los
+// shards y solo al final desconecta del broker. Así una ráfaga ya recibida no
+// se pierde por apagar el socket antes de vaciar el worker pool.
 func (g *Gateway) Close() {
 	if !g.enabled {
 		return
@@ -122,38 +125,50 @@ func (g *Gateway) Close() {
 	if g.stopped.Swap(true) {
 		return
 	}
+	g.connected.Store(false)
 
-	// Desconecta del broker para dejar de recibir mensajes nuevos
+	// Primero se cierra la compuerta de entrada y se vacían las colas.
+	close(g.stopSignal)
+	drained := make(chan struct{})
+	go func() {
+		g.workerWg.Wait()
+		close(drained)
+	}()
+	select {
+	case <-drained:
+		g.log.Info("MQTT worker pool drained")
+	case <-time.After(15 * time.Second):
+		g.log.Warn("MQTT worker pool drain timed out; disconnecting anyway")
+	}
+
+	// La desconexión va al final: los mensajes que ya estaban en las colas se
+	// procesaron antes de cerrar el socket.
 	if g.client != nil && g.client.IsConnected() {
 		g.client.Disconnect(3000)
 	}
-
-	// Señaliza a los workers y espera el drenado limpio de la cola
-	close(g.stopSignal)
-	g.workerWg.Wait()
-	g.log.Info("worker pool de MQTT detenido limpiamente")
 }
 
 // IsEnabled indica si MQTT está habilitado.
 func (g *Gateway) IsEnabled() bool { return g.enabled }
 
-// IsConnected indica si hay conexión con el broker.
+// IsConnected indica si hay conexión con el broker y las suscripciones ya
+// recibieron el SUBACK; /health no reporta UP antes de estar operativo.
 func (g *Gateway) IsConnected() bool {
-	return g.enabled && g.client != nil && g.client.IsConnected()
+	return g.enabled && g.connected.Load()
 }
 
 // Publish publica un mensaje; devuelve false si el broker no lo aceptó.
 func (g *Gateway) Publish(topic, payload string, qos byte, retained bool) bool {
-	if !g.IsConnected() {
+	if g.stopped.Load() || g.client == nil || !g.client.IsConnected() {
 		return false
 	}
 	token := g.client.Publish(topic, qos, retained, payload)
 	if !token.WaitTimeout(publishTimeout) {
-		g.log.Warn("tiempo de espera agotado al publicar", "topic", topic)
+		g.log.Warn("timed out publishing MQTT message", "topic", topic)
 		return false
 	}
 	if err := token.Error(); err != nil {
-		g.log.Warn("no se pudo publicar", "topic", topic, "err", err)
+		g.log.Warn("could not publish MQTT message", "topic", topic, "err", err)
 		return false
 	}
 	return true
@@ -173,17 +188,52 @@ func (g *Gateway) onConnected(c paho.Client) {
 	for _, topic := range topicsList {
 		subscriptions[topic] = 1
 	}
-	token := c.SubscribeMultiple(subscriptions, g.onMessage)
-	if token.WaitTimeout(connectTimeout) && token.Error() != nil {
-		g.log.Error("no se pudo suscribir a los tópicos de SmartPot", "err", token.Error())
+
+	// El SUBACK es la prueba de que la API ya recibe telemetría: solo entonces
+	// se marca connected. Si el broker aún no está listo, se reintenta con
+	// backoff en vez de dejar la API sorda hasta la próxima reconexión.
+	delay := time.Second
+	for attempt := 0; attempt < 6; attempt++ {
+		token := c.SubscribeMultiple(subscriptions, g.onMessage)
+		if token.WaitTimeout(connectTimeout) && token.Error() == nil {
+			g.connected.Store(true)
+			g.log.Info("connected to the MQTT broker", "subscribed", len(subscriptions),
+				"sharedGroup", g.sharedGroup)
+			return
+		}
+		if !c.IsConnected() || g.stopped.Load() {
+			return
+		}
+		g.log.Warn("MQTT subscription failed; retrying", "attempt", attempt+1, "retryIn", delay.String())
+		select {
+		case <-time.After(delay):
+		case <-g.stopSignal:
+			return
+		}
+		delay *= 2
+		if delay > 16*time.Second {
+			delay = 16 * time.Second
+		}
 	}
-	reconnect := g.connected.Swap(true)
-	g.log.Info("conectado al broker MQTT", "reconexion", reconnect, "sharedGroup", g.sharedGroup)
+	g.connected.Store(false)
+	g.log.Error("could not subscribe to SmartPot MQTT topics after retries")
 }
 
 func (g *Gateway) onMessage(_ paho.Client, m paho.Message) {
 	if g.router == nil || g.stopped.Load() {
 		return
+	}
+	// Los mensajes retenidos de telemetría y ACK son historia: reinsertarlos
+	// duplicaría lecturas y cerraría órdenes viejas (M-02). El estado retenido
+	// (LWT) sí se procesa porque representa la última conexión conocida.
+	if m.Retained() {
+		if parsed, ok := g.topics.Parse(m.Topic()); ok {
+			switch parsed.Kind {
+			case KindTelemetry, KindCommandAck:
+				g.log.Debug("retained telemetry or ACK ignored", "topic", m.Topic())
+				return
+			}
+		}
 	}
 	job := mqttJob{topic: m.Topic(), payload: string(m.Payload())}
 	// Si la cola del cultivo está llena se espera: el cliente deja de leer del socket y el broker retiene los

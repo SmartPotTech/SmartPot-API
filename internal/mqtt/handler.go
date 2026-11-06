@@ -31,13 +31,13 @@ func NewMessageHandler(topics *TopicResolver, readingsSvc *readings.Service, com
 func (h *MessageHandler) Route(topic, payload string) {
 	defer func() {
 		if r := recover(); r != nil {
-			h.log.Warn("mensaje descartado por pánico", "topic", topic, "panic", r)
+			h.log.Warn("message dropped after panic", "topic", topic, "panic", r)
 		}
 	}()
 
 	parsed, ok := h.topics.Parse(topic)
 	if !ok {
-		h.log.Debug("tópico ignorado", "topic", topic)
+		h.log.Debug("MQTT topic ignored", "topic", topic)
 		return
 	}
 	ctx := context.Background()
@@ -45,21 +45,29 @@ func (h *MessageHandler) Route(topic, payload string) {
 	case KindTelemetry:
 		measures, err := ParseTelemetry(payload)
 		if err != nil {
-			h.log.Warn("telemetría descartada", "topic", topic, "err", err)
+			h.log.Warn("telemetry dropped", "topic", topic, "err", err)
 			return
 		}
 		if _, err := h.readings.RecordFromDevice(ctx, parsed.CropID, measures); err != nil {
-			h.log.Warn("no se pudo guardar la telemetría", "cropId", parsed.CropID, "err", err)
+			h.log.Warn("could not store device telemetry", "cropId", parsed.CropID, "err", err)
 		}
 	case KindCommandAck:
 		ack, err := ParseAck(payload)
 		if err != nil {
-			h.log.Warn("ACK descartado", "topic", topic, "err", err)
+			h.log.Warn("command ACK dropped", "topic", topic, "err", err)
 			return
 		}
 		h.commands.Acknowledge(ctx, parsed.CropID, ack)
 	case KindStatus:
 		online := strings.EqualFold(strings.TrimSpace(payload), "online")
 		h.crops.UpdateDeviceStatus(ctx, parsed.CropID, online)
+	case KindCapabilities:
+		caps, err := ParseCapabilities(payload)
+		if err != nil {
+			h.log.Warn("device capabilities dropped", "cropId", parsed.CropID, "err", err)
+			return
+		}
+		h.crops.UpdateDeviceCapabilities(ctx, parsed.CropID, caps)
+		h.log.Info("device capabilities accepted", "cropId", parsed.CropID, "bytes", len(payload))
 	}
 }

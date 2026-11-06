@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -124,7 +125,7 @@ func ParseTelemetry(payload string) (readings.Measures, error) {
 	}
 
 	if strings.TrimSpace(payload) == "" || len(payload) > maxPayload {
-		return readings.Measures{}, errors.New("mensaje vacío o demasiado grande")
+		return readings.Measures{}, errors.New("empty or oversized message")
 	}
 
 	root := mapPool.Get().(map[string]any)
@@ -132,7 +133,7 @@ func ParseTelemetry(payload string) (readings.Measures, error) {
 	defer mapPool.Put(root)
 
 	if err := json.Unmarshal(bytesPayload, &root); err != nil {
-		return readings.Measures{}, errors.New("el mensaje no es un objeto JSON válido")
+		return readings.Measures{}, errors.New("message is not a valid JSON object")
 	}
 
 	m := readings.Measures{}
@@ -160,7 +161,7 @@ func ParseTelemetry(payload string) (readings.Measures, error) {
 // ParseAck lee la confirmación del dispositivo. status: EXECUTED o FAILED.
 func ParseAck(payload string) (commands.AckMessage, error) {
 	if strings.TrimSpace(payload) == "" || len(payload) > maxPayload {
-		return commands.AckMessage{}, errors.New("mensaje vacío o demasiado grande")
+		return commands.AckMessage{}, errors.New("empty or oversized message")
 	}
 
 	root := mapPool.Get().(map[string]any)
@@ -168,14 +169,184 @@ func ParseAck(payload string) (commands.AckMessage, error) {
 	defer mapPool.Put(root)
 
 	if err := json.Unmarshal([]byte(payload), &root); err != nil {
-		return commands.AckMessage{}, errors.New("el mensaje no es un objeto JSON válido")
+		return commands.AckMessage{}, errors.New("message is not a valid JSON object")
 	}
 
 	status := strings.ToUpper(stringField(root, "status"))
 	if status != "EXECUTED" && status != "FAILED" {
-		return commands.AckMessage{}, fmt.Errorf("estado de ACK desconocido: %s", status)
+		return commands.AckMessage{}, fmt.Errorf("unknown ACK status: %s", status)
 	}
 	return commands.AckMessage{ID: stringField(root, "id"), Status: status, Message: stringField(root, "message")}, nil
+}
+
+// maxCapabilitiesBytes es el límite de tamaño de la carga retenida de capacidades (Audit_06).
+const maxCapabilitiesBytes = 2048
+
+const (
+	maxCapabilitySensors   = 16
+	maxCapabilityActuators = 6
+)
+
+// capabilitySensorLimits son los rangos que el servidor admite para cada sensor.
+var capabilitySensorLimits = map[string][2]float64{
+	"temperature":  {-20, 60},
+	"humidity":     {0, 100},
+	"brightness":   {0, 200000},
+	"ph":           {0, 14},
+	"tds":          {0, 10000},
+	"atmosphere":   {300, 1100},
+	"soilMoisture": {0, 100},
+}
+
+// capabilityActuators son los actuadores que reconoce el contrato.
+var capabilityActuators = map[string]bool{
+	"WATER_PUMP":     true,
+	"UV_LIGHT":       true,
+	"FAN":            true,
+	"HUMIDIFIER":     true,
+	"PH_DOSER":       true,
+	"NUTRIENT_DOSER": true,
+}
+
+// capabilitiesEnvelope es la declaración de hardware que publica el dispositivo.
+type capabilitiesEnvelope struct {
+	Schema    int                  `json:"schema"`
+	Device    capabilitiesDevice   `json:"device"`
+	Sensors   []capabilitySensor   `json:"sensors"`
+	Actuators []string             `json:"actuators"`
+}
+
+// capabilitiesDevice describe el firmware y el hardware del dispositivo.
+type capabilitiesDevice struct {
+	Firmware  string                `json:"firmware"`
+	Hardware  string                `json:"hardware"`
+	Telemetry capabilitiesTelemetry `json:"telemetry"`
+}
+
+// capabilitiesTelemetry declara los formatos de telemetría que el dispositivo sabe emitir.
+type capabilitiesTelemetry struct {
+	Formats      []string `json:"formats"`
+	CompactBytes *int     `json:"compactBytes"`
+}
+
+// capabilitySensor declara un sensor con su unidad, resolución y rango admitido.
+type capabilitySensor struct {
+	Key        string     `json:"key"`
+	Unit       string     `json:"unit"`
+	Resolution *float64   `json:"resolution"`
+	Range      []*float64 `json:"range"`
+}
+
+// ParseCapabilities valida la declaración de hardware del dispositivo y devuelve
+// el JSON original para guardarlo tal cual.
+func ParseCapabilities(payload string) (json.RawMessage, error) {
+	if strings.TrimSpace(payload) == "" || len(payload) > maxCapabilitiesBytes {
+		return nil, errors.New("empty or oversized capabilities payload")
+	}
+	var parsed capabilitiesEnvelope
+	if err := json.Unmarshal([]byte(payload), &parsed); err != nil {
+		return nil, errors.New("capabilities payload is not valid JSON")
+	}
+	if parsed.Schema != 1 {
+		return nil, fmt.Errorf("unsupported capabilities schema: %d", parsed.Schema)
+	}
+	if err := parsed.validate(); err != nil {
+		return nil, err
+	}
+	return json.RawMessage(payload), nil
+}
+
+// validate comprueba el dispositivo, sus sensores y sus actuadores.
+func (p capabilitiesEnvelope) validate() error {
+	if strings.TrimSpace(p.Device.Firmware) == "" {
+		return errors.New("device.firmware is required")
+	}
+	if strings.TrimSpace(p.Device.Hardware) == "" {
+		return errors.New("device.hardware is required")
+	}
+	if err := p.Device.Telemetry.validate(); err != nil {
+		return err
+	}
+	if len(p.Sensors) > maxCapabilitySensors {
+		return fmt.Errorf("too many sensors: %d (max %d)", len(p.Sensors), maxCapabilitySensors)
+	}
+	if len(p.Actuators) > maxCapabilityActuators {
+		return fmt.Errorf("too many actuators: %d (max %d)", len(p.Actuators), maxCapabilityActuators)
+	}
+	seenSensors := make(map[string]bool, len(p.Sensors))
+	for _, sensor := range p.Sensors {
+		if err := sensor.validate(seenSensors); err != nil {
+			return err
+		}
+	}
+	seenActuators := make(map[string]bool, len(p.Actuators))
+	for _, actuator := range p.Actuators {
+		if !capabilityActuators[actuator] {
+			return fmt.Errorf("unknown actuator: %q", actuator)
+		}
+		if seenActuators[actuator] {
+			return fmt.Errorf("duplicate actuator: %q", actuator)
+		}
+		seenActuators[actuator] = true
+	}
+	return nil
+}
+
+// validate exige una lista de formatos no vacía y solo los formatos del contrato.
+func (t capabilitiesTelemetry) validate() error {
+	if len(t.Formats) == 0 {
+		return errors.New("device.telemetry.formats must not be empty")
+	}
+	compact := false
+	for _, format := range t.Formats {
+		switch format {
+		case "json-v1":
+		case "compact-v2":
+			compact = true
+		default:
+			return fmt.Errorf("unknown telemetry format: %q", format)
+		}
+	}
+	// compactBytes es opcional, pero si se declara compact-v2 debe ser el tamaño exacto.
+	if compact && t.CompactBytes != nil && *t.CompactBytes != compactV2Size {
+		return fmt.Errorf("device.telemetry.compactBytes must be %d for compact-v2", compactV2Size)
+	}
+	return nil
+}
+
+// validate comprueba que el sensor sea canónico, único y coherente con los límites del servidor.
+func (s capabilitySensor) validate(seen map[string]bool) error {
+	if s.Key == "" {
+		return errors.New("sensor key is required")
+	}
+	limits, ok := capabilitySensorLimits[s.Key]
+	if !ok {
+		return fmt.Errorf("unknown sensor key: %q", s.Key)
+	}
+	if seen[s.Key] {
+		return fmt.Errorf("duplicate sensor key: %q", s.Key)
+	}
+	seen[s.Key] = true
+	if strings.TrimSpace(s.Unit) == "" {
+		return fmt.Errorf("sensor %q unit is required", s.Key)
+	}
+	if s.Resolution == nil || math.IsNaN(*s.Resolution) || math.IsInf(*s.Resolution, 0) || *s.Resolution <= 0 {
+		return fmt.Errorf("sensor %q resolution must be a finite positive number", s.Key)
+	}
+	if len(s.Range) != 2 || s.Range[0] == nil || s.Range[1] == nil {
+		return fmt.Errorf("sensor %q range must be a two-element array", s.Key)
+	}
+	min, max := *s.Range[0], *s.Range[1]
+	if math.IsNaN(min) || math.IsInf(min, 0) || math.IsNaN(max) || math.IsInf(max, 0) {
+		return fmt.Errorf("sensor %q range must be finite", s.Key)
+	}
+	if min >= max {
+		return fmt.Errorf("sensor %q range minimum must be lower than maximum", s.Key)
+	}
+	if min < limits[0] || max > limits[1] {
+		return fmt.Errorf("sensor %q range must be inside the API limits %g..%g", s.Key, limits[0], limits[1])
+	}
+	return nil
 }
 
 func number(root map[string]any, field string) (*float64, error) {
@@ -189,11 +360,11 @@ func number(root map[string]any, field string) (*float64, error) {
 	case string:
 		f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
 		if err != nil {
-			return nil, fmt.Errorf("el campo %s no es numérico", field)
+			return nil, fmt.Errorf("field %s is not numeric", field)
 		}
 		return &f, nil
 	default:
-		return nil, fmt.Errorf("el campo %s no es numérico", field)
+		return nil, fmt.Errorf("field %s is not numeric", field)
 	}
 }
 

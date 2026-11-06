@@ -82,6 +82,7 @@ func TestAuthn_AllowsValidDeviceWithScopedACL(t *testing.T) {
 		{"allow", "publish", "smartpot/v1/" + id + "/status"},
 		{"allow", "publish", "smartpot/v1/" + id + "/commands/ack"},
 		{"allow", "subscribe", "smartpot/v1/" + id + "/commands"},
+		{"allow", "publish", "smartpot/v1/" + id + "/capabilities"},
 		{"deny", "all", "#"},
 	}
 	if len(resp.ACL) != len(want) {
@@ -127,8 +128,9 @@ func TestAuthn_Denies(t *testing.T) {
 
 func TestAuthn_IgnoresOnDatabaseError(t *testing.T) {
 	id := "6718f0a1b2c3d4e5f6a7b8c9"
-	v := fakeVerifier{err: errors.New("base caída")}
-	rec := doAuthn(newTestController(v), testToken, `{"username":"`+id+`","password":"x"}`)
+	v := fakeVerifier{err: errors.New("database down")}
+	rec := doAuthn(newTestController(v), testToken,
+		`{"username":"`+id+`","password":"x","clientid":"smartpot-`+id+`"}`)
 	// 5xx: EMQX lo trata como "ignore" y no cachee un rechazo.
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("esperaba 503, obtuve %d", rec.Code)
@@ -153,13 +155,13 @@ func TestAuthnCachesOnlyAnHMACOfTheDeviceKey(t *testing.T) {
 	c := NewAuthnController(cfg, fakeVerifier{crop: cropWithID(t, id), key: key, hasKey: true}, store,
 		NewTopicResolver("smartpot/v1"), slog.New(slog.DiscardHandler))
 
-	body := `{"username":"` + strings.ToUpper(id) + `","password":"` + key + `","clientid":"smartpot-` + id + `"}`
+	body := `{"username":"` + id + `","password":"` + key + `","clientid":"smartpot-sim-` + id + `"}`
 	if got := decode(t, doAuthn(c, testToken, body)); got.Result != "allow" {
-		t.Fatalf("la clave correcta debía permitirse, se obtuvo %q", got.Result)
+		t.Fatalf("the correct key should be allowed, got %q", got.Result)
 	}
 	cached, ok := store.Get(deviceKeyCachePrefix + id)
 	if !ok {
-		t.Fatal("la verificación debía quedar en caché con el id normalizado")
+		t.Fatal("verification should be cached with the normalized id")
 	}
 	if strings.Contains(cached, key) {
 		t.Fatal("cache must not store device key in plaintext")
@@ -170,6 +172,31 @@ func TestAuthnCachesOnlyAnHMACOfTheDeviceKey(t *testing.T) {
 	}
 	c.Invalidate(id)
 	if _, ok := store.Get(deviceKeyCachePrefix + id); ok {
-		t.Fatal("Invalidate debía borrar la entrada")
+		t.Fatal("Invalidate should delete the cached entry")
+	}
+}
+
+func TestAuthnRejectsUppercaseOrSpacedUsername(t *testing.T) {
+	const id = "6718f0a1b2c3d4e5f6a7b8c9"
+	v := fakeVerifier{crop: cropWithID(t, id), key: "device-key-123", hasKey: true}
+	c := newTestController(v)
+	for _, username := range []string{strings.ToUpper(id), " " + id, id + " "} {
+		body := `{"username":"` + username + `","password":"device-key-123","clientid":"smartpot-` + id + `"}`
+		if got := decode(t, doAuthn(c, testToken, body)); got.Result != "deny" {
+			t.Fatalf("username %q must be rejected exactly, got %q", username, got.Result)
+		}
+	}
+}
+
+func TestAuthnRejectsClientIDFromAnotherCrop(t *testing.T) {
+	const id = "6718f0a1b2c3d4e5f6a7b8c9"
+	const other = "6718f0a1b2c3d4e5f6a7b8d0"
+	v := fakeVerifier{crop: cropWithID(t, id), key: "device-key-123", hasKey: true}
+	c := newTestController(v)
+	for _, clientID := range []string{"smartpot-" + other, "smartpot-sim-" + other, "smartpot-", id} {
+		body := `{"username":"` + id + `","password":"device-key-123","clientid":"` + clientID + `"}`
+		if got := decode(t, doAuthn(c, testToken, body)); got.Result != "deny" {
+			t.Fatalf("clientid %q must be rejected, got %q", clientID, got.Result)
+		}
 	}
 }

@@ -32,7 +32,12 @@ type clientListResponse struct {
 	Data []struct {
 		ClientID string `json:"clientid"`
 	} `json:"data"`
+	Meta struct {
+		HasNext bool `json:"hasnext"`
+	} `json:"meta"`
 }
+
+const clientPageSize = 100
 
 // NewProvisioner crea el aprovisionador contra la API REST de EMQX.
 func NewProvisioner(cfg config.MQTT, logger *slog.Logger) *Provisioner {
@@ -83,30 +88,47 @@ func (p *Provisioner) kick(ctx context.Context, cropID string) {
 	}
 }
 
+// clientsByUsername recorre todas las páginas mientras meta.hasnext sea
+// verdadero: con más de 100 sesiones (por ejemplo, reconexiones zombie) una
+// sola página dejaría sesiones vivas con la clave anterior (M-01).
 func (p *Provisioner) clientsByUsername(ctx context.Context, cropID string) ([]string, error) {
-	endpoint := fmt.Sprintf("%s/api/v5/clients?username=%s&fields=clientid", p.baseURL, url.QueryEscape(cropID))
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(p.key, p.secret)
-	resp, err := p.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return nil, fmt.Errorf("broker returned %d while listing sessions: %s", resp.StatusCode, strings.TrimSpace(string(body)))
-	}
-	var parsed clientListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, err
-	}
-	ids := make([]string, 0, len(parsed.Data))
-	for _, c := range parsed.Data {
-		if c.ClientID != "" {
+	seen := make(map[string]struct{})
+	ids := make([]string, 0)
+	for page := 1; page <= 100; page++ {
+		endpoint := fmt.Sprintf("%s/api/v5/clients?username=%s&fields=clientid&limit=%d&page=%d",
+			p.baseURL, url.QueryEscape(cropID), clientPageSize, page)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.SetBasicAuth(p.key, p.secret)
+		resp, err := p.http.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+			resp.Body.Close()
+			return nil, fmt.Errorf("broker returned %d while listing sessions: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		}
+		var parsed clientListResponse
+		decodeErr := json.NewDecoder(resp.Body).Decode(&parsed)
+		resp.Body.Close()
+		if decodeErr != nil {
+			return nil, decodeErr
+		}
+		for _, c := range parsed.Data {
+			if c.ClientID == "" {
+				continue
+			}
+			if _, ok := seen[c.ClientID]; ok {
+				continue
+			}
+			seen[c.ClientID] = struct{}{}
 			ids = append(ids, c.ClientID)
+		}
+		if !parsed.Meta.HasNext {
+			return ids, nil
 		}
 	}
 	return ids, nil
