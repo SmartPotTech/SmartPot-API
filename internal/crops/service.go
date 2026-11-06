@@ -518,10 +518,12 @@ func (s *Service) deleteCascade(ctx context.Context, crop *Crop) error {
 	if err := s.repo.Delete(ctx, crop.ID); err != nil {
 		return err
 	}
+	// El evento invalida la caché de autenticación antes de cortar las sesiones:
+	// una reconexión con la clave vieja no puede sobrevivir al apagado.
+	s.bus.Publish(DeletedEvent{CropID: crop.HexID(), OwnerID: crop.OwnerID.Hex()})
 	if err := s.provisioner.Deprovision(ctx, crop.HexID()); err != nil {
 		slog.Warn("could not deprovision device from broker", "cropId", crop.HexID(), "err", err)
 	}
-	s.bus.Publish(DeletedEvent{CropID: crop.HexID(), OwnerID: crop.OwnerID.Hex()})
 	slog.Info("crop deleted", "cropId", crop.HexID())
 	return nil
 }

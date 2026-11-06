@@ -176,6 +176,23 @@ func TestAuthnCachesOnlyAnHMACOfTheDeviceKey(t *testing.T) {
 	}
 }
 
+func TestAuthnRateLimitsPerUsername(t *testing.T) {
+	const id = "6718f0a1b2c3d4e5f6a7b8c9"
+	store := cache.NewStore(nil)
+	c := NewAuthnController(config.MQTT{AuthnToken: testToken},
+		fakeVerifier{crop: cropWithID(t, id), key: "device-key-123", hasKey: true}, store,
+		NewTopicResolver("smartpot/v1"), slog.New(slog.DiscardHandler))
+	body := `{"username":"` + id + `","password":"device-key-123","clientid":"smartpot-` + id + `"}`
+	for i := 0; i < authnRatePerMinute; i++ {
+		if got := decode(t, doAuthn(c, testToken, body)); got.Result != "allow" {
+			t.Fatalf("attempt %d should be allowed, got %q", i+1, got.Result)
+		}
+	}
+	if got := decode(t, doAuthn(c, testToken, body)); got.Result != "deny" {
+		t.Fatalf("attempts above the per-crop limit must be denied, got %q", got.Result)
+	}
+}
+
 func TestAuthnRejectsUppercaseOrSpacedUsername(t *testing.T) {
 	const id = "6718f0a1b2c3d4e5f6a7b8c9"
 	v := fakeVerifier{crop: cropWithID(t, id), key: "device-key-123", hasKey: true}
