@@ -30,7 +30,17 @@ func (h *Handler) RegisterPublic(g *echo.Group) {
 }
 
 func (h *Handler) insightsOf(c echo.Context) error {
-	resp, err := h.insights.ForOwner(c.Request().Context(), security.CurrentUserID(c), c.Param("cropId"))
+	ctx := c.Request().Context()
+	ownerID := security.CurrentUserID(c)
+	// Un token de conexión READ solo consulta: el índice de salud no se escribe.
+	if security.CurrentIdentity(c).Scope == "READ" {
+		resp, err := h.insights.ForOwnerReadOnly(ctx, ownerID, c.Param("cropId"))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, resp)
+	}
+	resp, err := h.insights.ForOwner(ctx, ownerID, c.Param("cropId"))
 	if err != nil {
 		return err
 	}

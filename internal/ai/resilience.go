@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -107,10 +108,26 @@ func (cb *CircuitBreaker) Execute(fn func() error) error {
 	now = cb.clock()
 
 	if err != nil {
+		// Un 4xx es culpa del cliente, no una caída del transporte: se propaga
+		// sin abrir el circuito y, en HALF-OPEN, confirma que la IA está viva.
+		var apiErr *apperr.Error
+		if errors.As(err, &apiErr) && apiErr.Status >= 400 && apiErr.Status < 500 {
+			if cb.state == StateHalfOpen {
+				cb.state = StateClosed
+				cb.failures = 0
+			}
+			cb.halfOpenBusy.Store(false)
+			return err
+		}
 		cb.failures++
 		cb.lastFailure = now
-		cb.state = StateOpen
 		cb.halfOpenBusy.Store(false)
+		// El circuito abre exactamente al alcanzar el umbral (5 fallos
+		// consecutivos por defecto), no con el primero. En HALF-OPEN un fallo
+		// vuelve a abrir de inmediato.
+		if cb.state == StateHalfOpen || cb.failures >= cb.threshold {
+			cb.state = StateOpen
+		}
 		return err
 	}
 
@@ -199,6 +216,8 @@ func NewSingleflight() *Singleflight {
 }
 
 // Do ejecuta fn únicamente una vez para una clave dada mientras esté en curso.
+// La limpieza va en defer: un pánico en fn no deja el WaitGroup ni la entrada
+// del mapa bloqueados para siempre.
 func (g *Singleflight) Do(key string, fn func() (any, error)) (any, error) {
 	g.mu.Lock()
 	if c, ok := g.m[key]; ok {
@@ -211,12 +230,17 @@ func (g *Singleflight) Do(key string, fn func() (any, error)) (any, error) {
 	g.m[key] = c
 	g.mu.Unlock()
 
-	c.val, c.err = fn()
-	c.wg.Done()
-
-	g.mu.Lock()
-	delete(g.m, key)
-	g.mu.Unlock()
-
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				c.err = fmt.Errorf("singleflight panic: %v", r)
+			}
+			c.wg.Done()
+			g.mu.Lock()
+			delete(g.m, key)
+			g.mu.Unlock()
+		}()
+		c.val, c.err = fn()
+	}()
 	return c.val, c.err
 }

@@ -43,6 +43,16 @@ func NewInsightService(client *Client, cropsSvc *crops.Service, readingsSvc *rea
 
 // ForOwner evalúa el cultivo del dueño sobre su última lectura.
 func (s *InsightService) ForOwner(ctx context.Context, ownerID, cropID string) (*InsightResponse, error) {
+	return s.forOwner(ctx, ownerID, cropID, true)
+}
+
+// ForOwnerReadOnly evalúa sin persistir el índice de salud. La usa un token de
+// conexión con alcance READ: leer un diagnóstico no debe escribir en la base.
+func (s *InsightService) ForOwnerReadOnly(ctx context.Context, ownerID, cropID string) (*InsightResponse, error) {
+	return s.forOwner(ctx, ownerID, cropID, false)
+}
+
+func (s *InsightService) forOwner(ctx context.Context, ownerID, cropID string, persist bool) (*InsightResponse, error) {
 	crop, err := s.crops.GetOwned(ctx, ownerID, cropID)
 	if err != nil {
 		return nil, err
@@ -54,15 +64,24 @@ func (s *InsightService) ForOwner(ctx context.Context, ownerID, cropID string) (
 	if latest == nil {
 		return nil, apperr.NotFound("No readings to analyze yet for this crop")
 	}
-	return s.Evaluate(ctx, crop, *latest)
+	return s.evaluate(ctx, crop, *latest, persist)
 }
 
 // Evaluate consulta a la IA y guarda el índice de salud en el cultivo.
-// Utiliza caché inteligente de Valkey y singleflight para deduplicar llamadas concurrentes idénticas.
 func (s *InsightService) Evaluate(ctx context.Context, crop *crops.Crop, latest readings.Reading) (*InsightResponse, error) {
-	// La llave incluye la última modificación del cultivo: cambiar su lugar, especie o forma invalida el diagnóstico.
-	cacheKey := fmt.Sprintf("insights:%s:%s:%d:%d", crop.HexID(), latest.ID.Hex(), latest.MeasuredAt.Unix(),
-		crop.UpdatedAt.UnixNano())
+	return s.evaluate(ctx, crop, latest, true)
+}
+
+// evaluate consulta a la IA con caché inteligente de Valkey y singleflight. La
+// clave del vuelo incluye la versión de la lectura y del cultivo: una petición
+// posterior a un PUT /crops/{id} no hereda el diagnóstico viejo (R5b).
+func (s *InsightService) evaluate(ctx context.Context, crop *crops.Crop, latest readings.Reading, persist bool) (*InsightResponse, error) {
+	cacheKey := insightCacheKey(crop, latest)
+	if !persist {
+		// La respuesta de una conexión READ no comparte caché con la que
+		// persiste el índice de salud del cultivo.
+		cacheKey += ":read-only"
+	}
 	if s.cache != nil {
 		if raw, ok := s.cache.Get(cacheKey); ok {
 			var cached InsightResponse
@@ -72,7 +91,7 @@ func (s *InsightService) Evaluate(ctx context.Context, crop *crops.Crop, latest 
 		}
 	}
 
-	flightKey := fmt.Sprintf("flight:insights:%s", crop.HexID())
+	flightKey := insightFlightKey(cacheKey)
 	v, err, _ := s.flight.Do(flightKey, func() (any, error) {
 		if s.cache != nil {
 			if raw, ok := s.cache.Get(cacheKey); ok {
@@ -121,7 +140,7 @@ func (s *InsightService) Evaluate(ctx context.Context, crop *crops.Crop, latest 
 			return nil, err
 		}
 		resp.EvaluatedAt = now
-		if resp.Health != nil {
+		if persist && resp.Health != nil {
 			s.crops.UpdateHealth(ctx, crop.HexID(), crops.CropHealth{
 				Index: resp.Health.Index, Level: resp.Health.Level, Label: resp.Health.Label, EvaluatedAt: now,
 			})
@@ -137,6 +156,19 @@ func (s *InsightService) Evaluate(ctx context.Context, crop *crops.Crop, latest 
 		return nil, err
 	}
 	return v.(*InsightResponse), nil
+}
+
+// insightCacheKey incluye la última modificación del cultivo y la lectura: si
+// cambia su lugar, especie o forma, el diagnóstico anterior deja de valer.
+func insightCacheKey(crop *crops.Crop, latest readings.Reading) string {
+	return fmt.Sprintf("insights:%s:%s:%d:%d", crop.HexID(), latest.ID.Hex(), latest.MeasuredAt.Unix(),
+		crop.UpdatedAt.UnixNano())
+}
+
+// insightFlightKey versiona el singleflight con la misma llave de caché
+// (lectura, cultivo y versión), cerrando la carrera R5b.
+func insightFlightKey(cacheKey string) string {
+	return "flight:" + cacheKey
 }
 
 func (s *InsightService) outside(ctx context.Context, crop *crops.Crop) *Outside {
