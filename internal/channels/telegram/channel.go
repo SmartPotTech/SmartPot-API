@@ -58,7 +58,7 @@ func (c *Channel) Requirements() []string {
 
 // Send envía un mensaje al chat.
 func (c *Channel) Send(address string, message channels.ChannelMessage) error {
-	return c.client.SendMessage(address, format(message), "Abrir en SmartPot", message.URL)
+	return c.client.SendMessage(address, format(message), "Open in SmartPot", message.URL)
 }
 
 func (c *Channel) username() string {

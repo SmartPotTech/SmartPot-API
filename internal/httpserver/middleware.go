@@ -33,7 +33,7 @@ func requestLogger(logger *slog.Logger) echo.MiddlewareFunc {
 			}
 			req := c.Request()
 			res := c.Response()
-			logger.Info("peticion",
+			logger.Info("request",
 				"requestId", rc.Trace().RequestID,
 				"method", req.Method,
 				"path", req.URL.Path,

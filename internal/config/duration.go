@@ -14,7 +14,7 @@ import (
 func ParseDuration(s string) (time.Duration, error) {
 	raw := strings.TrimSpace(s)
 	if raw == "" {
-		return 0, errors.New("duración vacía")
+		return 0, errors.New("empty duration")
 	}
 	upper := strings.ToUpper(raw)
 	if strings.HasPrefix(upper, "P") || strings.HasPrefix(upper, "-P") || strings.HasPrefix(upper, "+P") {

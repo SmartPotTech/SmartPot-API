@@ -18,11 +18,11 @@ import (
 const digestLines = 8
 
 var digestKinds = map[notifications.Type]string{
-	notifications.TypeAlert:   "Alerta",
+	notifications.TypeAlert:   "Alert",
 	notifications.TypeDevice:  "Connection",
-	notifications.TypeAI:      "Asistente",
-	notifications.TypeCommand: "Orden",
-	notifications.TypeInfo:    "Aviso",
+	notifications.TypeAI:      "Assistant",
+	notifications.TypeCommand: "Command",
+	notifications.TypeInfo:    "Notice",
 }
 
 // Digest prepara los resúmenes por cultivo (cada tantas horas y el diario),
@@ -141,7 +141,7 @@ func (d *Digest) digest(crop *crops.Crop, items []notifications.Notification, ho
 	if hours == 1 {
 		window = "the last hour"
 	}
-	lines := []string{fmt.Sprintf("%d %s en %s:", len(items), plural(len(items), "aviso", "avisos"), window)}
+	lines := []string{fmt.Sprintf("%d %s in %s:", len(items), plural(len(items), "notice", "notices"), window)}
 	limit := len(items)
 	if limit > digestLines {
 		limit = digestLines
@@ -162,7 +162,7 @@ func (d *Digest) summary(ctx context.Context, crop *crops.Crop, now time.Time) (
 	if crop.Health == nil {
 		lines = append(lines, "Health: not evaluated yet")
 	} else {
-		lines = append(lines, fmt.Sprintf("Salud: %s (%d/100)", crop.Health.Label, int(math.Round(crop.Health.Index))))
+		lines = append(lines, fmt.Sprintf("Health: %s (%d/100)", crop.Health.Label, int(math.Round(crop.Health.Index))))
 	}
 	if crop.Device != nil && crop.Device.Online {
 		lines = append(lines, "Connection: online")
@@ -194,16 +194,16 @@ func (d *Digest) url(crop *crops.Crop) string {
 func describe(m readings.Measures) string {
 	var parts []string
 	if m.Temperature != nil {
-		parts = append(parts, strings.Replace(fmt.Sprintf("%.1f °C", *m.Temperature), ".", ",", 1))
+		parts = append(parts, fmt.Sprintf("%.1f °C", *m.Temperature))
 	}
 	if m.Humidity != nil {
-		parts = append(parts, fmt.Sprintf("humedad %d %%", int(math.Round(*m.Humidity))))
+		parts = append(parts, fmt.Sprintf("humidity %d %%", int(math.Round(*m.Humidity))))
 	}
 	if m.SoilMoisture != nil {
-		parts = append(parts, fmt.Sprintf("sustrato %d %%", int(math.Round(*m.SoilMoisture))))
+		parts = append(parts, fmt.Sprintf("soil %d %%", int(math.Round(*m.SoilMoisture))))
 	}
 	if m.Brightness != nil {
-		parts = append(parts, fmt.Sprintf("luz %d lux", int(math.Round(*m.Brightness))))
+		parts = append(parts, fmt.Sprintf("light %d lux", int(math.Round(*m.Brightness))))
 	}
 	if len(parts) == 0 {
 		return "Latest reading: no data"

@@ -77,7 +77,7 @@ func (r CreateRequest) Validate() validation.Fields {
 		v.Add("name", "Connection name must be at most 60 characters")
 	}
 	if r.Scope != ScopeRead && r.Scope != ScopeControl {
-		v.Add("scope", "Elige solo lectura o control")
+		v.Add("scope", "Choose read-only or control")
 	}
 	if r.ExpiresInDays != nil && (*r.ExpiresInDays < 1 || *r.ExpiresInDays > 365) {
 		v.Add("expiresInDays", "Expiration must be between 1 and 365 days")

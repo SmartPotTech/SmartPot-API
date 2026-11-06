@@ -25,11 +25,11 @@ func Register(engine *echo.Echo, publicAPIURL string, enabled bool) {
 
 // swaggerUIPage es la página que carga la interfaz de Swagger apuntando al JSON.
 const swaggerUIPage = `<!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SmartPot API · Documentación</title>
+  <title>SmartPot API · Documentation</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/` + swaggerUIVersion + `/swagger-ui.min.css">
   <style>body{margin:0;background:#F2F7F4}</style>
 </head>
