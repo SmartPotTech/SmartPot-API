@@ -3,6 +3,7 @@ package readings
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -22,8 +23,13 @@ const exportLimit = 50000
 // La última lectura de cada cultivo vive en la caché compartida (Valkey) para que todas las réplicas de la API
 // respondan lo mismo; expira sola si el cultivo deja de enviar.
 const (
-	latestKeyPrefix = "reading:latest:"
-	latestTTL       = 10 * time.Minute
+	latestKeyPrefix  = "reading:latest:"
+	latestTTL        = 10 * time.Minute
+	cropExistsPrefix = "crop:exists:"
+	cropExistsTTL    = 30 * time.Second
+	deviceSeenPrefix = "device:seen:"
+	deviceSeenTTL    = 30 * time.Second
+	maxRetryReadings = 20000
 )
 
 var batchSlicePool = sync.Pool{
@@ -34,9 +40,10 @@ var batchSlicePool = sync.Pool{
 }
 
 // Crops es lo que el servicio de lecturas necesita de los cultivos, sin importar
-// el paquete crops (lo implementa CropService).
+// el paquete crops (lo implementa CropService). Exists distingue "no existe" de
+// "la base no responde" devolviendo el error.
 type Crops interface {
-	Exists(ctx context.Context, cropID string) bool
+	Exists(ctx context.Context, cropID string) (bool, error)
 	RequireOwned(ctx context.Context, ownerID, cropID string) error
 	MarkDeviceSeen(ctx context.Context, cropID string, online *bool)
 }
@@ -56,8 +63,9 @@ type Service struct {
 	batchWg     sync.WaitGroup
 	batchStop   chan struct{}
 
-	streamMu sync.RWMutex
-	streams  map[string]map[chan *Reading]struct{}
+	streamMu      sync.RWMutex
+	streams       map[string]map[chan *Reading]struct{}
+	streamsClosed bool
 }
 
 // NewService crea el servicio de lecturas.
@@ -75,7 +83,10 @@ func NewService(repo Repository, crops Crops, store cache.Cache, bus *events.Bus
 	}
 }
 
-// StartBatchWorker arranca el worker de micro-batching con ventana ultracorta (10ms) o umbral de 100 lecturas y reciclaje de memoria via sync.Pool.
+// StartBatchWorker arranca el worker de micro-batching con ventana ultracorta
+// (10 ms) o umbral de 100 lecturas, reciclaje de memoria con sync.Pool y
+// reintento con backoff cuando PostgreSQL se pausa. Una lectura aceptada no se
+// descarta en silencio: queda en el buffer de reintento hasta que se guarda.
 func (s *Service) StartBatchWorker(ctx context.Context) {
 	if s.batchActive.Swap(true) {
 		return
@@ -92,71 +103,129 @@ func (s *Service) StartBatchWorker(ctx context.Context) {
 		batchPtr := batchSlicePool.Get().(*[]Reading)
 		batch := (*batchPtr)[:0]
 		defer func() {
-			batch = batch[:0]
-			batchSlicePool.Put(&batch)
+			// Se devuelve el puntero obtenido del pool, no una variable local.
+			*batchPtr = batch[:0]
+			batchSlicePool.Put(batchPtr)
 		}()
 
-		flush := func() {
-			if len(batch) == 0 {
-				return
-			}
-			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			saved := batch
-			if err := s.repo.InsertBatch(flushCtx, batch); err != nil {
-				// Si falla el lote completo, se guarda una por una para no perder las válidas.
-				slog.Warn("batch insert failed; retrying reading by reading", "count", len(batch), "err", err)
-				saved = saved[:0:0]
-				for i := range batch {
-					if err := s.repo.Insert(flushCtx, &batch[i]); err != nil {
-						slog.Error("lectura descartada al guardar", "cropId", batch[i].CropID.Hex(), "err", err)
-						continue
-					}
-					saved = append(saved, batch[i])
-				}
-			}
-			cancel()
-			// Los eventos (agente, aprendizaje, avisos) salen solo con la lectura ya guardada. Sus manejadores pueden
-			// tardar (consultan a la IA), así que corren aparte para no frenar el siguiente lote.
+		var retry []Reading
+		retryDelay := 200 * time.Millisecond
+		var retryAt time.Time
+
+		publish := func(saved []Reading) {
 			for i := range saved {
 				s.rememberLatest(&saved[i])
 			}
-			if len(saved) > 0 {
-				events := append([]Reading(nil), saved...)
-				go func() {
-					for i := range events {
-						s.bus.Publish(ReadingRecordedEvent{CropID: events[i].CropID.Hex(), Reading: events[i]})
-					}
-				}()
+			if len(saved) == 0 {
+				return
 			}
-			batch = batch[:0]
+			events := append([]Reading(nil), saved...)
+			go func() {
+				for i := range events {
+					s.bus.Publish(ReadingRecordedEvent{CropID: events[i].CropID.Hex(), Reading: events[i]})
+				}
+			}()
+		}
+
+		flush := func(force bool) {
+			if len(batch) == 0 && len(retry) == 0 {
+				return
+			}
+			if !force && !retryAt.IsZero() && time.Now().Before(retryAt) {
+				return
+			}
+			all := make([]Reading, 0, len(retry)+len(batch))
+			all = append(all, retry...)
+			all = append(all, batch...)
+			retry, batch = retry[:0], batch[:0]
+
+			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err := s.repo.InsertBatch(flushCtx, all)
+			cancel()
+			if err == nil {
+				retryDelay = 200 * time.Millisecond
+				retryAt = time.Time{}
+				publish(all)
+				return
+			}
+
+			// El lote completo falló (base pausada o conexión perdida). Se
+			// reintenta lectura por lectura con un subcontexto independiente:
+			// el presupuesto agotado del lote no condena a las demás.
+			slog.Warn("batch insert failed; retrying reading by reading", "count", len(all), "err", err)
+			saved := make([]Reading, 0, len(all))
+			failed := make([]Reading, 0)
+			// Presupuesto acotado para el respaldo individual: si la base sigue
+			// caída, no se puede tardar 5 s por cada lectura del búfer.
+			budget := time.Now().Add(10 * time.Second)
+			for i := range all {
+				if time.Now().After(budget) {
+					failed = append(failed, all[i:]...)
+					break
+				}
+				itemCtx, itemCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+				itemErr := s.repo.Insert(itemCtx, &all[i])
+				itemCancel()
+				if itemErr != nil {
+					failed = append(failed, all[i])
+					continue
+				}
+				saved = append(saved, all[i])
+			}
+			publish(saved)
+			if len(failed) == 0 {
+				retryDelay = 200 * time.Millisecond
+				retryAt = time.Time{}
+				return
+			}
+			if len(failed) > maxRetryReadings {
+				dropped := len(failed) - maxRetryReadings
+				failed = failed[dropped:]
+				slog.Error("readings retry buffer full; dropping oldest", "dropped", dropped)
+			}
+			retry = failed
+			retryDelay *= 2
+			if retryDelay > 30*time.Second {
+				retryDelay = 30 * time.Second
+			}
+			retryAt = time.Now().Add(retryDelay)
+			slog.Error("readings kept for retry after database failure",
+				"count", len(retry), "retryIn", retryDelay.String())
+		}
+
+		drain := func() {
+			for {
+				select {
+				case r := <-s.batchQueue:
+					batch = append(batch, r)
+					if len(batch) >= 100 {
+						flush(true)
+					}
+				default:
+					flush(true)
+					if len(retry) > 0 {
+						slog.Error("readings could not be persisted before shutdown", "count", len(retry))
+					}
+					return
+				}
+			}
 		}
 
 		for {
 			select {
 			case <-ctx.Done():
-				flush()
+				drain()
 				return
 			case <-s.batchStop:
-				// Drena la cola antes de salir
-				for {
-					select {
-					case r := <-s.batchQueue:
-						batch = append(batch, r)
-						if len(batch) >= 100 {
-							flush()
-						}
-					default:
-						flush()
-						return
-					}
-				}
+				drain()
+				return
 			case r := <-s.batchQueue:
 				batch = append(batch, r)
 				if len(batch) >= 100 {
-					flush()
+					flush(false)
 				}
 			case <-ticker.C:
-				flush()
+				flush(false)
 			}
 		}
 	}()
@@ -171,25 +240,88 @@ func (s *Service) StopBatchWorker() {
 	s.batchWg.Wait()
 }
 
-// RecordFromDevice guarda la telemetría del dispositivo. Se descarta si el
-// cultivo no existe o si llega más rápido que el intervalo mínimo.
+// RecordFromDevice guarda la telemetría del dispositivo. El rate gate va
+// primero (sin tocar PostgreSQL), la existencia del cultivo se cachea y, si la
+// base está pausada, la lectura se encola para reintento en vez de perderse.
 func (s *Service) RecordFromDevice(ctx context.Context, cropID string, measures Measures) (*Reading, error) {
-	if !s.crops.Exists(ctx, cropID) {
-		slog.Debug("telemetry dropped: crop does not exist", "cropId", cropID)
+	oid, ok := objectid.Parse(cropID)
+	if !ok {
+		slog.Debug("telemetry dropped: invalid crop id", "cropId", cropID)
 		return nil, nil
 	}
-	online := true
-	s.crops.MarkDeviceSeen(ctx, cropID, &online)
-	if !s.cache.SetIfAbsent("reading:"+cropID, s.minInterval) {
-		slog.Debug("telemetry dropped due to rate limit", "cropId", cropID)
-		return nil, nil
-	}
-	reading, err := s.store(ctx, cropID, measures, SourceMQTT)
-	if err != nil {
+	if err := ValidateRanges(measures); err != nil {
 		slog.Debug("telemetry dropped due to out of range value", "cropId", cropID, "err", err)
 		return nil, nil
 	}
-	return reading, nil
+	if !s.cache.SetIfAbsent("reading:"+oid.Hex(), s.minInterval) {
+		slog.Debug("telemetry dropped due to rate limit", "cropId", cropID)
+		return nil, nil
+	}
+
+	exists, err := s.cropExists(ctx, oid.Hex())
+	if err != nil {
+		// La base no responde: no se puede afirmar que el cultivo no exista. La
+		// lectura entra al worker de lotes (con reintento y backoff) y se emite
+		// por SSE mientras tanto.
+		reading := s.newReading(oid, measures, SourceMQTT)
+		s.broadcastStream(oid.Hex(), reading)
+		if !s.enqueue(*reading) {
+			slog.Error("telemetry could not be queued while database is unavailable",
+				"cropId", cropID, "err", err)
+			return reading, fmt.Errorf("readings queue is full: %w", err)
+		}
+		slog.Warn("database unavailable; telemetry queued for retry", "cropId", cropID, "err", err)
+		return reading, nil
+	}
+	if !exists {
+		slog.Debug("telemetry dropped: crop does not exist", "cropId", cropID)
+		return nil, nil
+	}
+
+	s.markDeviceSeen(oid.Hex(), true)
+	return s.store(ctx, oid.Hex(), measures, SourceMQTT)
+}
+
+// cropExists cachea solo la existencia positiva: un cultivo recién creado nunca
+// queda oculto por una entrada negativa.
+func (s *Service) cropExists(ctx context.Context, cropID string) (bool, error) {
+	key := cropExistsPrefix + cropID
+	if cached, ok := s.cache.Get(key); ok && cached == "1" {
+		return true, nil
+	}
+	exists, err := s.crops.Exists(ctx, cropID)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		s.cache.Put(key, "1", cropExistsTTL)
+	}
+	return exists, nil
+}
+
+// markDeviceSeen limita la escritura de last_seen a una vez cada 30 s por
+// cultivo, para que una ráfaga de telemetría no sature el pool (C-07).
+func (s *Service) markDeviceSeen(cropID string, online bool) {
+	if !s.cache.SetIfAbsent(deviceSeenPrefix+cropID, deviceSeenTTL) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	s.crops.MarkDeviceSeen(ctx, cropID, &online)
+}
+
+// enqueue entrega la lectura al worker de lotes; false si no está activo o la
+// cola está llena (el llamador decide si la guarda en línea).
+func (s *Service) enqueue(reading Reading) bool {
+	if !s.batchActive.Load() {
+		return false
+	}
+	select {
+	case s.batchQueue <- reading:
+		return true
+	default:
+		return false
+	}
 }
 
 // RecordManual guarda una lectura manual (dispositivos sin MQTT o pruebas).
@@ -221,6 +353,36 @@ func (s *Service) Latest(ctx context.Context, cropID string) (*Reading, error) {
 		s.rememberLatest(reading)
 	}
 	return reading, err
+}
+
+// LatestByCropIDs devuelve la última lectura de varios cultivos con una sola
+// consulta SQL para los que no estén en Valkey: elimina el N+1 de /crops y del
+// panel general.
+func (s *Service) LatestByCropIDs(ctx context.Context, cropIDs []primitive.ObjectID) (map[string]*Reading, error) {
+	out := make(map[string]*Reading, len(cropIDs))
+	missing := make([]primitive.ObjectID, 0, len(cropIDs))
+	for _, oid := range cropIDs {
+		if raw, hit := s.cache.Get(latestKeyPrefix + oid.Hex()); hit {
+			var cached Reading
+			if json.Unmarshal([]byte(raw), &cached) == nil {
+				out[oid.Hex()] = &cached
+				continue
+			}
+		}
+		missing = append(missing, oid)
+	}
+	if len(missing) == 0 {
+		return out, nil
+	}
+	found, err := s.repo.LatestByCropIDs(ctx, missing)
+	if err != nil {
+		return nil, err
+	}
+	for id, reading := range found {
+		out[id] = reading
+		s.rememberLatest(reading)
+	}
+	return out, nil
 }
 
 func (s *Service) rememberLatest(r *Reading) {
@@ -333,6 +495,11 @@ func (s *Service) SeriesAverages(ctx context.Context, cropIDs []string, metric s
 func (s *Service) SubscribeStream(cropID string) (<-chan *Reading, func()) {
 	s.streamMu.Lock()
 	defer s.streamMu.Unlock()
+	if s.streamsClosed {
+		closed := make(chan *Reading)
+		close(closed)
+		return closed, func() {}
+	}
 	ch := make(chan *Reading, 16)
 	if s.streams[cropID] == nil {
 		s.streams[cropID] = make(map[chan *Reading]struct{})
@@ -342,15 +509,35 @@ func (s *Service) SubscribeStream(cropID string) (<-chan *Reading, func()) {
 	unsubscribe := func() {
 		s.streamMu.Lock()
 		defer s.streamMu.Unlock()
-		if subs, ok := s.streams[cropID]; ok {
-			delete(subs, ch)
-			if len(subs) == 0 {
-				delete(s.streams, cropID)
-			}
+		subs, ok := s.streams[cropID]
+		if !ok {
+			return
+		}
+		if _, exists := subs[ch]; !exists {
+			// CloseStreams ya cerró el canal durante el apagado.
+			return
+		}
+		delete(subs, ch)
+		if len(subs) == 0 {
+			delete(s.streams, cropID)
 		}
 		close(ch)
 	}
 	return ch, unsubscribe
+}
+
+// CloseStreams cierra todos los flujos SSE activos. Se llama al recibir SIGTERM,
+// antes de apagar el servidor HTTP, para que srv.Shutdown no espere 20 s.
+func (s *Service) CloseStreams() {
+	s.streamMu.Lock()
+	defer s.streamMu.Unlock()
+	s.streamsClosed = true
+	for cropID, subs := range s.streams {
+		for ch := range subs {
+			close(ch)
+		}
+		delete(s.streams, cropID)
+	}
 }
 
 func (s *Service) broadcastStream(cropID string, r *Reading) {
@@ -372,8 +559,12 @@ func (s *Service) DeleteByCrop(ctx context.Context, cropID string) error {
 	if !ok {
 		return nil
 	}
-	s.cache.Delete(latestKeyPrefix + oid.Hex())
+	s.cache.Delete(latestKeyPrefix+oid.Hex(), cropExistsPrefix+oid.Hex(), deviceSeenPrefix+oid.Hex())
 	return s.repo.DeleteByCrop(ctx, oid)
+}
+
+func (s *Service) newReading(cropID primitive.ObjectID, measures Measures, source Source) *Reading {
+	return &Reading{ID: primitive.NewObjectID(), CropID: cropID, MeasuredAt: s.clock(), Measures: measures, Source: source}
 }
 
 func (s *Service) store(ctx context.Context, cropID string, measures Measures, source Source) (*Reading, error) {
@@ -384,17 +575,15 @@ func (s *Service) store(ctx context.Context, cropID string, measures Measures, s
 	if !ok {
 		return nil, apperr.NotFound("Crop does not exist")
 	}
-	reading := &Reading{ID: primitive.NewObjectID(), CropID: oid, MeasuredAt: s.clock(), Measures: measures, Source: source}
+	reading := s.newReading(oid, measures, source)
 	// El flujo en vivo (SSE) recibe la lectura validada de inmediato; la caché y los eventos, al quedar guardada.
 	s.broadcastStream(oid.Hex(), reading)
 
-	if source == SourceMQTT && s.batchActive.Load() {
-		select {
-		case s.batchQueue <- *reading:
-			return reading, nil
-		default:
-			slog.Warn("readings batch queue saturated; flushing immediately", "cropId", cropID)
-		}
+	if source == SourceMQTT && s.enqueue(*reading) {
+		return reading, nil
+	}
+	if source == SourceMQTT {
+		slog.Warn("readings batch queue saturated; persisting synchronously", "cropId", cropID)
 	}
 	if err := s.repo.Insert(ctx, reading); err != nil {
 		return nil, err

@@ -11,6 +11,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/virtualdevices"
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // VirtualDeviceManager arranca y valida la simulación de los cultivos virtuales
@@ -48,13 +49,21 @@ func (h *Handler) Register(g *echo.Group) {
 }
 
 func (h *Handler) list(c echo.Context) error {
-	crops, err := h.crops.List(c.Request().Context(), security.CurrentUserID(c))
+	cropsList, err := h.crops.List(c.Request().Context(), security.CurrentUserID(c))
 	if err != nil {
 		return err
 	}
-	out := make([]CropResponse, 0, len(crops))
-	for i := range crops {
-		out = append(out, h.toResponse(c.Request().Context(), &crops[i]))
+	ids := make([]primitive.ObjectID, 0, len(cropsList))
+	for i := range cropsList {
+		ids = append(ids, cropsList[i].ID)
+	}
+	latest, err := h.readings.LatestByCropIDs(c.Request().Context(), ids)
+	if err != nil {
+		return err
+	}
+	out := make([]CropResponse, 0, len(cropsList))
+	for i := range cropsList {
+		out = append(out, ToResponse(&cropsList[i], latest[cropsList[i].HexID()]))
 	}
 	return c.JSON(http.StatusOK, out)
 }
@@ -81,6 +90,10 @@ func (h *Handler) create(c echo.Context) error {
 		if err := h.virtual.StartFor(c.Request().Context(), created.Crop.HexID(), req.Virtual); err != nil {
 			return err
 		}
+	}
+	if created.Credentials != nil {
+		// Una credencial de dispositivo nunca debe quedar en cachés intermedias.
+		c.Response().Header().Set("Cache-Control", "no-store")
 	}
 	return c.JSON(http.StatusCreated, CropCreatedResponse{Crop: ToResponse(created.Crop, nil), Device: created.Credentials})
 }
@@ -157,6 +170,7 @@ func (h *Handler) device(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, creds)
 }
 
@@ -165,6 +179,7 @@ func (h *Handler) rotateKey(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, creds)
 }
 

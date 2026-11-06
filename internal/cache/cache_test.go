@@ -166,6 +166,24 @@ func (f *fakeBackend) Ping(_ context.Context) error {
 
 func (f *fakeBackend) Close() error { return nil }
 
+func TestAvailableResetsBackoffAfterRecovery(t *testing.T) {
+	backend := &fakeBackend{data: map[string]string{}, fail: true}
+	store := NewStore(backend)
+	store.Put("during-outage", "1", time.Minute)
+	if store.Available() {
+		t.Fatal("Available must report DOWN while the backend fails")
+	}
+
+	backend.fail = false
+	if !store.Available() {
+		t.Fatal("a successful ping must bring the cache back UP")
+	}
+	store.Put("after-recovery", "1", time.Minute)
+	if _, ok := backend.data[keyPrefix+"after-recovery"]; !ok {
+		t.Fatal("a successful ping must reset the backoff so operations use the backend again")
+	}
+}
+
 func TestStoreUsesBackend(t *testing.T) {
 	fb := &fakeBackend{data: map[string]string{}}
 	s := NewStore(fb)

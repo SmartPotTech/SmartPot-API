@@ -14,7 +14,7 @@ import (
 
 type fakeCrops struct{}
 
-func (fakeCrops) Exists(context.Context, string) bool                { return true }
+func (fakeCrops) Exists(context.Context, string) (bool, error)       { return true, nil }
 func (fakeCrops) RequireOwned(context.Context, string, string) error { return nil }
 func (fakeCrops) MarkDeviceSeen(context.Context, string, *bool)      {}
 
@@ -57,6 +57,22 @@ func (r *fakeRepo) Latest(context.Context, primitive.ObjectID) (*Reading, error)
 	return &last, nil
 }
 
+func (r *fakeRepo) LatestByCropIDs(_ context.Context, cropIDs []primitive.ObjectID) (map[string]*Reading, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make(map[string]*Reading, len(cropIDs))
+	for _, oid := range cropIDs {
+		for i := len(r.saved) - 1; i >= 0; i-- {
+			if r.saved[i].CropID == oid {
+				reading := r.saved[i]
+				out[oid.Hex()] = &reading
+				break
+			}
+		}
+	}
+	return out, nil
+}
+
 func (r *fakeRepo) Recent(context.Context, primitive.ObjectID, int) ([]Reading, error) {
 	return nil, nil
 }
@@ -86,6 +102,19 @@ func TestLatestComesFromTheSharedCacheAfterSaving(t *testing.T) {
 	}
 	if repo.latestHit != 0 {
 		t.Fatal("la última lectura debía salir de la caché, no de la base")
+	}
+}
+
+func TestCloseStreamsEndsActiveAndNewSubscriptions(t *testing.T) {
+	svc := NewService(&fakeRepo{}, fakeCrops{}, cache.NewStore(nil), events.NewBus(), time.Now, 0, 100)
+	ch, _ := svc.SubscribeStream("crop")
+	svc.CloseStreams()
+	if _, ok := <-ch; ok {
+		t.Fatal("an active SSE stream must be closed on shutdown")
+	}
+	fresh, _ := svc.SubscribeStream("crop")
+	if _, ok := <-fresh; ok {
+		t.Fatal("new SSE streams must be rejected once shutdown started")
 	}
 }
 

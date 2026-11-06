@@ -15,6 +15,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/notifications"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/readings"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const attentionHealth = 70.0
@@ -53,14 +54,20 @@ func (s *Service) Overview(ctx context.Context, ownerID string) (OverviewRespons
 	}
 	responses := make([]crops.CropResponse, 0, len(cropsList))
 	cropIDs := make([]string, 0, len(cropsList))
+	oids := make([]primitive.ObjectID, 0, len(cropsList))
+	for i := range cropsList {
+		oids = append(oids, cropsList[i].ID)
+	}
+	// Una sola consulta (más la caché) para la última lectura de todos los cultivos.
+	latestByID, err := s.readings.LatestByCropIDs(ctx, oids)
+	if err != nil {
+		return OverviewResponse{}, err
+	}
 	online, automated, attention, healthCount := 0, 0, 0, 0
 	var healthSum float64
 	for i := range cropsList {
 		crop := &cropsList[i]
-		latest, err := s.readings.Latest(ctx, crop.HexID())
-		if err != nil {
-			return OverviewResponse{}, err
-		}
+		latest := latestByID[crop.HexID()]
 		responses = append(responses, crops.ToResponse(crop, latest))
 		cropIDs = append(cropIDs, crop.HexID())
 		isOnline := crop.Device != nil && crop.Device.Online
@@ -109,7 +116,7 @@ func (s *Service) Overview(ctx context.Context, ownerID string) (OverviewRespons
 // Utiliza caché inteligente de Valkey con fallback local para latencia sub-milisegundo.
 func (s *Service) Series(ctx context.Context, ownerID, metric string, hours int) (MetricSeriesResponse, error) {
 	if !metricsSet[metric] {
-		return MetricSeriesResponse{}, apperr.BadRequest("Variable desconocida: " + metric)
+		return MetricSeriesResponse{}, apperr.BadRequest("Unknown variable: " + metric)
 	}
 	if hours < 1 || hours > 168 {
 		return MetricSeriesResponse{}, apperr.BadRequest("Period must be between 1 and 168 hours")
@@ -174,13 +181,18 @@ func (s *Service) Fleet(ctx context.Context, ownerID string) (*ai.FleetResponse,
 			Summary:      "Create your first crop so the assistant can compare it.",
 		}, nil
 	}
+	oids := make([]primitive.ObjectID, 0, len(cropsList))
+	for i := range cropsList {
+		oids = append(oids, cropsList[i].ID)
+	}
+	latestByID, err := s.readings.LatestByCropIDs(ctx, oids)
+	if err != nil {
+		return nil, err
+	}
 	input := make([]ai.FleetCrop, 0, len(cropsList))
 	for i := range cropsList {
 		crop := &cropsList[i]
-		latest, err := s.readings.Latest(ctx, crop.HexID())
-		if err != nil {
-			return nil, err
-		}
+		latest := latestByID[crop.HexID()]
 		var measures *readings.Measures
 		if latest != nil {
 			measures = &latest.Measures

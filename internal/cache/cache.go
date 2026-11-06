@@ -212,14 +212,24 @@ func (s *Store) Delete(keys ...string) {
 	}
 }
 
-// Available hace ping al backend (independiente del backoff).
+// Available hace ping al backend y sincroniza el backoff con el resultado: un
+// ping correcto rehabilita las operaciones de inmediato (antes /health decía UP
+// mientras el Store seguía en backoff, o tardaba 30 s en volver), y un fallo
+// mantiene el estado DOWN real.
 func (s *Store) Available() bool {
 	if s.backend == nil {
 		return false
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), opTimeout)
 	defer cancel()
-	return s.backend.Ping(ctx) == nil
+	if err := s.backend.Ping(ctx); err != nil {
+		s.markDown(err)
+		return false
+	}
+	s.mu.Lock()
+	s.retryAt = time.Time{}
+	s.mu.Unlock()
+	return true
 }
 
 // PurgeExpired limpia las entradas locales vencidas; se llama periódicamente.
@@ -253,7 +263,11 @@ func (s *Store) backendReady() bool {
 
 func (s *Store) markDown(err error) {
 	s.mu.Lock()
+	alreadyDown := !s.now().Before(s.retryAt)
 	s.retryAt = s.now().Add(backendBackoff)
 	s.mu.Unlock()
-	slog.Warn("la caché no está disponible; se usa memoria local", "backoff_s", int(backendBackoff.Seconds()), "err", err)
+	if alreadyDown {
+		return
+	}
+	slog.Warn("cache backend is unavailable; using local memory", "backoff_s", int(backendBackoff.Seconds()), "err", err)
 }

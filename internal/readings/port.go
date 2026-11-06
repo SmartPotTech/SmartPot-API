@@ -14,6 +14,8 @@ type Repository interface {
 	Insert(ctx context.Context, reading *Reading) error
 	InsertBatch(ctx context.Context, readings []Reading) error
 	Latest(ctx context.Context, cropID primitive.ObjectID) (*Reading, error)
+	// LatestByCropIDs devuelve la última lectura de cada cultivo en una sola consulta.
+	LatestByCropIDs(ctx context.Context, cropIDs []primitive.ObjectID) (map[string]*Reading, error)
 	Recent(ctx context.Context, cropID primitive.ObjectID, limit int) ([]Reading, error)
 	Between(ctx context.Context, cropID primitive.ObjectID, from, to time.Time, limit int) ([]Reading, error)
 	DeleteByCrop(ctx context.Context, cropID primitive.ObjectID) error

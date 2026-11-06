@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/readings"
@@ -15,6 +16,9 @@ import (
 // ReadingRepository implementa readings.Repository sobre la hipertabla de TimescaleDB (tabla readings).
 type ReadingRepository struct {
 	pool *pgxpool.Pool
+	// countColumns recuerda si una vista continua expone count_<métrica>, para no
+	// consultar information_schema en cada petición.
+	countColumns sync.Map
 }
 
 // NewReadingRepository crea el adaptador de telemetría.
@@ -141,6 +145,30 @@ func (r *ReadingRepository) Latest(ctx context.Context, cropID primitive.ObjectI
 	return reading, err
 }
 
+// LatestByCropIDs devuelve la última lectura de cada cultivo en una sola consulta
+// (DISTINCT ON), para eliminar el N+1 de los listados y del panel general.
+func (r *ReadingRepository) LatestByCropIDs(ctx context.Context, cropIDs []primitive.ObjectID) (map[string]*readings.Reading, error) {
+	out := make(map[string]*readings.Reading, len(cropIDs))
+	if len(cropIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.pool.Query(ctx,
+		"SELECT DISTINCT ON (crop_id) "+readingColumns+" FROM readings "+
+			"WHERE crop_id = ANY($1) ORDER BY crop_id, measured_at DESC", hexSlice(cropIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		reading, err := scanReading(rows)
+		if err != nil {
+			return nil, err
+		}
+		out[reading.CropID.Hex()] = reading
+	}
+	return out, rows.Err()
+}
+
 // Recent devuelve las últimas lecturas del cultivo, más recientes primero.
 func (r *ReadingRepository) Recent(ctx context.Context, cropID primitive.ObjectID, limit int) ([]readings.Reading, error) {
 	return r.query(ctx,
@@ -197,56 +225,28 @@ func (r *ReadingRepository) Summary(ctx context.Context, cropID primitive.Object
 	return count, metrics, nil
 }
 
-// SeriesAverages calcula promedios por cultivo e intervalo enrutando inteligentemente hacia las vistas continuas.
-func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primitive.ObjectID, metric string, from time.Time, bucketMinutes int) ([]readings.Bucket, error) {
-	col, ok := metricColumn[metric]
-	if !ok || len(cropIDs) == 0 {
-		return nil, nil
+// hasCountColumn indica si la vista continua expone count_<métrica>; el
+// resultado se recuerda para no repetir la consulta a information_schema.
+func (r *ReadingRepository) hasCountColumn(ctx context.Context, table, column string) bool {
+	key := table + "." + column
+	if cached, ok := r.countColumns.Load(key); ok {
+		return cached.(bool)
 	}
-	hexes := make([]string, len(cropIDs))
-	for i, id := range cropIDs {
-		hexes[i] = id.Hex()
+	var exists bool
+	err := r.pool.QueryRow(ctx,
+		"SELECT EXISTS(SELECT 1 FROM information_schema.columns "+
+			"WHERE table_schema = current_schema() AND table_name = $1 AND column_name = $2)",
+		table, "count_"+column).Scan(&exists)
+	if err != nil {
+		return false
 	}
+	r.countColumns.Store(key, exists)
+	return exists
+}
 
-	// Enrutamiento inteligente a vistas continuas materializadas
-	var caggTable string
-	if bucketMinutes >= 60 {
-		caggTable = "readings_hourly"
-	} else if bucketMinutes >= 15 {
-		caggTable = "readings_15m"
-	} else if bucketMinutes >= 1 {
-		caggTable = "readings_1m"
-	}
-
-	if caggTable != "" {
-		caggCol := "avg_" + col
-		// Promedio ponderado por cantidad de lecturas: reagrupar promedios con avg() daría el mismo peso a un balde
-		// de 3 lecturas que a uno de 60.
-		sqlCagg := "SELECT crop_id, time_bucket(make_interval(mins => $2), bucket) AS b, " +
-			"sum(" + caggCol + " * reading_count) / nullif(sum(reading_count), 0) " +
-			"FROM " + caggTable + " WHERE crop_id = ANY($1) AND bucket >= $3 AND " + caggCol + " IS NOT NULL " +
-			"GROUP BY crop_id, b ORDER BY b ASC"
-		rows, err := r.pool.Query(ctx, sqlCagg, hexes, bucketMinutes, from)
-		if err == nil {
-			defer rows.Close()
-			out := make([]readings.Bucket, 0)
-			for rows.Next() {
-				var b readings.Bucket
-				if err := rows.Scan(&b.CropID, &b.Time, &b.Value); err == nil {
-					out = append(out, b)
-				}
-			}
-			if rows.Err() == nil && len(out) > 0 {
-				return out, nil
-			}
-		}
-	}
-
-	// Fallback a la hipertabla readings
-	sql := "SELECT crop_id, time_bucket(make_interval(mins => $2), measured_at) AS bucket, avg(" + col + ") " +
-		"FROM readings WHERE crop_id = ANY($1) AND measured_at >= $3 AND " + col + " IS NOT NULL " +
-		"GROUP BY crop_id, bucket ORDER BY bucket ASC"
-	rows, err := r.pool.Query(ctx, sql, hexes, bucketMinutes, from)
+// queryBuckets ejecuta una consulta de promedios agrupados y la convierte en buckets.
+func (r *ReadingRepository) queryBuckets(ctx context.Context, sql string, args ...any) ([]readings.Bucket, error) {
+	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -260,4 +260,70 @@ func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primit
 		out = append(out, b)
 	}
 	return out, rows.Err()
+}
+
+// alignToBucket lleva el inicio de la ventana al borde de un intervalo, para que
+// la serie y las vistas continuas compartan exactamente los mismos cortes.
+func alignToBucket(from time.Time, bucketMinutes int) time.Time {
+	span := int64(bucketMinutes) * 60
+	if span <= 0 {
+		return from
+	}
+	unix := from.UTC().Unix()
+	return time.Unix(unix-unix%span, 0).UTC()
+}
+
+// SeriesAverages calcula promedios por cultivo e intervalo. Para ventanas
+// cortas de varios cultivos usa la hipertabla (índice BRIN); para un cultivo o
+// ventanas largas, las vistas continuas. La ponderación usa count_<métrica>
+// cuando la vista lo expone y, si no, descarta los baldes sin dato.
+func (r *ReadingRepository) SeriesAverages(ctx context.Context, cropIDs []primitive.ObjectID, metric string, from time.Time, bucketMinutes int) ([]readings.Bucket, error) {
+	col, ok := metricColumn[metric]
+	if !ok || len(cropIDs) == 0 || bucketMinutes < 1 {
+		return nil, nil
+	}
+	hexes := make([]string, len(cropIDs))
+	for i, id := range cropIDs {
+		hexes[i] = id.Hex()
+	}
+	from = alignToBucket(from, bucketMinutes)
+
+	// Enrutamiento a vistas continuas materializadas. Con varios cultivos y una
+	// ventana corta, la hipertabla con BRIN responde mejor (P2.3).
+	var caggTable string
+	switch {
+	case bucketMinutes >= 60:
+		caggTable = "readings_hourly"
+	case bucketMinutes >= 15:
+		caggTable = "readings_15m"
+	default:
+		caggTable = "readings_1m"
+	}
+	if len(cropIDs) > 1 && bucketMinutes < 60 {
+		caggTable = ""
+	}
+
+	if caggTable != "" {
+		caggCol := "avg_" + col
+		weight := "reading_count"
+		filter := caggCol + " IS NOT NULL"
+		if r.hasCountColumn(ctx, caggTable, col) {
+			// Ponderación exacta por cantidad de muestras no nulas de esa métrica.
+			weight = "count_" + col
+			filter = weight + " > 0"
+		}
+		sqlCagg := "SELECT crop_id, time_bucket(make_interval(mins => $2), bucket) AS b, " +
+			"sum(" + caggCol + " * " + weight + ") / nullif(sum(" + weight + "), 0) " +
+			"FROM " + caggTable + " WHERE crop_id = ANY($1) AND bucket >= $3 AND " + filter + " " +
+			"GROUP BY crop_id, b ORDER BY b ASC"
+		if out, err := r.queryBuckets(ctx, sqlCagg, hexes, bucketMinutes, from); err == nil && len(out) > 0 {
+			return out, nil
+		}
+	}
+
+	// Respaldo: promedio directo sobre la hipertabla, sin sesgo por nulos.
+	sql := "SELECT crop_id, time_bucket(make_interval(mins => $2), measured_at) AS bucket, avg(" + col + ") " +
+		"FROM readings WHERE crop_id = ANY($1) AND measured_at >= $3 AND " + col + " IS NOT NULL " +
+		"GROUP BY crop_id, bucket ORDER BY bucket ASC"
+	return r.queryBuckets(ctx, sql, hexes, bucketMinutes, from)
 }

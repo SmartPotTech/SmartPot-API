@@ -72,7 +72,7 @@ func (r MeasuresRequest) ToMeasures() Measures {
 }
 
 // ValidateRanges comprueba los rangos físicos admitidos. Un valor fuera de rango
-// suele ser un sensor dañado o mal calibrado. Devuelve error con mensaje en español.
+// suele ser un sensor dañado o mal calibrado. Devuelve un error con mensaje en inglés.
 func ValidateRanges(m Measures) error {
 	if m.IsEmpty() {
 		return fmt.Errorf("Reading does not contain any measurement value")
@@ -82,9 +82,9 @@ func ValidateRanges(m Measures) error {
 		value    *float64
 		min, max float64
 	}{
-		{"temperatura", m.Temperature, -20, 60},
-		{"humedad", m.Humidity, 0, 100},
-		{"luz", m.Brightness, 0, 200000},
+		{"temperature", m.Temperature, -20, 60},
+		{"humidity", m.Humidity, 0, 100},
+		{"brightness", m.Brightness, 0, 200000},
 		{"pH", m.Ph, 0, 14},
 		{"TDS", m.Tds, 0, 10000},
 		{"atmosphere", m.Atmosphere, 300, 1100},
