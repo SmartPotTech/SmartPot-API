@@ -8,6 +8,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/actuators"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/commands"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -68,7 +69,8 @@ func (r *CommandRepository) query(ctx context.Context, sql string, args ...any) 
 	return out, rows.Err()
 }
 
-// Insert guarda una orden nueva y fija su id generado.
+// Insert guarda una orden nueva y fija su id generado. Si el índice parcial
+// commands_one_inflight_per_actuator rechaza la fila, devuelve commands.ErrInFlight.
 func (r *CommandRepository) Insert(ctx context.Context, c *commands.Command) error {
 	if c.ID.IsZero() {
 		c.ID = primitive.NewObjectID()
@@ -77,10 +79,63 @@ func (r *CommandRepository) Insert(ctx context.Context, c *commands.Command) err
 		"INSERT INTO commands ("+commandColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)",
 		hexOf(c.ID), hexOf(c.CropID), hexOf(c.ActuatorID), string(c.ActuatorType), string(c.Action),
 		c.DurationSeconds, string(c.Status), string(c.Source), c.Reason, c.Message, c.CreatedAt, c.SentAt, c.CompletedAt)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "commands_one_inflight_per_actuator" {
+		return commands.ErrInFlight
+	}
 	return err
 }
 
-// Save reemplaza la orden.
+// MarkSent transita PENDING -> SENT solo si la orden sigue pendiente. Devuelve
+// false si otra transición (por ejemplo un ACK rápido) ganó la carrera.
+func (r *CommandRepository) MarkSent(ctx context.Context, id primitive.ObjectID, at time.Time) (bool, error) {
+	tag, err := r.pool.Exec(ctx,
+		"UPDATE commands SET status = 'SENT', sent_at = $2 WHERE id = $1 AND status = 'PENDING'",
+		hexOf(id), at)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// Complete cierra la orden solo si sigue en curso (PENDING o SENT) y devuelve
+// la fila resultante. El estado terminal es inmutable: un ACK o una expiración
+// posteriores no lo sobrescriben.
+func (r *CommandRepository) Complete(ctx context.Context, id primitive.ObjectID, status commands.Status,
+	message string, at time.Time) (*commands.Command, bool, error) {
+	row := r.pool.QueryRow(ctx,
+		"UPDATE commands SET status = $2, message = $3, completed_at = $4 "+
+			"WHERE id = $1 AND status IN ('PENDING','SENT') RETURNING "+commandColumns,
+		hexOf(id), string(status), message, at)
+	c, err := scanCommand(row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return c, true, nil
+}
+
+// Expire cierra una orden sin confirmar solo si sigue en curso.
+func (r *CommandRepository) Expire(ctx context.Context, id primitive.ObjectID, message string, at time.Time) (*commands.Command, bool, error) {
+	row := r.pool.QueryRow(ctx,
+		"UPDATE commands SET status = 'EXPIRED', message = $3, completed_at = $2 "+
+			"WHERE id = $1 AND status IN ('PENDING','SENT') RETURNING "+commandColumns,
+		hexOf(id), at, message)
+	c, err := scanCommand(row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return c, true, nil
+}
+
+// Save reemplaza la orden. Se conserva para usos administrativos; el ciclo de
+// vida usa las transiciones condicionales de arriba.
 func (r *CommandRepository) Save(ctx context.Context, c *commands.Command) error {
 	_, err := r.pool.Exec(ctx,
 		"UPDATE commands SET crop_id=$2, actuator_id=$3, actuator_type=$4, action=$5, duration_seconds=$6, status=$7, source=$8, reason=$9, message=$10, created_at=$11, sent_at=$12, completed_at=$13 WHERE id=$1",
@@ -125,10 +180,13 @@ func (r *CommandRepository) FindByIDAndCrop(ctx context.Context, id, cropID prim
 	return c, err
 }
 
-// FindStaleSent devuelve los comandos SENT enviados antes del límite.
+// FindStaleSent devuelve los comandos en curso (PENDING o SENT) cuyo último
+// instante conocido (sent_at o created_at) quedó antes del límite. Un PENDING
+// que nunca llegó a publicarse también caduca y libera el actuador.
 func (r *CommandRepository) FindStaleSent(ctx context.Context, before time.Time) ([]commands.Command, error) {
 	return r.query(ctx,
-		"SELECT "+commandColumns+" FROM commands WHERE status = 'SENT' AND sent_at < $1", before)
+		"SELECT "+commandColumns+" FROM commands WHERE status IN ('PENDING','SENT') "+
+			"AND COALESCE(sent_at, created_at) < $1", before)
 }
 
 // ExistsInFlight indica si el actuador tiene un comando PENDING o SENT.

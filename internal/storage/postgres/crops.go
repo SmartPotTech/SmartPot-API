@@ -9,6 +9,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/crops"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/geo"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -131,8 +132,13 @@ func (r *CropRepository) CountByOwner(ctx context.Context, ownerID primitive.Obj
 	return n, err
 }
 
-// Insert guarda un cultivo nuevo y fija su id generado.
-func (r *CropRepository) Insert(ctx context.Context, crop *crops.Crop) error {
+// cropExecer es lo común entre el pool y una transacción, para reutilizar el INSERT.
+type cropExecer interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// insertCrop ejecuta el INSERT del cultivo sobre el ejecutor recibido.
+func insertCrop(ctx context.Context, q cropExecer, crop *crops.Crop) error {
 	if crop.ID.IsZero() {
 		crop.ID = primitive.NewObjectID()
 	}
@@ -148,20 +154,55 @@ func (r *CropRepository) Insert(ctx context.Context, crop *crops.Crop) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.pool.Exec(ctx,
+	_, err = q.Exec(ctx,
 		"INSERT INTO crops ("+cropColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
 		hexOf(crop.ID), hexOf(crop.OwnerID), crop.Name, string(crop.Type), nullEnum(string(crop.Kind)),
 		nullEnum(string(crop.Form)), placement, crop.AutomationEnabled, device, health, crop.CreatedAt, nullTime(crop.UpdatedAt))
 	return err
 }
 
-// Save reemplaza el cultivo.
-func (r *CropRepository) Save(ctx context.Context, crop *crops.Crop) error {
-	placement, err := jsonbArg(crop.Placement)
+// Insert guarda un cultivo nuevo y fija su id generado. No aplica cupos: para
+// eso está InsertWithQuota.
+func (r *CropRepository) Insert(ctx context.Context, crop *crops.Crop) error {
+	return insertCrop(ctx, r.pool, crop)
+}
+
+// InsertWithQuota crea el cultivo con un bloqueo asesor por dueño y cuenta los
+// cultivos (total y virtuales) dentro de la misma transacción. Dos peticiones
+// concurrentes del mismo dueño se serializan y no pueden superar el cupo.
+func (r *CropRepository) InsertWithQuota(ctx context.Context, crop *crops.Crop, maxTotal, maxVirtual int) error {
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	device, err := jsonbArg(crop.Device)
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx,
+		"SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", hexOf(crop.OwnerID)); err != nil {
+		return err
+	}
+	var total, virtual int
+	if err := tx.QueryRow(ctx,
+		"SELECT count(*), count(*) FILTER (WHERE kind = 'VIRTUAL') FROM crops WHERE owner_id = $1",
+		hexOf(crop.OwnerID)).Scan(&total, &virtual); err != nil {
+		return err
+	}
+	if total >= maxTotal {
+		return crops.ErrCropLimit
+	}
+	if crop.Kind == crops.KindVirtual && virtual >= maxVirtual {
+		return crops.ErrVirtualCropLimit
+	}
+	if err := insertCrop(ctx, tx, crop); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// Save actualiza solo las columnas editables del cultivo: nunca sobrescribe el
+// JSONB device, que MQTT actualiza en paralelo con online y lastSeenAt.
+func (r *CropRepository) Save(ctx context.Context, crop *crops.Crop) error {
+	placement, err := jsonbArg(crop.Placement)
 	if err != nil {
 		return err
 	}
@@ -170,9 +211,20 @@ func (r *CropRepository) Save(ctx context.Context, crop *crops.Crop) error {
 		return err
 	}
 	_, err = r.pool.Exec(ctx,
-		"UPDATE crops SET owner_id=$2, name=$3, type=$4, kind=$5, form=$6, placement=$7, automation_enabled=$8, device=$9, health=$10, created_at=$11, updated_at=$12 WHERE id=$1",
+		"UPDATE crops SET owner_id=$2, name=$3, type=$4, kind=$5, form=$6, placement=$7, automation_enabled=$8, health=$9, created_at=$10, updated_at=$11 WHERE id=$1",
 		hexOf(crop.ID), hexOf(crop.OwnerID), crop.Name, string(crop.Type), nullEnum(string(crop.Kind)),
-		nullEnum(string(crop.Form)), placement, crop.AutomationEnabled, device, health, crop.CreatedAt, nullTime(crop.UpdatedAt))
+		nullEnum(string(crop.Form)), placement, crop.AutomationEnabled, health, crop.CreatedAt, nullTime(crop.UpdatedAt))
+	return err
+}
+
+// UpdateDeviceKey guarda la clave cifrada y la fecha de rotación sin tocar el
+// resto del subdocumento device (online y lastSeenAt).
+func (r *CropRepository) UpdateDeviceKey(ctx context.Context, id primitive.ObjectID, ciphertext string, rotatedAt, now time.Time) error {
+	_, err := r.pool.Exec(ctx,
+		"UPDATE crops SET device = jsonb_set(jsonb_set(COALESCE(device, '{}'::jsonb), "+
+			"'{keyCiphertext}', to_jsonb($2::text), true), '{keyRotatedAt}', to_jsonb($3::timestamptz), true), "+
+			"updated_at = $4 WHERE id = $1",
+		hexOf(id), ciphertext, rotatedAt, now)
 	return err
 }
 

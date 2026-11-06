@@ -4,6 +4,7 @@ package actuators
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,10 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/validation"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+// ErrDuplicate indica que el cultivo ya tiene un actuador de ese tipo; el
+// índice único actuators_crop_type es la autoridad y el servicio lo mapea a 409.
+var ErrDuplicate = errors.New("the crop already has an actuator of that type")
 
 // Type es la clase de actuador.
 type Type string

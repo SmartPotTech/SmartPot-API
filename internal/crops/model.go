@@ -6,11 +6,19 @@ package crops
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/geo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// ErrCropLimit y ErrVirtualCropLimit los devuelve la creación transaccional con
+// cupo; el servicio los traduce a los 400 que ya conoce la PWA.
+var (
+	ErrCropLimit        = errors.New("crop limit reached for this account")
+	ErrVirtualCropLimit = errors.New("virtual crop limit reached for this account")
 )
 
 // CropType es la especie del cultivo.
@@ -104,6 +112,11 @@ type Device struct {
 	KeyRotatedAt  *time.Time `json:"keyRotatedAt,omitempty" bson:"keyRotatedAt,omitempty"`
 	Online        bool       `json:"online" bson:"online"`
 	LastSeenAt    *time.Time `json:"lastSeenAt,omitempty" bson:"lastSeenAt,omitempty"`
+	// Capabilities guarda la última declaración de hardware validada; stale indica
+	// que el dispositivo se desconectó y podría haber cambiado sin publicarla.
+	Capabilities          json.RawMessage `json:"capabilities,omitempty" bson:"capabilities,omitempty"`
+	CapabilitiesUpdatedAt *time.Time      `json:"capabilitiesUpdatedAt,omitempty" bson:"capabilitiesUpdatedAt,omitempty"`
+	CapabilitiesStale     bool            `json:"capabilitiesStale" bson:"capabilitiesStale"`
 }
 
 // CropHealth es la última evaluación del asistente de IA (índice de 0 a 100).

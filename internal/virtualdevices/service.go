@@ -57,17 +57,8 @@ func (s *Service) CheckCanCreate(ctx context.Context, ownerID string, req *Virtu
 	if err := s.requireSimulator(); err != nil {
 		return err
 	}
-	ownerOID, ok := objectid.Parse(ownerID)
-	if !ok {
-		return apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
-	}
-	count, err := s.repo.CountByOwner(ctx, ownerOID)
-	if err != nil {
-		return err
-	}
-	if count >= MaxPerAccount {
-		return apperr.BadRequest("You can have up to 5 virtual crops")
-	}
+	// El cupo de cultivos virtuales lo aplica crops.InsertWithQuota en la misma
+	// transacción que crea el cultivo; aquí solo se valida la configuración.
 	return validate(req, placement)
 }
 

@@ -2,6 +2,7 @@ package actuators
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
@@ -59,6 +60,9 @@ func (s *Service) Add(ctx context.Context, ownerID, cropID string, t Type) (*Act
 	}
 	a := &Actuator{CropID: oid, Type: t, Active: false, CreatedAt: s.clock()}
 	if err := s.repo.Insert(ctx, a); err != nil {
+		if errors.Is(err, ErrDuplicate) {
+			return nil, apperr.Conflict("The crop already has an actuator of that type")
+		}
 		return nil, err
 	}
 	return a, nil

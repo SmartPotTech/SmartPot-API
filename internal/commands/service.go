@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"strings"
 	"time"
@@ -23,12 +24,32 @@ type Publisher interface {
 	PublishCommand(cropID, payload string) bool
 }
 
+// Crops es lo que el servicio de comandos necesita de los cultivos.
+type Crops interface {
+	GetOwned(ctx context.Context, ownerID, cropID string) (*crops.Crop, error)
+	Find(ctx context.Context, cropID string) (*crops.Crop, error)
+	List(ctx context.Context, ownerID string) ([]crops.Crop, error)
+}
+
+// Actuators es lo que el servicio de comandos necesita de los actuadores.
+type Actuators interface {
+	GetForCrop(ctx context.Context, cropID, actuatorID string) (*actuators.Actuator, error)
+	FindByType(ctx context.Context, cropID string, t actuators.Type) (*actuators.Actuator, error)
+	UpdateState(ctx context.Context, actuatorID string, active bool, runningUntil *time.Time)
+}
+
+// Notifier envía los avisos de fallo con enfriamiento.
+type Notifier interface {
+	NotifyOnce(ctx context.Context, cooldownKey string, cooldown time.Duration,
+		userID, cropID string, t notifications.Type, title, message string) (bool, error)
+}
+
 // Service implementa la lógica de comandos.
 type Service struct {
 	repo      Repository
-	crops     *crops.Service
-	actuators *actuators.Service
-	notifier  *notifications.Service
+	crops     Crops
+	actuators Actuators
+	notifier  Notifier
 	publisher Publisher
 	clock     func() time.Time
 	timeout   time.Duration
@@ -36,8 +57,8 @@ type Service struct {
 
 // NewService crea el servicio de comandos. El publisher se fija luego con
 // SetPublisher (el gateway MQTT se construye después).
-func NewService(repo Repository, cropsSvc *crops.Service, actuatorsSvc *actuators.Service,
-	notifier *notifications.Service, clock func() time.Time, timeout time.Duration) *Service {
+func NewService(repo Repository, cropsSvc Crops, actuatorsSvc Actuators,
+	notifier Notifier, clock func() time.Time, timeout time.Duration) *Service {
 	return &Service{repo: repo, crops: cropsSvc, actuators: actuatorsSvc, notifier: notifier,
 		publisher: disabledPublisher{}, clock: clock, timeout: timeout}
 }
@@ -71,6 +92,9 @@ func (s *Service) Request(ctx context.Context, ownerID, cropID string, req Comma
 		return nil, apperr.Conflict(msg)
 	}
 	cmd, err := s.create(ctx, crop, actuator, *req.Action, req.DurationSeconds, SourceUser, "")
+	if errors.Is(err, ErrInFlight) {
+		return nil, apperr.Conflict("There is already a command in progress for this actuator: wait for confirmation")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +161,10 @@ func (s *Service) RequestBulk(ctx context.Context, ownerID string, req BulkComma
 				continue
 			}
 			cmd, err := s.create(ctx, crop, actuator, *req.Action, req.DurationSeconds, SourceUser, "Bulk action")
+			if errors.Is(err, ErrInFlight) {
+				results = append(results, skipped(crop, "There is already a command in progress for this actuator"))
+				continue
+			}
 			if err != nil {
 				return BulkCommandResponse{}, err
 			}
@@ -190,19 +218,22 @@ func (s *Service) Acknowledge(ctx context.Context, cropID string, ack AckMessage
 		return
 	}
 	idOID, _ := objectid.Parse(ack.ID)
-	cmd, err := s.repo.FindByIDAndCrop(ctx, idOID, cropOID)
-	if err != nil || cmd == nil {
-		return
-	}
-	if cmd.Status != StatusPending && cmd.Status != StatusSent {
+	// El ACK solo vale para un comando del cultivo que lo publicó.
+	existing, err := s.repo.FindByIDAndCrop(ctx, idOID, cropOID)
+	if err != nil || existing == nil {
 		return
 	}
 	now := s.clock()
-	cmd.Message = truncate(ack.Message)
-	cmd.CompletedAt = &now
+	status := StatusFailed
 	if ack.Executed() {
-		cmd.Status = StatusExecuted
-		_ = s.repo.Save(ctx, cmd)
+		status = StatusExecuted
+	}
+	// Transición condicional: si el barrido ya expiró la orden, el ACK no la revive.
+	cmd, won, err := s.repo.Complete(ctx, idOID, status, truncate(ack.Message), now)
+	if err != nil || !won || cmd == nil {
+		return
+	}
+	if status == StatusExecuted {
 		on := cmd.Action == Activate
 		var runningUntil *time.Time
 		if on && cmd.DurationSeconds != nil {
@@ -211,8 +242,6 @@ func (s *Service) Acknowledge(ctx context.Context, cropID string, ack AckMessage
 		}
 		s.actuators.UpdateState(ctx, cmd.ActuatorID.Hex(), on && cmd.DurationSeconds == nil, runningUntil)
 	} else {
-		cmd.Status = StatusFailed
-		_ = s.repo.Save(ctx, cmd)
 		s.notifyFailure(ctx, cmd, "The device could not execute the command: "+orDefault(ack.Message))
 	}
 }
@@ -246,12 +275,14 @@ func (s *Service) ExpireStale(ctx context.Context) {
 		return
 	}
 	for i := range stale {
-		cmd := &stale[i]
+		candidate := &stale[i]
 		now := s.clock()
-		cmd.Status = StatusExpired
-		cmd.Message = "The device did not confirm the command in time"
-		cmd.CompletedAt = &now
-		_ = s.repo.Save(ctx, cmd)
+		cmd, won, err := s.repo.Expire(ctx, candidate.ID,
+			"The device did not confirm the command in time", now)
+		if err != nil || !won || cmd == nil {
+			// Otro proceso (o un ACK) ya cerró la orden: no se notifica dos veces.
+			continue
+		}
 		s.notifyFailure(ctx, cmd, "The device did not respond to the command. Verify that it is connected.")
 	}
 }
@@ -323,17 +354,29 @@ func (s *Service) dispatch(ctx context.Context, cmd *Command) (*Command, error) 
 	}
 	now := s.clock()
 	if s.publisher.PublishCommand(cmd.CropID.Hex(), string(payload)) {
+		won, err := s.repo.MarkSent(ctx, cmd.ID, now)
+		if err != nil {
+			return nil, err
+		}
+		if !won {
+			// Un ACK rápido ya cerró la orden: se devuelve el estado terminal real.
+			return s.repo.FindByIDAndCrop(ctx, cmd.ID, cmd.CropID)
+		}
 		cmd.Status = StatusSent
 		cmd.SentAt = &now
 	} else {
-		cmd.Status = StatusFailed
-		cmd.Message = "The MQTT broker is not available at this moment"
-		cmd.CompletedAt = &now
+		failed, won, err := s.repo.Complete(ctx, cmd.ID, StatusFailed,
+			"The MQTT broker is not available at this moment", now)
+		if err != nil {
+			return nil, err
+		}
+		if !won {
+			return s.repo.FindByIDAndCrop(ctx, cmd.ID, cmd.CropID)
+		}
+		cmd = failed
 	}
-	if err := s.repo.Save(ctx, cmd); err != nil {
-		return nil, err
-	}
-	slog.Info("comando enviado", "action", cmd.Action, "actuator", cmd.ActuatorType, "cropId", cmd.CropID.Hex(), "status", cmd.Status)
+	slog.Info("command dispatched", "action", cmd.Action, "actuator", cmd.ActuatorType,
+		"cropId", cmd.CropID.Hex(), "status", cmd.Status)
 	return cmd, nil
 }
 
@@ -342,8 +385,10 @@ func (s *Service) notifyFailure(ctx context.Context, cmd *Command, message strin
 	if err != nil || crop == nil {
 		return
 	}
-	_, _ = s.notifier.NotifyOnce(ctx, "command-failure:"+crop.HexID(), failureNoticeCooldown, crop.OwnerID.Hex(),
-		crop.HexID(), notifications.TypeCommand, "Unexecuted command on "+crop.Name, message)
+	// La clave incluye el id del comando: dos órdenes expiradas en el mismo
+	// cultivo generan dos avisos, no uno (R3c-bis).
+	_, _ = s.notifier.NotifyOnce(ctx, "command-failure:"+crop.HexID()+":"+cmd.ID.Hex(), failureNoticeCooldown,
+		crop.OwnerID.Hex(), crop.HexID(), notifications.TypeCommand, "Unexecuted command on "+crop.Name, message)
 }
 
 func skipped(crop *crops.Crop, reason string) BulkResult {

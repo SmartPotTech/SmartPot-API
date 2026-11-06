@@ -7,6 +7,7 @@ import (
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/actuators"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -87,7 +88,8 @@ func (r *ActuatorRepository) ExistsByCropAndType(ctx context.Context, cropID pri
 	return exists, err
 }
 
-// Insert guarda un actuador nuevo y fija su id generado.
+// Insert guarda un actuador nuevo y fija su id generado. La violación del índice
+// actuators_crop_type se traduce a actuators.ErrDuplicate (409 en el servicio).
 func (r *ActuatorRepository) Insert(ctx context.Context, a *actuators.Actuator) error {
 	if a.ID.IsZero() {
 		a.ID = primitive.NewObjectID()
@@ -95,6 +97,11 @@ func (r *ActuatorRepository) Insert(ctx context.Context, a *actuators.Actuator) 
 	_, err := r.pool.Exec(ctx,
 		"INSERT INTO actuators ("+actuatorColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7)",
 		hexOf(a.ID), hexOf(a.CropID), string(a.Type), a.Active, a.RunningUntil, a.LastChangedAt, a.CreatedAt)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "actuators_crop_type" {
+		return actuators.ErrDuplicate
+	}
 	return err
 }
 

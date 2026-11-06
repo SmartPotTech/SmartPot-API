@@ -5,6 +5,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,10 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/validation"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+// ErrInFlight indica que el actuador ya tiene una orden en curso. El índice único parcial de PostgreSQL es la
+// autoridad; el servicio lo traduce a 409 Conflict (o a SKIPPED en las órdenes en bloque).
+var ErrInFlight = errors.New("command already in flight for this actuator")
 
 // Action es la acción sobre el actuador.
 type Action string

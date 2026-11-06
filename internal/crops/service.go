@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/geo"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/security"
+	"github.com/SmartPotTech/SmartPot-API-Go/internal/virtualdevices"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -39,6 +42,12 @@ type ActuatorSeeder interface {
 	SeedDefaults(ctx context.Context, cropID string, virtual bool) error
 }
 
+// Notifier envía los avisos de desconexión con enfriamiento.
+type Notifier interface {
+	NotifyOnce(ctx context.Context, cooldownKey string, cooldown time.Duration,
+		userID, cropID string, t notifications.Type, title, message string) (bool, error)
+}
+
 // MQTTPublic son los datos públicos del broker que se entregan al dispositivo.
 type MQTTPublic struct {
 	Host         string
@@ -61,14 +70,14 @@ type Service struct {
 	mqttPublic  MQTTPublic
 	provisioner DeviceProvisioner
 	actuators   ActuatorSeeder
-	notifier    *notifications.Service
+	notifier    Notifier
 	bus         *events.Bus
 	clock       func() time.Time
 }
 
 // NewService crea el servicio de cultivos.
 func NewService(repo Repository, encryptor *security.Encryptor, mqttPublic MQTTPublic,
-	provisioner DeviceProvisioner, actuators ActuatorSeeder, notifier *notifications.Service, bus *events.Bus,
+	provisioner DeviceProvisioner, actuators ActuatorSeeder, notifier Notifier, bus *events.Bus,
 	clock func() time.Time) *Service {
 	return &Service{
 		repo: repo, encryptor: encryptor, mqttPublic: mqttPublic,
@@ -91,13 +100,6 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 	ownerOID, ok := objectid.Parse(ownerID)
 	if !ok {
 		return CreatedCrop{}, apperr.Unauthorized("Your session is invalid or has expired. Please log in again")
-	}
-	count, err := s.repo.CountByOwner(ctx, ownerOID)
-	if err != nil {
-		return CreatedCrop{}, err
-	}
-	if count >= MaxCropsPerUser {
-		return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", MaxCropsPerUser))
 	}
 	now := s.clock()
 	key := newDeviceKey()
@@ -125,8 +127,17 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	if err := s.repo.Insert(ctx, crop); err != nil {
-		return CreatedCrop{}, err
+	// El cupo se comprueba y se inserta en una sola transacción con bloqueo por
+	// dueño: las ráfagas concurrentes no pueden superar 20 cultivos ni 5 virtuales.
+	if err := s.repo.InsertWithQuota(ctx, crop, MaxCropsPerUser, virtualdevices.MaxPerAccount); err != nil {
+		switch {
+		case errors.Is(err, ErrCropLimit):
+			return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", MaxCropsPerUser))
+		case errors.Is(err, ErrVirtualCropLimit):
+			return CreatedCrop{}, apperr.BadRequest("You can have up to 5 virtual crops")
+		default:
+			return CreatedCrop{}, err
+		}
 	}
 	if err := s.actuators.SeedDefaults(ctx, crop.HexID(), crop.IsVirtual()); err != nil {
 		return CreatedCrop{}, err
@@ -306,13 +317,15 @@ func (s *Service) RotateDeviceKey(ctx context.Context, ownerID, cropID string) (
 	crop.Device.KeyCiphertext = cipher
 	crop.Device.KeyRotatedAt = &now
 	crop.UpdatedAt = now
-	if err := s.repo.Save(ctx, crop); err != nil {
+	if err := s.repo.UpdateDeviceKey(ctx, crop.ID, cipher, now, now); err != nil {
 		return DeviceCredentialsResponse{}, err
 	}
+	// La caché de autenticación del broker se invalida ANTES de cortar sesiones:
+	// así ninguna reconexión puede validar la clave anterior.
+	s.bus.Publish(DeviceKeyRotatedEvent{CropID: crop.HexID()})
 	if err := s.provisioner.Provision(ctx, crop.HexID(), key, true); err != nil {
 		slog.Warn("could not re-provision device", "cropId", crop.HexID(), "err", err)
 	}
-	s.bus.Publish(DeviceKeyRotatedEvent{CropID: crop.HexID()})
 	return s.credentials(crop, key), nil
 }
 
@@ -398,9 +411,14 @@ func (s *Service) MarkDeviceSeen(ctx context.Context, cropID string, online *boo
 }
 
 // UpdateDeviceStatus marca el dispositivo en línea o no y avisa al desconectarse.
+// Si el estado no cambió no se escribe ni se notifica: una ráfaga de mensajes de
+// estado del mismo cultivo no satura el pool de PostgreSQL (C-07).
 func (s *Service) UpdateDeviceStatus(ctx context.Context, cropID string, online bool) {
 	crop, err := s.Find(ctx, cropID)
 	if err != nil || crop == nil {
+		return
+	}
+	if crop.Device != nil && crop.Device.Online == online {
 		return
 	}
 	s.MarkDeviceSeen(ctx, cropID, &online)
@@ -422,10 +440,14 @@ func (s *Service) UpdateHealth(ctx context.Context, cropID string, health CropHe
 	}
 }
 
-// Exists indica si el cultivo existe (implementa readings.Crops).
-func (s *Service) Exists(ctx context.Context, cropID string) bool {
+// Exists indica si el cultivo existe (implementa readings.Crops). Un error de
+// base de datos se devuelve como error para no confundirlo con "no existe".
+func (s *Service) Exists(ctx context.Context, cropID string) (bool, error) {
 	crop, err := s.Find(ctx, cropID)
-	return err == nil && crop != nil
+	if err != nil {
+		return false, err
+	}
+	return crop != nil, nil
 }
 
 // RequireOwned comprueba el dueño del cultivo (implementa readings.Crops).

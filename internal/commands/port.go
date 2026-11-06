@@ -11,6 +11,12 @@ import (
 // implementa el adaptador de PostgreSQL (internal/storage/postgres).
 type Repository interface {
 	Insert(ctx context.Context, c *Command) error
+	// MarkSent hace la transición PENDING -> SENT solo si la orden sigue pendiente; el segundo valor indica si ganó.
+	MarkSent(ctx context.Context, id primitive.ObjectID, at time.Time) (bool, error)
+	// Complete cierra la orden de forma condicional (solo si sigue PENDING o SENT) y devuelve la fila resultante.
+	Complete(ctx context.Context, id primitive.ObjectID, status Status, message string, at time.Time) (*Command, bool, error)
+	// Expire cierra una orden sin confirmar de forma condicional y devuelve la fila resultante.
+	Expire(ctx context.Context, id primitive.ObjectID, message string, at time.Time) (*Command, bool, error)
 	Save(ctx context.Context, c *Command) error
 	ListByCrop(ctx context.Context, cropID primitive.ObjectID, limit int) ([]Command, error)
 	ListByCrops(ctx context.Context, cropIDs []primitive.ObjectID, limit int) ([]Command, error)
