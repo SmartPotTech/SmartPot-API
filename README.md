@@ -1,23 +1,23 @@
-# SmartPot-API-Go
+# SmartPot-API
 
 [English](#english) | [Español](#español)
 
 <a id="english"></a>
 ## Project Status
 
-[![Go CI](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml)
-[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml)
+[![Go CI](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml)
+[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml)
 
 ## Description
 
-SmartPot-API-Go is the core of **SmartPot** rewritten in **Go 1.26** with **Echo**: a REST and MQTT API that connects hydroponic crops, real or virtual, with the web application. It receives telemetry via **MQTT**, persists it in **PostgreSQL + TimescaleDB**, sends commands to actuators, manages device credentials on the broker, and queries the **AI assistant** to diagnose each crop and, when permitted by the user, act autonomously.
+SmartPot-API is the core of **SmartPot** rewritten in **Go 1.26** with **Echo**: a REST and MQTT API that connects hydroponic crops, real or virtual, with the web application. It receives telemetry via **MQTT**, persists it in **PostgreSQL + TimescaleDB**, sends commands to actuators, manages device credentials on the broker, and queries the **AI assistant** to diagnose each crop and, when permitted by the user, act autonomously.
 
 It provides a **seamless** migration from the Spring Boot version: it preserves all external contracts — REST routes, JSON payloads, error handling, MQTT topics and broker provisioning, cache keys, SMTP, and HTTP calls to AI, simulator, and Telegram — ensuring the web client, broker, hardware devices, AI, and simulator operate **without disruption**. The database is an internal detail behind a port: the API is the control plane and the persistence engine (**PostgreSQL + TimescaleDB**) can be swapped without touching the business domain. The cache follows the same pattern: behind the `Cache` port is an adapter (**Valkey**, the open-source Redis replacement) that can be swapped without altering services. Existing JWT tokens and device keys remain valid (same HS256 secret, cost-12 BCrypt, and AES-256-GCM). Internally it leverages Go concurrency: the MQTT client, Telegram bot, scheduled workers, and in-memory event bus run in parallel without thread pools or cron daemons.
 
 ```mermaid
 flowchart LR
-  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API-Go<br/>:8091"]
+  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API<br/>:8091"]
   esp["Real crop<br/>ESP32 or Wokwi"] -->|"MQTT"| broker["SmartPot-Broker"]
   broker <-->|"telemetry · commands · ACK"| api
   api --> db[("PostgreSQL<br/>+ TimescaleDB")]
@@ -175,7 +175,7 @@ Crops specify their data origin upon creation:
 
 ### One-Command Deployment
 
-The container image is publicly available at `ghcr.io/smartpottech/smartpot-api-go`. The full platform can be started with a single command without downloading source code:
+The container image is publicly available at `ghcr.io/smartpottech/smartpot-api`. The full platform can be started with a single command without downloading source code:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SmartPotTech/.github/main/docker/demo-beta/compose.yaml | docker compose -f - up -d --wait
@@ -210,8 +210,8 @@ The test suite covers encryption/decryption parity, JWT handling, password polic
 ### Docker Image
 
 ```bash
-docker build -t smartpot-api-go .
-docker pull ghcr.io/smartpottech/smartpot-api-go:latest
+docker build -t smartpot-api .
+docker pull ghcr.io/smartpottech/smartpot-api:latest
 ```
 
 The Dockerfile builds a statically linked binary copied into a minimal `scratch` image (no shell, package manager, or network binaries). Runs under UID 1000 with a read-only root filesystem and embedded `healthcheck` command.
@@ -245,13 +245,13 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 <a id="español"></a>
 ## Estado del Proyecto
 
-[![Go CI](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/codeql.yml)
-[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API-Go/actions/workflows/packaging.yml)
+[![Go CI](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/codeql.yml)
+[![Publish Docker Images](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml/badge.svg)](https://github.com/SmartPotTech/SmartPot-API/actions/workflows/packaging.yml)
 
 ## Descripción
 
-SmartPot-API-Go es el núcleo de **SmartPot** reescrito en **Go 1.26** con **Echo**: una API REST y MQTT que conecta los
+SmartPot-API es el núcleo de **SmartPot** reescrito en **Go 1.26** con **Echo**: una API REST y MQTT que conecta los
 cultivos hidropónicos, reales o virtuales, con la aplicación web. Recibe la telemetría por **MQTT**, la guarda en
 **PostgreSQL + TimescaleDB**, envía comandos a los actuadores, administra las credenciales de cada dispositivo en el
 broker y consulta al **asistente de IA** para diagnosticar cada cultivo y, si el usuario lo permite, actuar por su
@@ -271,7 +271,7 @@ hilos ni cron en el servidor.
 
 ```mermaid
 flowchart LR
-  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API-Go<br/>:8091"]
+  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API<br/>:8091"]
   esp["Cultivo real<br/>ESP32 o Wokwi"] -->|"MQTT"| broker["SmartPot-Broker"]
   broker <-->|"telemetría · comandos · ACK"| api
   api --> db[("PostgreSQL<br/>+ TimescaleDB")]
@@ -481,7 +481,7 @@ completa el tipo y la forma de los cultivos anteriores.
 
 ### Despliegue en un comando
 
-La imagen es pública: `ghcr.io/smartpottech/smartpot-api-go`. La plataforma completa, con este servicio incluido, se
+La imagen es pública: `ghcr.io/smartpottech/smartpot-api`. La plataforma completa, con este servicio incluido, se
 levanta con un solo comando y sin descargar el código:
 
 ```bash
@@ -525,8 +525,8 @@ documento OpenAPI, la caché con respaldo local y la seguridad de dueño en los 
 ### Imagen Docker
 
 ```bash
-docker build -t smartpot-api-go .
-docker pull ghcr.io/smartpottech/smartpot-api-go:latest
+docker build -t smartpot-api .
+docker pull ghcr.io/smartpottech/smartpot-api:latest
 ```
 
 La imagen compila el binario estático en una etapa aparte y lo copia a una imagen final `scratch`: sin shell, sin gestor
