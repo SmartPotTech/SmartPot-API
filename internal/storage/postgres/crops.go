@@ -228,6 +228,28 @@ func (r *CropRepository) UpdateDeviceKey(ctx context.Context, id primitive.Objec
 	return err
 }
 
+// UpdateDeviceCapabilities guarda la declaración de hardware validada y limpia la
+// marca de obsolescencia, sin tocar el resto del subdocumento device.
+func (r *CropRepository) UpdateDeviceCapabilities(ctx context.Context, id primitive.ObjectID,
+	capabilities json.RawMessage, now time.Time) error {
+	_, err := r.pool.Exec(ctx,
+		"UPDATE crops SET device = jsonb_set(jsonb_set(jsonb_set(COALESCE(device, '{}'::jsonb), "+
+			"'{capabilities}', $2::jsonb, true), '{capabilitiesUpdatedAt}', to_jsonb($3::timestamptz), true), "+
+			"'{capabilitiesStale}', 'false'::jsonb, true) WHERE id = $1",
+		hexOf(id), string(capabilities), now)
+	return err
+}
+
+// MarkDeviceCapabilitiesStale marca obsoletas las capacidades solo si el dispositivo
+// ya las había declarado; now se mantiene por simetría con la interfaz del servicio.
+func (r *CropRepository) MarkDeviceCapabilitiesStale(ctx context.Context, id primitive.ObjectID, _ time.Time) error {
+	_, err := r.pool.Exec(ctx,
+		"UPDATE crops SET device = jsonb_set(device, '{capabilitiesStale}', 'true'::jsonb, true) "+
+			"WHERE id = $1 AND device ? 'capabilities'",
+		hexOf(id))
+	return err
+}
+
 // Delete borra el cultivo por id.
 func (r *CropRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	_, err := r.pool.Exec(ctx, "DELETE FROM crops WHERE id = $1", hexOf(id))

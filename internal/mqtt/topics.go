@@ -16,6 +16,7 @@ const (
 	KindTelemetry Kind = iota
 	KindCommandAck
 	KindStatus
+	KindCapabilities
 )
 
 // ParsedTopic es el resultado de interpretar un tópico entrante.
@@ -25,7 +26,7 @@ type ParsedTopic struct {
 }
 
 // TopicResolver arma e interpreta los tópicos v1: {prefijo}/{cropId}/telemetry |
-// commands | commands/ack | status.
+// commands | commands/ack | status | capabilities.
 type TopicResolver struct {
 	prefix string
 }
@@ -43,10 +44,13 @@ func (r *TopicResolver) CommandAck(cropID string) string {
 	return r.prefix + "/" + cropID + "/commands/ack"
 }
 func (r *TopicResolver) Status(cropID string) string { return r.prefix + "/" + cropID + "/status" }
+func (r *TopicResolver) Capabilities(cropID string) string {
+	return r.prefix + "/" + cropID + "/capabilities"
+}
 
 // Subscriptions son los tópicos que la API escucha de todos los cultivos.
 func (r *TopicResolver) Subscriptions() []string {
-	return []string{r.Telemetry("+"), r.CommandAck("+"), r.Status("+")}
+	return []string{r.Telemetry("+"), r.CommandAck("+"), r.Status("+"), r.Capabilities("+")}
 }
 
 // SharedSubscriptions devuelve los tópicos usando el prefijo de suscripción compartida de EMQX ($share/{group}/{topic}).
@@ -79,6 +83,8 @@ func (r *TopicResolver) Parse(topic string) (ParsedTopic, bool) {
 		return ParsedTopic{CropID: cropID, Kind: KindTelemetry}, true
 	case len(segments) == 2 && segments[1] == "status":
 		return ParsedTopic{CropID: cropID, Kind: KindStatus}, true
+	case len(segments) == 2 && segments[1] == "capabilities":
+		return ParsedTopic{CropID: cropID, Kind: KindCapabilities}, true
 	case len(segments) == 3 && segments[1] == "commands" && segments[2] == "ack":
 		return ParsedTopic{CropID: cropID, Kind: KindCommandAck}, true
 	default:

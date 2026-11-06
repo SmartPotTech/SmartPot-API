@@ -210,10 +210,10 @@ var capabilityActuators = map[string]bool{
 
 // capabilitiesEnvelope es la declaración de hardware que publica el dispositivo.
 type capabilitiesEnvelope struct {
-	Schema    int                  `json:"schema"`
-	Device    capabilitiesDevice   `json:"device"`
-	Sensors   []capabilitySensor   `json:"sensors"`
-	Actuators []string             `json:"actuators"`
+	Schema    int                `json:"schema"`
+	Device    capabilitiesDevice `json:"device"`
+	Sensors   []capabilitySensor `json:"sensors"`
+	Actuators []string           `json:"actuators"`
 }
 
 // capabilitiesDevice describe el firmware y el hardware del dispositivo.

@@ -1,6 +1,7 @@
 package crops
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -109,9 +110,12 @@ func (r BulkAutomationRequest) Validate() validation.Fields {
 
 // DeviceStatus es el estado del dispositivo dentro de la vista del cultivo.
 type DeviceStatus struct {
-	Online       bool       `json:"online"`
-	LastSeenAt   *time.Time `json:"lastSeenAt,omitempty"`
-	KeyRotatedAt *time.Time `json:"keyRotatedAt,omitempty"`
+	Online                bool            `json:"online"`
+	LastSeenAt            *time.Time      `json:"lastSeenAt,omitempty"`
+	KeyRotatedAt          *time.Time      `json:"keyRotatedAt,omitempty"`
+	Capabilities          json.RawMessage `json:"capabilities,omitempty"`
+	CapabilitiesUpdatedAt *time.Time      `json:"capabilitiesUpdatedAt,omitempty"`
+	CapabilitiesStale     bool            `json:"capabilitiesStale"`
 }
 
 // CropResponse es la vista pública de un cultivo.
@@ -160,7 +164,14 @@ type DeviceCredentialsResponse struct {
 func ToResponse(crop *Crop, latest *readings.Reading) CropResponse {
 	device := DeviceStatus{}
 	if crop.Device != nil {
-		device = DeviceStatus{Online: crop.Device.Online, LastSeenAt: crop.Device.LastSeenAt, KeyRotatedAt: crop.Device.KeyRotatedAt}
+		device = DeviceStatus{
+			Online:                crop.Device.Online,
+			LastSeenAt:            crop.Device.LastSeenAt,
+			KeyRotatedAt:          crop.Device.KeyRotatedAt,
+			Capabilities:          crop.Device.Capabilities,
+			CapabilitiesUpdatedAt: crop.Device.CapabilitiesUpdatedAt,
+			CapabilitiesStale:     crop.Device.CapabilitiesStale,
+		}
 	}
 	return CropResponse{
 		ID:                crop.HexID(),
