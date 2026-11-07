@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -183,5 +184,127 @@ func TestAuthCookieLifecycle(t *testing.T) {
 	e.ServeHTTP(logoutRec, logoutReq)
 	if logoutRec.Code != http.StatusNoContent {
 		t.Fatalf("POST /api/v1/auth/logout = %d", logoutRec.Code)
+	}
+}
+
+func TestAuthHandlerContracts(t *testing.T) {
+	f := newAuthFixture(t, false)
+	e := f.engine()
+	post := func(path, body string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		e.ServeHTTP(rec, req)
+		return rec
+	}
+
+	// 1. La validación del DTO responde 400 con el detalle del campo.
+	invalid := post("/api/v1/auth/register", `{"name":"A","lastName":"Demo","email":"ana@smartpot.app","password":"Password2026"}`)
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("invalid register = %d, want 400: %s", invalid.Code, invalid.Body.String())
+	}
+	var validationBody struct {
+		Fields map[string]string `json:"fields"`
+	}
+	if err := json.Unmarshal(invalid.Body.Bytes(), &validationBody); err != nil {
+		t.Fatalf("invalid register body is not JSON: %v", err)
+	}
+	if _, ok := validationBody.Fields["name"]; !ok {
+		t.Errorf("validation fields = %v, want a name error", validationBody.Fields)
+	}
+
+	// 2. El registro emite la cookie HttpOnly y la cookie CSRF de doble envío.
+	registered := post("/api/v1/auth/register",
+		`{"name":"Ana","lastName":"Demo","email":"ana@smartpot.app","password":"Password2026"}`)
+	if registered.Code != http.StatusCreated {
+		t.Fatalf("register = %d: %s", registered.Code, registered.Body.String())
+	}
+	var session, csrf *http.Cookie
+	for _, ck := range registered.Result().Cookies() {
+		switch ck.Name {
+		case security.SessionCookieName:
+			session = ck
+		case security.CSRFCookieName:
+			csrf = ck
+		}
+	}
+	if session == nil || !session.HttpOnly {
+		t.Fatalf("the session cookie must be HttpOnly: %+v", session)
+	}
+	if csrf == nil || csrf.HttpOnly {
+		t.Fatalf("the CSRF cookie must be readable by the client: %+v", csrf)
+	}
+	if got, want := registered.Header().Get(security.CSRFHeaderName), csrf.Value; got != want {
+		t.Errorf("X-CSRF-Token = %q, want the CSRF cookie value %q", got, want)
+	}
+	if want := f.jwt.CSRFToken(session.Value); csrf.Value != want {
+		t.Errorf("the CSRF cookie is not bound to the session token")
+	}
+
+	// 3. Un correo ya registrado responde 409.
+	duplicate := post("/api/v1/auth/register",
+		`{"name":"Ana","lastName":"Demo","email":"ANA@smartpot.app","password":"Password2026"}`)
+	if duplicate.Code != http.StatusConflict {
+		t.Errorf("duplicate register = %d, want 409: %s", duplicate.Code, duplicate.Body.String())
+	}
+
+	// 4. Credenciales incorrectas y DTO inválido.
+	wrong := post("/api/v1/auth/login", `{"email":"ana@smartpot.app","password":"WrongPassword2026"}`)
+	if wrong.Code != http.StatusUnauthorized {
+		t.Errorf("wrong password = %d, want 401", wrong.Code)
+	}
+	missing := post("/api/v1/auth/login", `{"email":"ana@smartpot.app"}`)
+	if missing.Code != http.StatusBadRequest {
+		t.Errorf("login without password = %d, want 400", missing.Code)
+	}
+
+	// 5. La recuperación responde 202 aunque la cuenta no exista.
+	unknown := post("/api/v1/auth/password/forgot", `{"email":"nobody@smartpot.app"}`)
+	if unknown.Code != http.StatusAccepted {
+		t.Errorf("forgot for an unknown email = %d, want 202: %s", unknown.Code, unknown.Body.String())
+	}
+	known := post("/api/v1/auth/password/forgot", `{"email":"ANA@smartpot.app"}`)
+	if known.Code != http.StatusAccepted {
+		t.Errorf("forgot for a known email = %d, want 202: %s", known.Code, known.Body.String())
+	}
+	if got := f.tokens.count(); got != 1 {
+		t.Errorf("stored reset tokens = %d, want 1", got)
+	}
+
+	// 6. El restablecimiento valida el token y la política de contraseña.
+	u := f.users.byEmail["ana@smartpot.app"]
+	if err := f.tokens.Insert(context.Background(), &PasswordResetToken{
+		TokenHash: sha256Hex("handler-reset-token"),
+		UserID:    u.ID,
+		CreatedAt: f.now,
+		ExpiresAt: f.now.Add(time.Hour),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	weak := post("/api/v1/auth/password/reset", `{"token":"handler-reset-token","password":"weak"}`)
+	if weak.Code != http.StatusBadRequest {
+		t.Errorf("weak reset password = %d, want 400: %s", weak.Code, weak.Body.String())
+	}
+	missingPassword := post("/api/v1/auth/password/reset", `{"token":"handler-reset-token"}`)
+	if missingPassword.Code != http.StatusBadRequest {
+		t.Errorf("reset without password = %d, want 400", missingPassword.Code)
+	}
+	expired := post("/api/v1/auth/password/reset", `{"token":"unknown-token","password":"NewPassword2026"}`)
+	if expired.Code != http.StatusBadRequest {
+		t.Errorf("unknown reset token = %d, want 400", expired.Code)
+	}
+	valid := post("/api/v1/auth/password/reset", `{"token":"handler-reset-token","password":"NewPassword2026"}`)
+	if valid.Code != http.StatusNoContent {
+		t.Fatalf("reset = %d, want 204: %s", valid.Code, valid.Body.String())
+	}
+	reuse := post("/api/v1/auth/password/reset", `{"token":"handler-reset-token","password":"AnotherPassword2026"}`)
+	if reuse.Code != http.StatusBadRequest {
+		t.Errorf("reusing a reset token = %d, want 400", reuse.Code)
+	}
+	if _, err := f.service.Login(context.Background(), LoginRequest{
+		Email:    "ana@smartpot.app",
+		Password: "NewPassword2026",
+	}); err != nil {
+		t.Errorf("the new password must work after the reset: %v", err)
 	}
 }
