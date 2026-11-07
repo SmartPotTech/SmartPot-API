@@ -69,3 +69,63 @@ func TestSeedDefaultsCreatesRealAndVirtualActuators(t *testing.T) {
 		}
 	}
 }
+
+func TestGetForCropRejectsInvalidAndMissingActuator(t *testing.T) {
+	svc := NewService(&fakeRepo{}, fakeCrops{}, time.Now)
+	cropID := primitive.NewObjectID().Hex()
+
+	if _, err := svc.GetForCrop(context.Background(), cropID, "invalid"); !isActuatorStatus(err, 404) {
+		t.Fatalf("an invalid actuator id must be 404, got %v", err)
+	}
+	if _, err := svc.GetForCrop(context.Background(), cropID, primitive.NewObjectID().Hex()); !isActuatorStatus(err, 404) {
+		t.Fatalf("a missing actuator must be 404, got %v", err)
+	}
+}
+
+func TestRemoveRequiresOwnedCrop(t *testing.T) {
+	ownerErr := apperr.NotFound("Crop does not exist")
+	svc := NewService(&fakeRepo{}, fakeCrops{err: ownerErr}, time.Now)
+
+	err := svc.Remove(context.Background(), primitive.NewObjectID().Hex(),
+		primitive.NewObjectID().Hex(), primitive.NewObjectID().Hex())
+	if !errors.Is(err, ownerErr) {
+		t.Fatalf("the crop ownership error must be propagated, got %v", err)
+	}
+}
+
+func TestToResponseMapsRunningState(t *testing.T) {
+	now := time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+	future := now.Add(time.Minute)
+	past := now.Add(-time.Minute)
+
+	cases := []struct {
+		name         string
+		actuator     Actuator
+		wantRunning  bool
+		wantUntilSet bool
+	}{
+		{"active without limit", Actuator{Active: true}, true, false},
+		{"timed command still running", Actuator{Active: false, RunningUntil: &future}, true, true},
+		{"timed command finished", Actuator{Active: false, RunningUntil: &past}, false, false},
+		{"inactive", Actuator{Active: false}, false, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.actuator.ID = primitive.NewObjectID()
+			tc.actuator.CropID = primitive.NewObjectID()
+			tc.actuator.Type = WaterPump
+			res := ToResponse(&tc.actuator, now)
+			if res.Running != tc.wantRunning {
+				t.Fatalf("running = %v, want %v", res.Running, tc.wantRunning)
+			}
+			if (res.RunningUntil != nil) != tc.wantUntilSet {
+				t.Fatalf("runningUntil present = %v, want %v", res.RunningUntil != nil, tc.wantUntilSet)
+			}
+		})
+	}
+}
+
+func isActuatorStatus(err error, status int) bool {
+	var apiErr *apperr.Error
+	return errors.As(err, &apiErr) && apiErr.Status == status
+}
