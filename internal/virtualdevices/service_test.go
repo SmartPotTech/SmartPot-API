@@ -552,6 +552,23 @@ func TestConfigureRequiresSimulator(t *testing.T) {
 	}
 }
 
+func TestConfigureRequiresDeviceKey(t *testing.T) {
+	ownerID := primitive.NewObjectID().Hex()
+	crop, crops, repo := cropFixture(ownerID)
+	crops.hasKey = false
+	_, client := testSimulator(t)
+	svc := NewService(repo, crops, client, fixedTime)
+
+	auto := ModeAuto
+	_, err := svc.Configure(context.Background(), ownerID, crop.ID, VirtualDeviceRequest{Mode: &auto})
+	if !isStatus(err, http.StatusConflict) {
+		t.Fatalf("a crop without device key must be 409, got %v", err)
+	}
+	if repo.saveCalls != 0 {
+		t.Fatalf("a rejected configuration must not be saved: %d", repo.saveCalls)
+	}
+}
+
 func TestConfigurePropagatesSimulatorAndSaveErrors(t *testing.T) {
 	ownerID := primitive.NewObjectID().Hex()
 	crop, crops, repo := cropFixture(ownerID)
