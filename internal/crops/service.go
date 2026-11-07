@@ -145,7 +145,7 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 		case errors.Is(err, ErrCropLimit):
 			return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", MaxCropsPerUser))
 		case errors.Is(err, ErrVirtualCropLimit):
-			return CreatedCrop{}, apperr.BadRequest("You can have up to 5 virtual crops")
+			return CreatedCrop{}, apperr.Conflict("You can have up to 5 virtual crops")
 		default:
 			return CreatedCrop{}, err
 		}

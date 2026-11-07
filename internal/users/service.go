@@ -18,10 +18,11 @@ type SessionRevoker func(ctx context.Context, userID string) error
 
 // Service implementa la lógica de la cuenta.
 type Service struct {
-	repo     Repository
-	clock    func() time.Time
-	deleters []AccountDeleter
-	revokers []SessionRevoker
+	repo       Repository
+	clock      func() time.Time
+	deleters   []AccountDeleter
+	revokers   []SessionRevoker
+	finalizers []AccountDeleter
 }
 
 // NewService crea el servicio de usuarios.
@@ -37,6 +38,12 @@ func (s *Service) AddAccountDeleter(d AccountDeleter) {
 // AddSessionRevoker registra el revocador de JWT al cambiar la contraseña.
 func (s *Service) AddSessionRevoker(r SessionRevoker) {
 	s.revokers = append(s.revokers, r)
+}
+
+// AddAccountFinalizer registra una limpieza que corre después de las
+// revocaciones, para borrar lo que éstas hayan podido recrear.
+func (s *Service) AddAccountFinalizer(d AccountDeleter) {
+	s.finalizers = append(s.finalizers, d)
 }
 
 // NormalizeEmail recorta y pasa a minúsculas el correo.
@@ -118,6 +125,13 @@ func (s *Service) DeleteAccount(ctx context.Context, userID string) error {
 	// Un token de una cuenta borrada no debe seguir sirviendo durante 7 días.
 	for _, revoke := range s.revokers {
 		if err := revoke(ctx, u.HexID()); err != nil {
+			return err
+		}
+	}
+	// Los finalizadores limpian lo que la revocación acaba de recrear (por
+	// ejemplo, la versión de sesión en la caché).
+	for _, finalize := range s.finalizers {
+		if err := finalize(ctx, userID); err != nil {
 			return err
 		}
 	}

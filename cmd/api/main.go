@@ -162,6 +162,10 @@ func run() error {
 	userService.AddAccountDeleter(notificationService.DeleteAllForUser)
 	userService.AddAccountDeleter(tokenRepo.DeleteByUserID)
 	userService.AddAccountDeleter(cropService.DeleteAllOwnedBy)
+	userService.AddAccountFinalizer(func(_ context.Context, userID string) error {
+		tokenService.ForgetUser(userID)
+		return nil
+	})
 	// Conexiones personales (clientes MCP y similares): el guard las acepta además de la sesión.
 	connectionService := connections.NewService(postgres.NewAccessTokenRepository(pool.Pool), clock)
 	tokenService.UseConnections(connectionService)

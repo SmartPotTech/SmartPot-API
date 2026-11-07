@@ -342,6 +342,10 @@ func TestDeleteAccountRunsEveryHookInOrder(t *testing.T) {
 		order = append(order, "revoke:connections")
 		return nil
 	})
+	f.service.AddAccountFinalizer(func(_ context.Context, userID string) error {
+		order = append(order, "finalize:cache:"+userID)
+		return nil
+	})
 
 	if err := f.service.DeleteAccount(context.Background(), f.user.HexID()); err != nil {
 		t.Fatalf("DeleteAccount: %v", err)
@@ -352,6 +356,7 @@ func TestDeleteAccountRunsEveryHookInOrder(t *testing.T) {
 		"delete:notifications:" + f.user.HexID(),
 		"revoke:sessions",
 		"revoke:connections",
+		"finalize:cache:" + f.user.HexID(),
 	}
 	if len(order) != len(want) {
 		t.Fatalf("hook calls = %v, want %v", order, want)

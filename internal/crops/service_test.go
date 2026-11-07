@@ -139,15 +139,16 @@ func cropRequest(kind CropKind) CropRequest {
 	return CropRequest{Name: "Lettuce", Type: &cropType, Kind: &kind}
 }
 
-func TestCreateMapsQuotaErrorsToBadRequest(t *testing.T) {
+func TestCreateMapsQuotaErrors(t *testing.T) {
 	cases := []struct {
-		name string
-		kind CropKind
-		err  error
-		want string
+		name   string
+		kind   CropKind
+		err    error
+		status int
+		want   string
 	}{
-		{"total", KindReal, ErrCropLimit, "maximum of 20 crops"},
-		{"virtual", KindVirtual, ErrVirtualCropLimit, "up to 5 virtual crops"},
+		{"total", KindReal, ErrCropLimit, 400, "maximum of 20 crops"},
+		{"virtual", KindVirtual, ErrVirtualCropLimit, 409, "up to 5 virtual crops"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -155,8 +156,8 @@ func TestCreateMapsQuotaErrorsToBadRequest(t *testing.T) {
 			svc, _ := testService(t, repo, &fakeNotifier{})
 			_, err := svc.Create(context.Background(), primitive.NewObjectID().Hex(), cropRequest(tc.kind))
 			var apiErr *apperr.Error
-			if !errors.As(err, &apiErr) || apiErr.Status != 400 || !strings.Contains(apiErr.Message, tc.want) {
-				t.Fatalf("expected 400 %q, got %v", tc.want, err)
+			if !errors.As(err, &apiErr) || apiErr.Status != tc.status || !strings.Contains(apiErr.Message, tc.want) {
+				t.Fatalf("expected %d %q, got %v", tc.status, tc.want, err)
 			}
 		})
 	}

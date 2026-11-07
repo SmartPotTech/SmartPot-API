@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/cache"
@@ -170,7 +171,8 @@ func (s *Service) SendTest(ctx context.Context, userID, linkID string) error {
 	msg := ChannelMessage{Type: notifications.TypeInfo, Title: "SmartPot test notification",
 		Body: "This is how crop alerts will reach you. You can configure alert preferences in your profile."}
 	if err := channel.Send(link.Address, msg); err != nil {
-		return apperr.BadRequest("Could not send test message: " + err.Error())
+		// El proveedor externo falló: es un 502, no un error del cliente.
+		return apperr.New(http.StatusBadGateway, "Could not send test message: "+err.Error())
 	}
 	s.Delivered(ctx, link)
 	return nil

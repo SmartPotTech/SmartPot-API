@@ -11,7 +11,7 @@ import (
 
 // WebhookController es la entrada pública de los mensajes del bot en modo
 // webhook. Telegram firma cada llamada con X-Telegram-Bot-Api-Secret-Token; sin
-// el secreto correcto la llamada no existe (404).
+// el secreto correcto la llamada se rechaza con 401.
 type WebhookController struct {
 	cfg      config.Telegram
 	listener *Listener
@@ -29,8 +29,11 @@ func (c *WebhookController) Register(g *echo.Group) {
 
 func (c *WebhookController) receive(ctx echo.Context) error {
 	secret := ctx.Request().Header.Get("X-Telegram-Bot-Api-Secret-Token")
-	if !c.enabled() || c.cfg.Mode != "webhook" || !c.matches(secret) {
+	if !c.enabled() || c.cfg.Mode != "webhook" {
 		return ctx.NoContent(http.StatusNotFound)
+	}
+	if !c.matches(secret) {
+		return ctx.NoContent(http.StatusUnauthorized)
 	}
 	var update Update
 	if err := json.NewDecoder(ctx.Request().Body).Decode(&update); err != nil {

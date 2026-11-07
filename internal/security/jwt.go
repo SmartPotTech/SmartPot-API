@@ -196,6 +196,15 @@ func (s *TokenService) BumpUserVersion(userID string) {
 	s.sessions.Put(userVersionKey+userID, strconv.Itoa(next), ttl)
 }
 
+// ForgetUser borra la versión de sesión de una cuenta eliminada: sin la cuenta,
+// la clave no vuelve a usarse y no debe quedar como rastro en la caché.
+func (s *TokenService) ForgetUser(userID string) {
+	if s.sessions == nil || userID == "" {
+		return
+	}
+	s.sessions.Delete(userVersionKey + userID)
+}
+
 func (s *TokenService) userVersion(userID string) int {
 	if s.sessions == nil || userID == "" {
 		return 0

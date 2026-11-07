@@ -65,8 +65,8 @@ func TestWebhookReceive(t *testing.T) {
 		want   int
 	}{
 		{"secreto correcto", enabled, "s3cr3t", `{}`, http.StatusOK},
-		{"wrong secret", enabled, "otro", `{}`, http.StatusNotFound},
-		{"without secret", enabled, "", `{}`, http.StatusNotFound},
+		{"wrong secret", enabled, "otro", `{}`, http.StatusUnauthorized},
+		{"without secret", enabled, "", `{}`, http.StatusUnauthorized},
 		{"bot not configured", disabled, "s3cr3t", `{}`, http.StatusNotFound},
 		{"modo sondeo", polling, "s3cr3t", `{}`, http.StatusNotFound},
 		{"invalid body", enabled, "s3cr3t", `{roto`, http.StatusBadRequest},
