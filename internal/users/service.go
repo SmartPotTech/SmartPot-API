@@ -83,6 +83,9 @@ func (s *Service) ChangePassword(ctx context.Context, userID string, req ChangeP
 	if err := security.ValidatePassword(req.NewPassword); err != nil {
 		return err
 	}
+	if security.PasswordMatches(req.NewPassword, u.PasswordHash) {
+		return apperr.BadRequest("New password must be different from the current password")
+	}
 	hash, err := security.HashPassword(req.NewPassword)
 	if err != nil {
 		return err
