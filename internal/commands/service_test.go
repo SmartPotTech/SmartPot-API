@@ -277,3 +277,25 @@ func TestRequestBulkReportsInFlightAsSkipped(t *testing.T) {
 		t.Fatalf("in-flight actuator should be skipped, got %+v", res)
 	}
 }
+
+func TestAcknowledgeIgnoresCommandFromAnotherCrop(t *testing.T) {
+	repo := newFakeCommandRepo()
+	cmd, actuator, crop := testCommand()
+	repo.commands[cmd.ID.Hex()] = cmd
+	actuatorsSvc := &fakeActuators{actuator: actuator}
+	notifier := &fakeNotifier{}
+	svc := NewService(repo, fakeCrops{crop: crop}, actuatorsSvc, notifier, time.Now, time.Minute)
+
+	otherCrop := primitive.NewObjectID().Hex()
+	svc.Acknowledge(context.Background(), otherCrop, AckMessage{ID: cmd.ID.Hex(), Status: "EXECUTED"})
+
+	if got := repo.commands[cmd.ID.Hex()].Status; got != StatusPending {
+		t.Fatalf("an ACK from another crop must not change the command: %s", got)
+	}
+	if actuatorsSvc.updates != 0 {
+		t.Fatalf("an ACK from another crop must not change the actuator: %d updates", actuatorsSvc.updates)
+	}
+	if notifier.calls != 0 {
+		t.Fatalf("an ACK from another crop must not notify: %d notices", notifier.calls)
+	}
+}
