@@ -5,6 +5,7 @@ package mail
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/config"
@@ -22,7 +23,12 @@ type Mailer struct {
 
 // NewMailer crea el emisor. Si el correo está deshabilitado, no abre conexión.
 func NewMailer(cfg config.Mail, webBaseURL string, logger *slog.Logger) (*Mailer, error) {
-	m := &Mailer{enabled: cfg.Enabled, from: cfg.From, webBaseURL: webBaseURL, log: logger}
+	m := &Mailer{
+		enabled:    cfg.Enabled,
+		from:       cfg.From,
+		webBaseURL: strings.TrimRight(webBaseURL, "/"),
+		log:        logger,
+	}
 	if !cfg.Enabled {
 		logger.Info("mail disabled")
 		return m, nil
@@ -33,8 +39,14 @@ func NewMailer(cfg config.Mail, webBaseURL string, logger *slog.Logger) (*Mailer
 		gomail.WithTimeout(5 * time.Second),
 	}
 	if cfg.SMTPAuth {
+		authType := gomail.SMTPAuthPlain
+		if !cfg.STARTTLS {
+			// Cuando STARTTLS está desactivado (p. ej. Mailpit en mail-smartpot:1025 dentro de la red interna),
+			// go-mail bloquea SMTPAuthPlain si el host no es localhost; SMTPAuthPlainNoEnc permite AUTH PLAIN sin TLS.
+			authType = gomail.SMTPAuthPlainNoEnc
+		}
 		opts = append(opts,
-			gomail.WithSMTPAuth(gomail.SMTPAuthPlain),
+			gomail.WithSMTPAuth(authType),
 			gomail.WithUsername(cfg.Username),
 			gomail.WithPassword(cfg.Password))
 	}
