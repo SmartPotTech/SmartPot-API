@@ -232,6 +232,7 @@ The Dockerfile builds a statically linked binary copied into a minimal `scratch`
 - Platform architecture & protocol docs: [Platform Documentation](https://github.com/SmartPotTech/.github/blob/main/docs/SmartPot_Technical_Documentation.md)
 
 Global platform diagrams:
+- [Interactive diagrams](docs/diagrams/interactive/README.md#english): telemetry-to-command sequence and ports and adapters, in English and Spanish, with links to the exact source lines
 - [Complete Architecture](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_01_Architecture.svg)
 - [Operational Sequence](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_02_Operation_Sequence.svg)
 - [State Machines](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_05_State_Machines.svg)
@@ -575,6 +576,7 @@ La documentación interactiva se sirve en `/docs` (interfaz de Swagger) y el esq
 detalla los contratos MQTT y REST, las reglas del agente, los canales y la seguridad. Los diagramas generales muestran
 la plataforma completa en una sola imagen ampliable:
 
+- [Diagramas interactivos](docs/diagrams/interactive/README.md#español): la secuencia de la telemetría a la orden y los puertos y adaptadores, en español e inglés, con enlaces a las líneas exactas del código
 - [Arquitectura completa](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_01_Architecture.svg)
 - [Operación completa](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_02_Operation_Sequence.svg)
 - [Máquinas de estado](https://github.com/SmartPotTech/.github/blob/main/docs/diagrams/SmartPot_Global_05_State_Machines.svg)
