@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -113,6 +114,39 @@ func TestHTTPServer_Recovery(t *testing.T) {
 		t.Fatalf("error unmarshaling JSON response: %v", err)
 	}
 	if !strings.Contains(resp.Message, "unexpected error") {
+		t.Errorf("unexpected message: %s", resp.Message)
+	}
+}
+
+func TestHTTPServer_ClientCancellationIsNotA500(t *testing.T) {
+	e := New(testLogger())
+	e.GET("/cancel", func(c echo.Context) error { return context.Canceled })
+
+	req := httptest.NewRequest(http.MethodGet, "/cancel", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204 for a canceled client, got %d", rec.Code)
+	}
+}
+
+func TestHTTPServer_DeadlineExceededIsA503(t *testing.T) {
+	e := New(testLogger())
+	e.GET("/deadline", func(c echo.Context) error { return context.DeadlineExceeded })
+
+	req := httptest.NewRequest(http.MethodGet, "/deadline", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503 for an exhausted deadline, got %d", rec.Code)
+	}
+	var resp apperr.Response
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("error unmarshaling JSON response: %v", err)
+	}
+	if !strings.Contains(resp.Message, "took too long") {
 		t.Errorf("unexpected message: %s", resp.Message)
 	}
 }

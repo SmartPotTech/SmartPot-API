@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -174,6 +175,18 @@ func RespondError(c echo.Context, err error) {
 	if err == nil || c.Response().Committed {
 		return
 	}
+	// El cliente cerró la conexión: no hay a quién responder y no es un fallo
+	// del servidor. Se evita registrarlo como 500 y se cierra sin cuerpo.
+	if errors.Is(err, context.Canceled) {
+		_ = c.NoContent(http.StatusNoContent)
+		return
+	}
+	// Un plazo agotado sí es un fallo del servidor, pero es transitorio: 503.
+	if errors.Is(err, context.DeadlineExceeded) {
+		slog.Warn("request deadline exceeded", "method", c.Request().Method, "path", c.Request().URL.Path, "err", err)
+		writeError(c, http.StatusServiceUnavailable, "The request took too long. Please try again.")
+		return
+	}
 	var valErr *apperr.ValidationError
 	if errors.As(err, &valErr) {
 		_ = c.JSON(http.StatusBadRequest,
@@ -199,6 +212,9 @@ func RespondError(c echo.Context, err error) {
 		writeError(c, he.Code, msg)
 		return
 	}
+	// Un error sin clasificar es un fallo real: se registra con su causa para
+	// poder diagnosticarlo, sin exponer detalles internos al cliente.
+	slog.Error("unhandled request error", "method", c.Request().Method, "path", c.Request().URL.Path, "err", err)
 	writeError(c, http.StatusInternalServerError,
 		"An unexpected error occurred. Please try again later")
 }
