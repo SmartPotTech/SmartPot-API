@@ -17,21 +17,23 @@ It provides a **seamless** migration from the Spring Boot version: it preserves 
 
 ```mermaid
 flowchart LR
-  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API<br/>:8091"]
-  esp["Real crop<br/>ESP32 or Wokwi"] -->|"MQTT"| broker["SmartPot-Broker"]
-  broker <-->|"telemetry · commands · ACK"| api
-  api --> db[("PostgreSQL<br/>+ TimescaleDB")]
-  api --> cache[("Valkey")]
-  api --> mail["Mailpit / SMTP"]
-  api -->|"evaluation · continual learning"| ai["SmartPot-AI"]
-  api -->|"virtual crops & weather"| sim["SmartPot-DataGenerator"]
+  web["SmartPot-Web<br/>SolidJS PWA"] -->|"REST + HttpOnly Cookie / CSRF"| api["SmartPot-API<br/>Go 1.27.3 · Echo v4.16.3"]
+  mcp["SmartPot-MCP<br/>FastMCP :8092"] -->|"REST + spt_... token"| api
+  esp["Physical / Wokwi ESP32<br/>Rust / MicroPython"] -->|"MQTT TLS 8883"| broker["SmartPot-Broker<br/>EMQX 5.8.9"]
+  broker <-->|"Internal MQTT · QoS 1"| api
+  broker -.->|"POST /internal/mqtt/authn"| api
+  api --> db[("SmartPot-DB<br/>PostgreSQL 17 + TimescaleDB 2.17.2<br/>pgx v5.12.0")]
+  api --> cache[("SmartPot-Cache<br/>Valkey 9.1.3-alpine")]
+  api --> mail["SmartPot-Mail<br/>Mailpit v1.33.0 / SMTP"]
+  api -->|"gRPC :50051 / REST fallback"| ai["SmartPot-AI<br/>Rust 1.88+ Engine"]
+  api -->|"virtual crops & weather"| sim["SmartPot-DataGenerator<br/>Rust :8081"]
   sim -->|"MQTT"| broker
   api -->|"notifications & digests"| tg["Telegram"]
 
   classDef core fill:#067A52,stroke:#06281C,color:#fff;
   classDef ext fill:#DDF5EA,stroke:#067A52,color:#17261F;
   class api core;
-  class web,esp,broker,db,cache,mail,ai,sim,tg ext;
+  class web,mcp,esp,broker,db,cache,mail,ai,sim,tg ext;
 ```
 
 ## Project Structure
@@ -290,21 +292,23 @@ hilos ni cron en el servidor.
 
 ```mermaid
 flowchart LR
-  web["SmartPot-Web<br/>PWA"] -->|"REST + JWT"| api["SmartPot-API<br/>:8091"]
-  esp["Cultivo real<br/>ESP32 o Wokwi"] -->|"MQTT"| broker["SmartPot-Broker"]
-  broker <-->|"telemetría · comandos · ACK"| api
-  api --> db[("PostgreSQL<br/>+ TimescaleDB")]
-  api --> cache[("Valkey")]
-  api --> mail["Mailpit / SMTP"]
-  api -->|"evaluación · lecturas para aprender"| ai["SmartPot-AI"]
-  api -->|"cultivos virtuales y clima"| sim["SmartPot-DataGenerator"]
+  web["SmartPot-Web<br/>SolidJS PWA"] -->|"REST + HttpOnly Cookie / CSRF"| api["SmartPot-API<br/>Go 1.27.3 · Echo v4.16.3"]
+  mcp["SmartPot-MCP<br/>FastMCP :8092"] -->|"REST + spt_... token"| api
+  esp["Physical / Wokwi ESP32<br/>Rust / MicroPython"] -->|"MQTT TLS 8883"| broker["SmartPot-Broker<br/>EMQX 5.8.9"]
+  broker <-->|"Internal MQTT · QoS 1"| api
+  broker -.->|"POST /internal/mqtt/authn"| api
+  api --> db[("SmartPot-DB<br/>PostgreSQL 17 + TimescaleDB 2.17.2<br/>pgx v5.12.0")]
+  api --> cache[("SmartPot-Cache<br/>Valkey 9.1.3-alpine")]
+  api --> mail["SmartPot-Mail<br/>Mailpit v1.33.0 / SMTP"]
+  api -->|"gRPC :50051 / REST fallback"| ai["SmartPot-AI<br/>Rust 1.88+ Engine"]
+  api -->|"virtual crops & weather"| sim["SmartPot-DataGenerator<br/>Rust :8081"]
   sim -->|"MQTT"| broker
-  api -->|"avisos y resúmenes"| tg["Telegram"]
+  api -->|"notifications & digests"| tg["Telegram"]
 
   classDef core fill:#067A52,stroke:#06281C,color:#fff;
   classDef ext fill:#DDF5EA,stroke:#067A52,color:#17261F;
   class api core;
-  class web,esp,broker,db,cache,mail,ai,sim,tg ext;
+  class web,mcp,esp,broker,db,cache,mail,ai,sim,tg ext;
 ```
 
 ## Estructura del Proyecto

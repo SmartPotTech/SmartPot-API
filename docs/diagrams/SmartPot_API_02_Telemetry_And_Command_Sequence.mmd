@@ -1,0 +1,34 @@
+%%{init: {"theme": "base", "fontFamily": "Segoe UI, Arial, sans-serif", "themeVariables": {"fontFamily": "Segoe UI, Arial, sans-serif", "fontSize": "15px", "primaryColor": "#DDF5EA", "primaryTextColor": "#17261F", "primaryBorderColor": "#067A52", "secondaryColor": "#E3F2FB", "secondaryTextColor": "#17261F", "secondaryBorderColor": "#1F6FA0", "tertiaryColor": "#F2F7F4", "tertiaryTextColor": "#17261F", "tertiaryBorderColor": "#D5E3DC", "lineColor": "#5B6B63", "textColor": "#17261F", "mainBkg": "#DDF5EA", "nodeBorder": "#067A52", "clusterBkg": "#F7FAF8", "clusterBorder": "#D5E3DC", "edgeLabelBackground": "#FFFFFF", "actorBkg": "#067A52", "actorBorder": "#0B3D2B", "actorTextColor": "#FFFFFF", "actorLineColor": "#5B6B63", "signalColor": "#17261F", "signalTextColor": "#17261F", "labelBoxBkgColor": "#0B3D2B", "labelBoxBorderColor": "#0B3D2B", "labelTextColor": "#FFFFFF", "loopTextColor": "#0B3D2B", "noteBkgColor": "#FDF4DD", "noteBorderColor": "#C98D12", "noteTextColor": "#17261F", "activationBkgColor": "#DDF5EA", "activationBorderColor": "#067A52", "attributeBackgroundColorOdd": "#FFFFFF", "attributeBackgroundColorEven": "#F2F7F4"}}}%%
+sequenceDiagram
+  autonumber
+  participant D as Device / Simulator
+  participant B as SmartPot-Broker (EMQX)
+  participant API as SmartPot-API (Go 1.27.3)
+  participant V as SmartPot-Cache (Valkey)
+  participant DB as SmartPot-DB (TimescaleDB)
+  participant AI as SmartPot-AI (Rust Engine)
+
+  D->>B: MQTT Publish smartpot/v1/{cropId}/telemetry (JSON v1 / Compact v2)
+  B->>API: Shared Subscription $share/api/...
+  API->>V: SET NX gate reading:cropId (5s throttling)
+  alt Throttled / Duplicate
+    API-->>API: Drop duplicate reading
+  else Fresh Reading
+    API->>DB: Batch Insert via pgx.CopyFrom (every 100 readings or 10ms)
+    API->>API: Emit ReadingRecordedEvent on EventBus
+    API->>V: Check agent:cropId:actuator cooldown (10m)
+    alt Cooldown Active
+      API-->>API: Skip autonomous evaluation
+    else Cooldown Free
+      API->>AI: gRPC Request (Tonic :50051, 1.5s timeout, REST fallback)
+      AI-->>API: InsightResponse (health, conclusions, recommended action)
+      opt Action Recommended & Automation Active
+        API->>DB: INSERT INTO commands (PENDING, in-flight unique index)
+        API->>B: MQTT Publish smartpot/v1/{cropId}/commands (QoS 1)
+        B->>D: Forward command {actuator, action, durationSeconds}
+        D->>B: MQTT Publish smartpot/v1/{cropId}/commands/ack (EXECUTED)
+        B->>API: Receive command ACK
+        API->>DB: UPDATE commands SET status='EXECUTED'
+      end
+    end
+  end

@@ -1,0 +1,52 @@
+%%{init: {"theme": "base", "fontFamily": "Segoe UI, Arial, sans-serif", "themeVariables": {"fontFamily": "Segoe UI, Arial, sans-serif", "fontSize": "15px", "primaryColor": "#DDF5EA", "primaryTextColor": "#17261F", "primaryBorderColor": "#067A52", "secondaryColor": "#E3F2FB", "secondaryTextColor": "#17261F", "secondaryBorderColor": "#1F6FA0", "tertiaryColor": "#F2F7F4", "tertiaryTextColor": "#17261F", "tertiaryBorderColor": "#D5E3DC", "lineColor": "#5B6B63", "textColor": "#17261F", "mainBkg": "#DDF5EA", "nodeBorder": "#067A52", "clusterBkg": "#F7FAF8", "clusterBorder": "#D5E3DC", "edgeLabelBackground": "#FFFFFF", "actorBkg": "#067A52", "actorBorder": "#0B3D2B", "actorTextColor": "#FFFFFF", "actorLineColor": "#5B6B63", "signalColor": "#17261F", "signalTextColor": "#17261F", "labelBoxBkgColor": "#0B3D2B", "labelBoxBorderColor": "#0B3D2B", "labelTextColor": "#FFFFFF", "loopTextColor": "#0B3D2B", "noteBkgColor": "#FDF4DD", "noteBorderColor": "#C98D12", "noteTextColor": "#17261F", "activationBkgColor": "#DDF5EA", "activationBorderColor": "#067A52", "attributeBackgroundColorOdd": "#FFFFFF", "attributeBackgroundColorEven": "#F2F7F4"}}}%%
+flowchart LR
+  subgraph inbound["Driving / Inbound Adapters"]
+    direction TB
+    echo["Echo v4.16.3 HTTP Server<br/>CORS · RateLimit · HttpOnly Session Cookie · Signed CSRF"]
+    authn["Broker Authn Webhook<br/>POST /internal/mqtt/authn · Per-Crop ACL"]
+    mqtt_sub["MQTT Subscriber<br/>Paho MQTT · Shared Subscription $share/api/..."]
+  end
+
+  subgraph core["Hexagonal Domain & Application Core (Go 1.27.3)"]
+    direction TB
+    auth_svc["auth.Service<br/>BCrypt Cost 12 · Session Versioning"]
+    crop_svc["crops.Service<br/>Tenant Isolation · RLS Verification"]
+    read_svc["readings.Service<br/>Deadband Filtering · Micro-batch Worker"]
+    agent_svc["ai.AutomationAgent<br/>10-min Actuator Cooldown · Cooldown Gates"]
+    cmd_svc["commands.Service<br/>QoS 1 Publishing · In-flight Uniqueness"]
+    event_bus["platform.EventBus<br/>In-memory Domain Event Dispatch"]
+  end
+
+  subgraph outbound["Driven / Outbound Adapters"]
+    direction TB
+    pgx_repo["storage/postgres (pgx v5.12.0)<br/>PostgreSQL 17 + TimescaleDB 2.17.2 Hypertables"]
+    valkey_cache["cache/valkey<br/>Valkey 9.1.3-alpine · Invalidation & Rate Limits"]
+    ai_client["ai/client (gRPC & REST)<br/>SmartPot-AI Tonic :50051 / Axum :8000"]
+    mail_client["mail/client<br/>SmartPot-Mail Mailpit v1.33.0 / SMTP :1025"]
+    sim_client["virtualdevices/client<br/>SmartPot-DataGenerator HTTP :8081"]
+    tg_client["channels/telegram<br/>Telegram Bot API Alerts"]
+  end
+
+  echo --> auth_svc & crop_svc
+  authn --> crop_svc
+  mqtt_sub --> read_svc
+
+  read_svc --> event_bus
+  event_bus --> agent_svc
+  agent_svc --> cmd_svc
+
+  crop_svc & read_svc & auth_svc --> pgx_repo
+  auth_svc & read_svc --> valkey_cache
+  agent_svc --> ai_client
+  auth_svc --> mail_client
+  crop_svc --> sim_client
+  event_bus --> tg_client
+
+  classDef leaf fill:#DDF5EA,stroke:#067A52,color:#17261F
+  classDef water fill:#E3F2FB,stroke:#1F6FA0,color:#17261F
+  classDef core fill:#067A52,stroke:#0B3D2B,color:#FFFFFF
+  classDef deep fill:#0B3D2B,stroke:#06281C,color:#FFFFFF
+
+  class echo,authn,mqtt_sub water
+  class auth_svc,crop_svc,read_svc,agent_svc,cmd_svc,event_bus leaf
+  class pgx_repo,valkey_cache,ai_client,mail_client,sim_client,tg_client deep
