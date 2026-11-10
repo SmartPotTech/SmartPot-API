@@ -135,6 +135,9 @@ func (s *InsightService) evaluate(ctx context.Context, crop *crops.Crop, latest 
 			Placement: place(crop.Placement),
 			Weather:   s.outside(ctx, crop),
 		}
+		if crop.Device != nil && len(crop.Device.Capabilities) > 0 {
+			req.Capabilities = crop.Device.Capabilities
+		}
 		resp, err := s.client.Insights(ctx, req)
 		if err != nil {
 			return nil, err

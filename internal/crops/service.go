@@ -503,6 +503,18 @@ func (s *Service) RequireOwned(ctx context.Context, ownerID, cropID string) erro
 	return err
 }
 
+// RequireOwnedVirtual comprueba que el cultivo pertenezca al dueño y sea virtual (implementa readings.Crops).
+func (s *Service) RequireOwnedVirtual(ctx context.Context, ownerID, cropID string) error {
+	crop, err := s.GetOwned(ctx, ownerID, cropID)
+	if err != nil {
+		return err
+	}
+	if !crop.IsVirtual() {
+		return apperr.BadRequest("Manual readings are only allowed for virtual crops")
+	}
+	return nil
+}
+
 func (s *Service) getOwnedReal(ctx context.Context, ownerID, cropID string) (*Crop, error) {
 	crop, err := s.GetOwned(ctx, ownerID, cropID)
 	if err != nil {

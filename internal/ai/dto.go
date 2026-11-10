@@ -3,6 +3,7 @@
 package ai
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/readings"
@@ -10,13 +11,14 @@ import (
 
 // InsightRequest es lo que recibe el servicio de IA. Omite los campos nulos.
 type InsightRequest struct {
-	CropType  string            `json:"cropType,omitempty"`
-	Measures  readings.Measures `json:"measures"`
-	History   []HistoryPoint    `json:"history,omitempty"`
-	Actuators []string          `json:"actuators,omitempty"`
-	LocalHour *int              `json:"localHour,omitempty"`
-	Placement *Place            `json:"placement,omitempty"`
-	Weather   *Outside          `json:"weather,omitempty"`
+	CropType     string            `json:"cropType,omitempty"`
+	Measures     readings.Measures `json:"measures"`
+	History      []HistoryPoint    `json:"history,omitempty"`
+	Actuators    []string          `json:"actuators,omitempty"`
+	LocalHour    *int              `json:"localHour,omitempty"`
+	Placement    *Place            `json:"placement,omitempty"`
+	Weather      *Outside          `json:"weather,omitempty"`
+	Capabilities json.RawMessage   `json:"capabilities,omitempty"`
 }
 
 // Place es el lugar del cultivo (setting/exposure), cualquiera puede faltar.

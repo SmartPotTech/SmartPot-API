@@ -197,9 +197,10 @@ func (r *cropsHandlerReadingsRepo) LatestByCropIDs(_ context.Context, cropIDs []
 
 type cropsReadingPerms struct{}
 
-func (cropsReadingPerms) Exists(context.Context, string) (bool, error)       { return true, nil }
-func (cropsReadingPerms) RequireOwned(context.Context, string, string) error { return nil }
-func (cropsReadingPerms) MarkDeviceSeen(context.Context, string, *bool)      {}
+func (cropsReadingPerms) Exists(context.Context, string) (bool, error)              { return true, nil }
+func (cropsReadingPerms) RequireOwned(context.Context, string, string) error        { return nil }
+func (cropsReadingPerms) RequireOwnedVirtual(context.Context, string, string) error { return nil }
+func (cropsReadingPerms) MarkDeviceSeen(context.Context, string, *bool)             {}
 
 type handlerVirtual struct {
 	checkErr   error

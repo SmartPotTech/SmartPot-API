@@ -45,6 +45,7 @@ var batchSlicePool = sync.Pool{
 type Crops interface {
 	Exists(ctx context.Context, cropID string) (bool, error)
 	RequireOwned(ctx context.Context, ownerID, cropID string) error
+	RequireOwnedVirtual(ctx context.Context, ownerID, cropID string) error
 	MarkDeviceSeen(ctx context.Context, cropID string, online *bool)
 }
 
@@ -324,9 +325,9 @@ func (s *Service) enqueue(reading Reading) bool {
 	}
 }
 
-// RecordManual guarda una lectura manual (dispositivos sin MQTT o pruebas).
+// RecordManual guarda una lectura manual (solo permitida en cultivos virtuales o pruebas).
 func (s *Service) RecordManual(ctx context.Context, ownerID, cropID string, measures Measures) (*Reading, error) {
-	if err := s.crops.RequireOwned(ctx, ownerID, cropID); err != nil {
+	if err := s.crops.RequireOwnedVirtual(ctx, ownerID, cropID); err != nil {
 		return nil, err
 	}
 	reading, err := s.store(ctx, cropID, measures, SourceHTTP)

@@ -14,9 +14,10 @@ import (
 
 type fakeCrops struct{}
 
-func (fakeCrops) Exists(context.Context, string) (bool, error)       { return true, nil }
-func (fakeCrops) RequireOwned(context.Context, string, string) error { return nil }
-func (fakeCrops) MarkDeviceSeen(context.Context, string, *bool)      {}
+func (fakeCrops) Exists(context.Context, string) (bool, error)              { return true, nil }
+func (fakeCrops) RequireOwned(context.Context, string, string) error        { return nil }
+func (fakeCrops) RequireOwnedVirtual(context.Context, string, string) error { return nil }
+func (fakeCrops) MarkDeviceSeen(context.Context, string, *bool)             {}
 
 type fakeRepo struct {
 	mu         sync.Mutex
@@ -147,4 +148,23 @@ func TestBatchPublishesOnlySavedReadings(t *testing.T) {
 	case <-time.After(200 * time.Millisecond):
 	}
 	svc.StopBatchWorker()
+}
+
+type rejectingVirtualCrops struct {
+	fakeCrops
+}
+
+func (rejectingVirtualCrops) RequireOwnedVirtual(context.Context, string, string) error {
+	return errors.New("Manual readings are only allowed for virtual crops")
+}
+
+func TestRecordManualRejectsRealCrops(t *testing.T) {
+	svc := NewService(&fakeRepo{}, rejectingVirtualCrops{}, cache.NewStore(nil), events.NewBus(), time.Now, 0, 100)
+	_, err := svc.RecordManual(context.Background(), "owner1", "crop1", temp(20))
+	if err == nil {
+		t.Fatal("expected error for real crop, got nil")
+	}
+	if err.Error() != "Manual readings are only allowed for virtual crops" {
+		t.Fatalf("unexpected error message: %v", err)
+	}
 }

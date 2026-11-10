@@ -211,7 +211,7 @@ func (r *CropRepository) Save(ctx context.Context, crop *crops.Crop) error {
 		return err
 	}
 	_, err = r.pool.Exec(ctx,
-		"UPDATE crops SET owner_id=$2, name=$3, type=$4, kind=$5, form=$6, placement=$7, automation_enabled=$8, health=$9, created_at=$10, updated_at=$11 WHERE id=$1",
+		"UPDATE crops SET owner_id=$2, name=$3, type=$4, kind=$5, form=$6, placement=$7, automation_enabled=$8, health=$9, created_at=$10, updated_at=$11 WHERE id=$1 AND owner_id=$2",
 		hexOf(crop.ID), hexOf(crop.OwnerID), crop.Name, string(crop.Type), nullEnum(string(crop.Kind)),
 		nullEnum(string(crop.Form)), placement, crop.AutomationEnabled, health, crop.CreatedAt, nullTime(crop.UpdatedAt))
 	return err

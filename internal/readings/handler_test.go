@@ -58,6 +58,9 @@ func (handlerCrops) Exists(context.Context, string) (bool, error) { return true,
 func (c handlerCrops) RequireOwned(context.Context, string, string) error {
 	return c.requireErr
 }
+func (c handlerCrops) RequireOwnedVirtual(context.Context, string, string) error {
+	return c.requireErr
+}
 func (handlerCrops) MarkDeviceSeen(context.Context, string, *bool) {}
 
 func newReadingsEngine(t *testing.T, repo Repository, crops Crops) (*echo.Echo, *security.TokenService) {
