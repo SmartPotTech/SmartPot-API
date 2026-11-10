@@ -36,20 +36,45 @@ type AutomationAgent struct {
 	crops              *crops.Service
 	evaluationInterval time.Duration
 	automationCooldown time.Duration
+	sem                chan struct{}
 }
 
 // NewAutomationAgent crea el agente.
 func NewAutomationAgent(insights *InsightService, commandsSvc *commands.Service, notifier *notifications.Service,
 	store cache.Cache, client *Client, cropsSvc *crops.Service, evaluationInterval, automationCooldown time.Duration) *AutomationAgent {
-	return &AutomationAgent{insights: insights, commands: commandsSvc, notifier: notifier, cache: store,
-		client: client, crops: cropsSvc, evaluationInterval: evaluationInterval, automationCooldown: automationCooldown}
+	return &AutomationAgent{
+		insights:           insights,
+		commands:           commandsSvc,
+		notifier:           notifier,
+		cache:              store,
+		client:             client,
+		crops:              cropsSvc,
+		evaluationInterval: evaluationInterval,
+		automationCooldown: automationCooldown,
+		sem:                make(chan struct{}, 32),
+	}
 }
 
-// OnReading evalúa el cultivo tras una lectura. Corre en su propia goroutine.
+// OnReading evalúa el cultivo tras una lectura. Corre en su propia goroutine con concurrencia acotada.
 func (a *AutomationAgent) OnReading(event readings.ReadingRecordedEvent) {
 	if !a.client.IsEnabled() {
 		return
 	}
+
+	// Comprobación temprana en caché antes de acceder a la base de datos o adquirir el semáforo.
+	if _, active := a.cache.Get("ai-eval:" + event.CropID); active {
+		return
+	}
+
+	// Semáforo no bloqueante para limitar a 32 evaluaciones concurrentes en vuelo.
+	select {
+	case a.sem <- struct{}{}:
+		defer func() { <-a.sem }()
+	default:
+		slog.Warn("agent worker pool saturated; skipping reading evaluation", "cropId", event.CropID)
+		return
+	}
+
 	ctx := context.Background()
 	crop, err := a.crops.Find(ctx, event.CropID)
 	if err != nil || crop == nil {
