@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -37,6 +38,12 @@ func Connect(ctx context.Context, url string, maxConns int) (*Pool, error) {
 		cfg.MaxConns = int32(maxConns)
 	}
 	cfg.MaxConnIdleTime = 5 * time.Minute
+	// La API aplica aislamiento estricto por owner_id en cada consulta de dominio.
+	// Activar bypass_rls a nivel de conexión evita contaminar el estado de las conexiones reutilizadas en el pool.
+	cfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		_, err := conn.Exec(ctx, "SET app.bypass_rls = 'on'")
+		return err
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("could not create PostgreSQL pool: %w", err)
