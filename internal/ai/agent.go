@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	automaticInterval = 30 * time.Second
-	alertCooldown     = time.Hour
-	agentNoticeCd     = 30 * time.Minute
-	deadbandMaxAge    = 15 * time.Minute
+	automaticInterval   = 30 * time.Second
+	alertCooldown       = time.Hour
+	agentNoticeCd       = 30 * time.Minute
+	deadbandMaxAge      = 15 * time.Minute
+	dailyChemicalLimit  = 3
+	dailyChemicalWindow = 24 * time.Hour
 )
 
 // AutomationAgent percibe cada lectura, la hace evaluar por la IA y, con el modo
@@ -114,12 +116,32 @@ func (a *AutomationAgent) act(ctx context.Context, crop *crops.Crop, insight *In
 		if !a.cache.SetIfAbsent(cooldownKey, a.automationCooldown) {
 			continue
 		}
+
+		// Presupuesto de seguridad diario para dosificadores químicos (máx. 3 dosis automáticas cada 24 horas).
+		// El riego (bomba de agua) y la ventilación (extractor/ventilador) no se ven afectados por este límite.
+		if isChemicalDoser(actuatorType) && commandAction == commands.Activate {
+			budgetKey := "agent:chemical-budget:" + crop.HexID() + ":" + string(actuatorType)
+			if doses := a.cache.Increment(budgetKey, dailyChemicalWindow); doses > dailyChemicalLimit {
+				slog.Warn("daily automatic dosage budget exceeded, dosage skipped",
+					"cropId", crop.HexID(), "actuator", actuatorType, "doses", doses, "max", dailyChemicalLimit)
+				_, _ = a.notifier.NotifyOnce(ctx, "agent:budget:"+crop.HexID()+":"+string(actuatorType), alertCooldown,
+					crop.OwnerID.Hex(), crop.HexID(), notifications.TypeAlert,
+					"Daily chemical dosage budget reached for "+crop.Name,
+					"Automatic dosing for "+string(actuatorType)+" was paused because the daily limit of 3 doses was reached.")
+				continue
+			}
+		}
+
 		cmd, ok := a.commands.RequestFromAgent(ctx, crop, actuatorType, commandAction, action.DurationSeconds, action.Reason)
 		if ok && cmd != nil {
 			_, _ = a.notifier.NotifyOnce(ctx, "agent:"+crop.HexID(), agentNoticeCd, crop.OwnerID.Hex(), crop.HexID(),
 				notifications.TypeAI, "The assistant acted on "+crop.Name, action.Reason)
 		}
 	}
+}
+
+func isChemicalDoser(t actuators.Type) bool {
+	return t == actuators.PhDoser || t == actuators.NutrientDoser
 }
 
 func equalsIgnoreCase(a, b string) bool {
