@@ -27,6 +27,7 @@ type Config struct {
 	Telegram  Telegram
 	Simulator Simulator
 	Channels  Channels
+	Quotas    Quotas
 }
 
 type Server struct {
@@ -140,6 +141,13 @@ type Simulator struct {
 
 type Channels struct {
 	DigestInterval time.Duration
+}
+
+// Quotas agrupa los topes máximos por cuenta configurables mediante variables de entorno.
+type Quotas struct {
+	MaxCropsPerUser        int
+	MaxVirtualCropsPerUser int
+	MaxConnectionsPerUser  int
 }
 
 // Load lee el .env opcional y arma la configuración. Falla si faltan los
@@ -262,6 +270,11 @@ func Load() (Config, error) {
 		},
 		Channels: Channels{
 			DigestInterval: dur("CHANNELS_DIGEST_INTERVAL", "PT1M"),
+		},
+		Quotas: Quotas{
+			MaxCropsPerUser:        envInt("MAX_CROPS_PER_USER", 20),
+			MaxVirtualCropsPerUser: envInt("MAX_VIRTUAL_CROPS_PER_USER", 5),
+			MaxConnectionsPerUser:  envInt("MAX_CONNECTIONS_PER_USER", 10),
 		},
 	}
 

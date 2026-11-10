@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,13 +26,28 @@ const (
 
 // Service crea, lista, revoca y verifica conexiones.
 type Service struct {
-	repo  Repository
-	clock func() time.Time
+	repo       Repository
+	clock      func() time.Time
+	maxPerUser int
 }
 
 // NewService crea el servicio de conexiones.
 func NewService(repo Repository, clock func() time.Time) *Service {
 	return &Service{repo: repo, clock: clock}
+}
+
+// SetMaxPerUser configura el límite de conexiones activas por cuenta.
+func (s *Service) SetMaxPerUser(max int) {
+	if max > 0 {
+		s.maxPerUser = max
+	}
+}
+
+func (s *Service) maxConnections() int {
+	if s.maxPerUser > 0 {
+		return s.maxPerUser
+	}
+	return MaxPerUser
 }
 
 // Create genera una conexión y devuelve su token, que no se vuelve a mostrar.
@@ -44,8 +60,12 @@ func (s *Service) Create(ctx context.Context, userID string, req CreateRequest) 
 	if err != nil {
 		return nil, err
 	}
-	if count >= MaxPerUser {
-		return nil, apperr.Conflict("You reached the limit of 10 connections; revoke one to create a new one")
+	maxConn := s.maxConnections()
+	if count >= int64(maxConn) {
+		if maxConn == 10 {
+			return nil, apperr.Conflict("You reached the limit of 10 connections; revoke one to create a new one")
+		}
+		return nil, apperr.Conflict(fmt.Sprintf("You reached the limit of %d connections; revoke one to create a new one", maxConn))
 	}
 	raw, err := newToken()
 	if err != nil {

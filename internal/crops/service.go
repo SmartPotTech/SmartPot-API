@@ -76,14 +76,16 @@ type CreatedCrop struct {
 
 // Service implementa la lógica de los cultivos.
 type Service struct {
-	repo        Repository
-	encryptor   *security.Encryptor
-	mqttPublic  MQTTPublic
-	provisioner DeviceProvisioner
-	actuators   ActuatorSeeder
-	notifier    Notifier
-	bus         *events.Bus
-	clock       func() time.Time
+	repo                   Repository
+	encryptor              *security.Encryptor
+	mqttPublic             MQTTPublic
+	provisioner            DeviceProvisioner
+	actuators              ActuatorSeeder
+	notifier               Notifier
+	bus                    *events.Bus
+	clock                  func() time.Time
+	maxCropsPerUser        int
+	maxVirtualCropsPerUser int
 }
 
 // NewService crea el servicio de cultivos.
@@ -104,6 +106,30 @@ func (s *Service) SetProvisioner(p DeviceProvisioner) {
 // SetActuatorSeeder fija el sembrador de actuadores real.
 func (s *Service) SetActuatorSeeder(a ActuatorSeeder) {
 	s.actuators = a
+}
+
+// SetQuotas configura los límites máximos por cuenta.
+func (s *Service) SetQuotas(maxCrops, maxVirtual int) {
+	if maxCrops > 0 {
+		s.maxCropsPerUser = maxCrops
+	}
+	if maxVirtual > 0 {
+		s.maxVirtualCropsPerUser = maxVirtual
+	}
+}
+
+func (s *Service) maxCrops() int {
+	if s.maxCropsPerUser > 0 {
+		return s.maxCropsPerUser
+	}
+	return MaxCropsPerUser
+}
+
+func (s *Service) maxVirtual() int {
+	if s.maxVirtualCropsPerUser > 0 {
+		return s.maxVirtualCropsPerUser
+	}
+	return virtualdevices.MaxPerAccount
 }
 
 // Create crea un cultivo real o virtual con sus actuadores y cuenta en el broker.
@@ -139,13 +165,18 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 		UpdatedAt: now,
 	}
 	// El cupo se comprueba y se inserta en una sola transacción con bloqueo por
-	// dueño: las ráfagas concurrentes no pueden superar 20 cultivos ni 5 virtuales.
-	if err := s.repo.InsertWithQuota(ctx, crop, MaxCropsPerUser, virtualdevices.MaxPerAccount); err != nil {
+	// dueño: las ráfagas concurrentes no pueden superar el límite de cultivos ni de virtuales.
+	maxCrops := s.maxCrops()
+	maxVirtual := s.maxVirtual()
+	if err := s.repo.InsertWithQuota(ctx, crop, maxCrops, maxVirtual); err != nil {
 		switch {
 		case errors.Is(err, ErrCropLimit):
-			return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", MaxCropsPerUser))
+			return CreatedCrop{}, apperr.BadRequest(fmt.Sprintf("You reached the maximum of %d crops per account", maxCrops))
 		case errors.Is(err, ErrVirtualCropLimit):
-			return CreatedCrop{}, apperr.Conflict("You can have up to 5 virtual crops")
+			if maxVirtual == 5 {
+				return CreatedCrop{}, apperr.Conflict("You can have up to 5 virtual crops")
+			}
+			return CreatedCrop{}, apperr.Conflict(fmt.Sprintf("You can have up to %d virtual crops", maxVirtual))
 		default:
 			return CreatedCrop{}, err
 		}

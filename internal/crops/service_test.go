@@ -163,6 +163,23 @@ func TestCreateMapsQuotaErrors(t *testing.T) {
 	}
 }
 
+func TestCreateMapsConfigurableQuotaErrors(t *testing.T) {
+	repo := &fakeRepo{insertQuotaErr: ErrCropLimit}
+	svc, _ := testService(t, repo, &fakeNotifier{})
+	svc.SetQuotas(10, 2)
+	_, err := svc.Create(context.Background(), primitive.NewObjectID().Hex(), cropRequest(KindReal))
+	var apiErr *apperr.Error
+	if !errors.As(err, &apiErr) || apiErr.Status != 400 || !strings.Contains(apiErr.Message, "maximum of 10 crops") {
+		t.Fatalf("expected 400 with 10 crops, got %v", err)
+	}
+
+	repo.insertQuotaErr = ErrVirtualCropLimit
+	_, err = svc.Create(context.Background(), primitive.NewObjectID().Hex(), cropRequest(KindVirtual))
+	if !errors.As(err, &apiErr) || apiErr.Status != 409 || !strings.Contains(apiErr.Message, "up to 2 virtual crops") {
+		t.Fatalf("expected 409 with 2 virtual crops, got %v", err)
+	}
+}
+
 func TestCreateEnforcesAccountAndVirtualLimitsInOneTransaction(t *testing.T) {
 	repo := &fakeRepo{}
 	svc, _ := testService(t, repo, &fakeNotifier{})

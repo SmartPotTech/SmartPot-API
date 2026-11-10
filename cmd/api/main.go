@@ -116,6 +116,7 @@ func run() error {
 		WebSocketURL: cfg.MQTT.WebSocketURL, TopicPrefix: cfg.MQTT.TopicPrefix}
 	cropService := crops.NewService(cropRepo, encryptor, mqttPublic, noopProvisioner{}, noopActuatorSeeder{},
 		notificationService, bus, clock)
+	cropService.SetQuotas(cfg.Quotas.MaxCropsPerUser, cfg.Quotas.MaxVirtualCropsPerUser)
 	readingService := readings.NewService(readingRepo, cropService, cacheStore, bus, clock,
 		cfg.Readings.MinInterval, cfg.Readings.MaxPageSize)
 	simulatorClient := virtualdevices.NewSimulatorClient(cfg.Simulator)
@@ -125,6 +126,7 @@ func run() error {
 	commandService := commands.NewService(commandRepo, cropService, actuatorService, notificationService, clock,
 		cfg.MQTT.CommandTimeout)
 	virtualDeviceService := virtualdevices.NewService(vdRepo, virtualCropsAdapter{crops: cropService}, simulatorClient, clock)
+	virtualDeviceService.SetMaxPerAccount(cfg.Quotas.MaxVirtualCropsPerUser)
 
 	// MQTT: gateway, enrutado de mensajes y corte de sesiones en el broker. Con EMQX la clave del
 	// dispositivo vive en la base y el broker la consulta al conectar; no hay que registrar cuentas.
@@ -168,6 +170,7 @@ func run() error {
 	})
 	// Conexiones personales (clientes MCP y similares): el guard las acepta además de la sesión.
 	connectionService := connections.NewService(postgres.NewAccessTokenRepository(pool.Pool), clock)
+	connectionService.SetMaxPerUser(cfg.Quotas.MaxConnectionsPerUser)
 	tokenService.UseConnections(connectionService)
 	userService.AddAccountDeleter(connectionService.DeleteAllForUser)
 	authService := auth.NewService(userRepo, tokenRepo, tokenService, mailer, notificationService, clock,

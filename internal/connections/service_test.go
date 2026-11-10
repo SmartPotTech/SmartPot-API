@@ -151,6 +151,24 @@ func TestExpiredConnectionAndLimit(t *testing.T) {
 	}
 }
 
+func TestConfigurableLimit(t *testing.T) {
+	repo := newMemRepo()
+	svc := NewService(repo, time.Now)
+	svc.SetMaxPerUser(2)
+	user := primitive.NewObjectID().Hex()
+	ctx := context.Background()
+
+	if _, err := svc.Create(ctx, user, CreateRequest{Name: "C1", Scope: ScopeRead}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Create(ctx, user, CreateRequest{Name: "C2", Scope: ScopeRead}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Create(ctx, user, CreateRequest{Name: "C3", Scope: ScopeRead}); status(err) != 409 {
+		t.Fatalf("exceeding configured limit of 2 should return 409, got %v", err)
+	}
+}
+
 func TestCreateRequestValidation(t *testing.T) {
 	bad := 0
 	cases := []CreateRequest{

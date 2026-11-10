@@ -40,15 +40,31 @@ type Crops interface {
 
 // Service implementa la lógica de los cultivos virtuales.
 type Service struct {
-	repo      Repository
-	crops     Crops
-	simulator *SimulatorClient
-	clock     func() time.Time
+	repo          Repository
+	crops         Crops
+	simulator     *SimulatorClient
+	clock         func() time.Time
+	maxPerAccount int
 }
 
 // NewService crea el servicio de dispositivos virtuales.
 func NewService(repo Repository, crops Crops, simulator *SimulatorClient, clock func() time.Time) *Service {
 	return &Service{repo: repo, crops: crops, simulator: simulator, clock: clock}
+}
+
+// SetMaxPerAccount configura el límite de dispositivos virtuales por cuenta.
+func (s *Service) SetMaxPerAccount(max int) {
+	if max > 0 {
+		s.maxPerAccount = max
+	}
+}
+
+// MaxPerAccount devuelve el límite configurado o el valor por defecto.
+func (s *Service) MaxPerAccount() int {
+	if s.maxPerAccount > 0 {
+		return s.maxPerAccount
+	}
+	return MaxPerAccount
 }
 
 // CheckCanCreate valida que haya simulador, cupo y una configuración válida
