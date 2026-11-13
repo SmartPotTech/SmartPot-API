@@ -4,7 +4,10 @@
 package events
 
 import (
+	"fmt"
+	"log/slog"
 	"reflect"
+	"runtime/debug"
 	"sync"
 )
 
@@ -20,13 +23,28 @@ func NewBus() *Bus {
 }
 
 // Publish entrega el evento a los manejadores de su tipo, en orden de registro.
+// Cada manejador se aísla con recover para que un pánico no derribe el proceso ni bloquee al resto.
 func (b *Bus) Publish(event any) {
 	b.mu.RLock()
-	handlers := b.handlers[reflect.TypeOf(event)]
+	var handlers []func(any)
+	handlers = append(handlers, b.handlers[reflect.TypeOf(event)]...)
 	b.mu.RUnlock()
 	for _, h := range handlers {
-		h(event)
+		invokeSafely(h, event)
 	}
+}
+
+func invokeSafely(h func(any), event any) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("event handler panic",
+				"eventType", fmt.Sprintf("%T", event),
+				"panic", r,
+				"stack", string(debug.Stack()),
+			)
+		}
+	}()
+	h(event)
 }
 
 func (b *Bus) subscribe(t reflect.Type, h func(any)) {

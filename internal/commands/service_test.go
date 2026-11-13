@@ -299,3 +299,24 @@ func TestAcknowledgeIgnoresCommandFromAnotherCrop(t *testing.T) {
 		t.Fatalf("an ACK from another crop must not notify: %d notices", notifier.calls)
 	}
 }
+
+func TestBulkCommandValidationRejectsExplicitEmptyCropIDs(t *testing.T) {
+	actuatorType := actuators.WaterPump
+	action := Activate
+
+	if fields := (BulkCommandRequest{
+		CropIds:      nil,
+		ActuatorType: &actuatorType,
+		Action:       &action,
+	}).Validate(); len(fields) != 0 {
+		t.Fatalf("omitted cropIds (all active crops) should validate cleanly, got %v", fields)
+	}
+
+	if fields := (BulkCommandRequest{
+		CropIds:      []string{},
+		ActuatorType: &actuatorType,
+		Action:       &action,
+	}).Validate(); fields["cropIds"] == "" {
+		t.Fatalf("explicit empty cropIds slice should fail validation, got %v", fields)
+	}
+}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -59,6 +60,7 @@ func recovery(logger *slog.Logger) echo.MiddlewareFunc {
 						"method", req.Method,
 						"path", req.URL.Path,
 						"panic", r,
+						"stack", string(debug.Stack()),
 					)
 					if !c.Response().Committed {
 						writeError(c, http.StatusInternalServerError,
@@ -107,7 +109,7 @@ func etagMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
-			if req.Method != http.MethodGet || isEventStream(req) {
+			if req.Method != http.MethodGet || isUnbufferedResponse(req) {
 				return next(c)
 			}
 			res := c.Response()
@@ -165,6 +167,10 @@ func etagMiddleware() echo.MiddlewareFunc {
 func isEventStream(req *http.Request) bool {
 	return strings.Contains(req.Header.Get(echo.HeaderAccept), "text/event-stream") ||
 		strings.HasSuffix(req.URL.Path, "/stream")
+}
+
+func isUnbufferedResponse(req *http.Request) bool {
+	return isEventStream(req) || strings.HasSuffix(req.URL.Path, "/export")
 }
 
 // RespondError es el HTTPErrorHandler centralizado: transforma errores de

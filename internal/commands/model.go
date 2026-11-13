@@ -137,7 +137,9 @@ type BulkCommandRequest struct {
 // Validate aplica las reglas de la versión en Java.
 func (r BulkCommandRequest) Validate() validation.Fields {
 	v := validation.New()
-	if len(r.CropIds) > 20 {
+	if r.CropIds != nil && len(r.CropIds) == 0 {
+		v.Add("cropIds", "Select at least 1 crop or omit cropIds")
+	} else if len(r.CropIds) > 20 {
 		v.Add("cropIds", "Select at most 20 crops")
 	}
 	v.Required("actuatorType", r.ActuatorType != nil, "Actuator type is required").

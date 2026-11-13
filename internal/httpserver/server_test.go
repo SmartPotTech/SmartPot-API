@@ -97,7 +97,8 @@ func TestHTTPServer_SecurityHeaders(t *testing.T) {
 }
 
 func TestHTTPServer_Recovery(t *testing.T) {
-	e := New(testLogger())
+	var logBuf bytes.Buffer
+	e := New(slog.New(slog.NewTextHandler(&logBuf, nil)))
 	e.GET("/panic", func(c echo.Context) error {
 		panic("error inesperado")
 	})
@@ -115,6 +116,9 @@ func TestHTTPServer_Recovery(t *testing.T) {
 	}
 	if !strings.Contains(resp.Message, "unexpected error") {
 		t.Errorf("unexpected message: %s", resp.Message)
+	}
+	if !strings.Contains(logBuf.String(), "stack=") {
+		t.Errorf("panic log should include stack trace, got: %s", logBuf.String())
 	}
 }
 
@@ -324,6 +328,28 @@ func TestHTTPServer_EventStreamSkipsETagBuffer(t *testing.T) {
 	}
 	if resp.Header.Get("ETag") != "" {
 		t.Fatal("event stream must not have ETag")
+	}
+}
+
+func TestHTTPServer_ExportSkipsETagBuffer(t *testing.T) {
+	e := New(testLogger())
+	e.GET("/api/v1/crops/:cropId/readings/export", func(c echo.Context) error {
+		c.Response().Header().Set("Cache-Control", "no-store")
+		return c.Blob(http.StatusOK, "text/csv; charset=utf-8", []byte("measuredAt,temperature\n"))
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/crops/abc/readings/export", nil)
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("export status = %d, want 200", rec.Code)
+	}
+	if got := rec.Header().Get("ETag"); got != "" {
+		t.Fatalf("export must skip ETag buffering, got %q", got)
+	}
+	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", got)
 	}
 }
 
