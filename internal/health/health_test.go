@@ -83,3 +83,36 @@ func TestHealthChecker_DatabaseDown(t *testing.T) {
 		t.Errorf("respuesta inesperada: %+v", resp)
 	}
 }
+
+func TestHealthCheckerRunsProbesConcurrently(t *testing.T) {
+	var entered atomic.Int32
+	ready := make(chan struct{})
+	barrier := func() {
+		if entered.Add(1) == 5 {
+			close(ready)
+		}
+		select {
+		case <-ready:
+		case <-time.After(time.Second):
+		}
+	}
+	checker := Checker{
+		Database:  func() bool { barrier(); return true },
+		Cache:     func() bool { barrier(); return true },
+		Broker:    func() (bool, bool) { barrier(); return true, true },
+		AI:        func() (bool, bool) { barrier(); return true, true },
+		Simulator: func() (bool, bool) { barrier(); return true, true },
+	}
+
+	e := echo.New()
+	e.GET("/health", checker.Handler())
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
+
+	if entered.Load() != 5 {
+		t.Fatalf("expected all 5 probes to run in parallel, entered=%d", entered.Load())
+	}
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+}

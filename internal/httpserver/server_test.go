@@ -169,6 +169,23 @@ func TestHTTPServer_BindAndExchangeableValidator(t *testing.T) {
 		t.Fatalf("expected status 400 for invalid JSON, got %d", recBadJSON.Code)
 	}
 
+	// JSON seguido de contenido extra
+	reqTrailing := httptest.NewRequest(http.MethodPost, "/bind", bytes.NewBufferString(`{"name":"test"}{"extra":1}`))
+	recTrailing := httptest.NewRecorder()
+	e.ServeHTTP(recTrailing, reqTrailing)
+	if recTrailing.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400 for trailing JSON payload, got %d", recTrailing.Code)
+	}
+
+	// Cuerpo que supera 1 MiB
+	oversized := `{"name":"` + strings.Repeat("a", maxJSONBodyBytes+32) + `"}`
+	reqTooLarge := httptest.NewRequest(http.MethodPost, "/bind", strings.NewReader(oversized))
+	recTooLarge := httptest.NewRecorder()
+	e.ServeHTTP(recTooLarge, reqTooLarge)
+	if recTooLarge.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected status 413 for oversized JSON payload, got %d", recTooLarge.Code)
+	}
+
 	// Validación fallida vía echo.Validator + HTTPErrorHandler centralizado
 	reqInvalid := httptest.NewRequest(http.MethodPost, "/bind", bytes.NewBufferString(`{"name":""}`))
 	recInvalid := httptest.NewRecorder()

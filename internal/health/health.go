@@ -51,14 +51,29 @@ func (h Checker) Handler() echo.HandlerFunc {
 			return c.JSON(cachedStatus, cached)
 		}
 
-		database := call(h.Database)
+		var (
+			database bool
+			broker   string
+			cache    string
+			ai       string
+			sim      string
+			wg       sync.WaitGroup
+		)
+		wg.Add(5)
+		go func() { defer wg.Done(); database = call(h.Database) }()
+		go func() { defer wg.Done(); broker = gated(h.Broker) }()
+		go func() { defer wg.Done(); cache = upDown(call(h.Cache)) }()
+		go func() { defer wg.Done(); ai = gated(h.AI) }()
+		go func() { defer wg.Done(); sim = gated(h.Simulator) }()
+		wg.Wait()
+
 		body := response{
 			Status:    upDown(database),
 			Database:  upDown(database),
-			Broker:    gated(h.Broker),
-			Cache:     upDown(call(h.Cache)),
-			AI:        gated(h.AI),
-			Simulator: gated(h.Simulator),
+			Broker:    broker,
+			Cache:     cache,
+			AI:        ai,
+			Simulator: sim,
 		}
 
 		status := http.StatusOK

@@ -54,6 +54,8 @@ var routes = []route{
 	{"GET", "/api/v1/crops/{cropId}/readings/latest", "Readings", "Latest reading", false},
 	{"GET", "/api/v1/crops/{cropId}/readings/summary", "Readings", "Readings summary", false},
 	{"GET", "/api/v1/crops/{cropId}/readings/export", "Readings", "Export readings (CSV)", false},
+	{"GET", "/api/v1/crops/{cropId}/stream", "Readings", "Live telemetry stream (SSE)", false},
+	{"GET", "/api/v1/crops/{cropId}/readings/stream", "Readings", "Live readings stream (SSE)", false},
 	{"POST", "/api/v1/crops/{cropId}/readings", "Readings", "Record reading", false},
 
 	{"GET", "/api/v1/crops/{cropId}/actuators", "Actuators", "List actuators", false},
