@@ -166,20 +166,20 @@ func (h *Handler) weatherOf(c echo.Context) error {
 }
 
 func (h *Handler) device(c echo.Context) error {
+	c.Response().Header().Set("Cache-Control", "no-store")
 	creds, err := h.crops.DeviceInfo(c.Request().Context(), security.CurrentUserID(c), c.Param("cropId"))
 	if err != nil {
 		return err
 	}
-	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, creds)
 }
 
 func (h *Handler) rotateKey(c echo.Context) error {
+	c.Response().Header().Set("Cache-Control", "no-store")
 	creds, err := h.crops.RotateDeviceKey(c.Request().Context(), security.CurrentUserID(c), c.Param("cropId"))
 	if err != nil {
 		return err
 	}
-	c.Response().Header().Set("Cache-Control", "no-store")
 	return c.JSON(http.StatusOK, creds)
 }
 

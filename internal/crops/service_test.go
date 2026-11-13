@@ -30,6 +30,7 @@ type fakeRepo struct {
 	saveCalls        int
 	bulkAutoCalls    int
 	bulkAutoIDs      []primitive.ObjectID
+	deletedIDs       []primitive.ObjectID
 }
 
 func (r *fakeRepo) ListByOwner(context.Context, primitive.ObjectID) ([]Crop, error) {
@@ -89,7 +90,12 @@ func (r *fakeRepo) UpdateDeviceKey(context.Context, primitive.ObjectID, string, 
 	r.deviceKeyUpdates++
 	return nil
 }
-func (r *fakeRepo) Delete(context.Context, primitive.ObjectID) error { return nil }
+func (r *fakeRepo) Delete(_ context.Context, id primitive.ObjectID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.deletedIDs = append(r.deletedIDs, id)
+	return nil
+}
 func (r *fakeRepo) UpdatePlacement(context.Context, primitive.ObjectID, *geo.Placement, time.Time) error {
 	return nil
 }
@@ -277,5 +283,27 @@ func TestSetAutomationBulkUsesSingleAtomicUpdate(t *testing.T) {
 	if repo.bulkAutoCalls != 1 || len(repo.bulkAutoIDs) != 1 || repo.saveCalls != 0 {
 		t.Fatalf("expected 1 bulk update without Save loops; bulk=%d ids=%d saves=%d",
 			repo.bulkAutoCalls, len(repo.bulkAutoIDs), repo.saveCalls)
+	}
+}
+
+type failingSeeder struct{ err error }
+
+func (f failingSeeder) SeedDefaults(context.Context, string, bool) error { return f.err }
+
+func TestCreateDeletesOrphanCropWhenActuatorSeedingFails(t *testing.T) {
+	repo := &fakeRepo{}
+	key := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef0123456789abcdef"))
+	encryptor, err := security.NewEncryptor(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := NewService(repo, encryptor, MQTTPublic{}, &fakeProvisioner{},
+		failingSeeder{err: errors.New("seed failed")}, &fakeNotifier{}, events.NewBus(), time.Now)
+
+	if _, err := svc.Create(context.Background(), primitive.NewObjectID().Hex(), cropRequest(KindReal)); err == nil {
+		t.Fatal("expected SeedDefaults failure to propagate")
+	}
+	if len(repo.deletedIDs) != 1 {
+		t.Fatalf("expected compensating Delete for orphan crop, got %d deletions", len(repo.deletedIDs))
 	}
 }

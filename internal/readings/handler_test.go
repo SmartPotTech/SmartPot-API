@@ -109,6 +109,12 @@ func TestReadingsExportCSV(t *testing.T) {
 	if contentType := rec.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "text/csv") {
 		t.Fatalf("content type = %q, want text/csv", contentType)
 	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", cc)
+	}
+	if etag := rec.Header().Get("ETag"); etag != "" {
+		t.Fatalf("CSV export must bypass ETag buffering, got %q", etag)
+	}
 	disposition := rec.Header().Get("Content-Disposition")
 	if !strings.Contains(disposition, cropID.Hex()+".csv") {
 		t.Fatalf("content disposition = %q", disposition)

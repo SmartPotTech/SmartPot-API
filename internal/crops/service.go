@@ -182,6 +182,9 @@ func (s *Service) Create(ctx context.Context, ownerID string, req CropRequest) (
 		}
 	}
 	if err := s.actuators.SeedDefaults(ctx, crop.HexID(), crop.IsVirtual()); err != nil {
+		if delErr := s.repo.Delete(ctx, crop.ID); delErr != nil {
+			slog.Warn("could not clean up crop after actuator seeding failure", "cropId", crop.HexID(), "err", delErr)
+		}
 		return CreatedCrop{}, err
 	}
 	// La cuenta en el broker (incluso la de un virtual) es best-effort: Paho reintenta.

@@ -99,6 +99,7 @@ func (h *Handler) export(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	c.Response().Header().Set("Cache-Control", "no-store")
 	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"smartpot-%s.csv\"", cropID))
 	return c.Blob(http.StatusOK, "text/csv; charset=utf-8", []byte(csv))
 }
