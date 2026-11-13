@@ -142,7 +142,8 @@ func (s *Service) RequestPasswordReset(ctx context.Context, rawEmail string) err
 
 // ResetPassword cambia la contraseña con el enlace recibido por correo.
 func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
-	t, err := s.tokens.FindByTokenHash(ctx, sha256Hex(req.Token))
+	tokenHash := sha256Hex(req.Token)
+	t, err := s.tokens.FindByTokenHash(ctx, tokenHash)
 	if err != nil {
 		return err
 	}
@@ -162,6 +163,14 @@ func (s *Service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 	hash, err := security.HashPassword(req.Password)
 	if err != nil {
 		return err
+	}
+	// Consumo atómico tras validar la política de contraseña para impedir reutilización concurrente.
+	consumed, err := s.tokens.ConsumeByTokenHash(ctx, tokenHash, s.clock())
+	if err != nil {
+		return err
+	}
+	if consumed == nil {
+		return apperr.BadRequest(invalidReset)
 	}
 	u.PasswordHash = hash
 	u.UpdatedAt = s.clock()

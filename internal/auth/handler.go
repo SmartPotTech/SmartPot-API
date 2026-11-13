@@ -65,6 +65,7 @@ func (h *Handler) logout(c echo.Context) error {
 }
 
 func (h *Handler) session(c echo.Context) error {
+	c.Response().Header().Set("Cache-Control", "no-store")
 	id := security.CurrentIdentity(c)
 	resp, err := h.svc.CurrentSession(c.Request().Context(), id.UserID, id.ExpiresAt)
 	if err != nil {

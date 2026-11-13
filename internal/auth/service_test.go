@@ -64,6 +64,18 @@ func (r *memTokenRepo) FindByTokenHash(_ context.Context, hash string) (*Passwor
 	return &t, nil
 }
 
+func (r *memTokenRepo) ConsumeByTokenHash(_ context.Context, hash string, now time.Time) (*PasswordResetToken, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	t, ok := r.tokens[hash]
+	if !ok || !t.ExpiresAt.After(now) {
+		return nil, nil
+	}
+	delete(r.tokens, hash)
+	r.deletes++
+	return &t, nil
+}
+
 func (r *memTokenRepo) Insert(_ context.Context, t *PasswordResetToken) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -793,5 +805,50 @@ func TestPasswordRecoveryCycle(t *testing.T) {
 	}
 	if _, err := f.service.Login(ctx, LoginRequest{Email: "ana@smartpot.app", Password: "NewPassword2026"}); err != nil {
 		t.Errorf("the new password must work: %v", err)
+	}
+}
+
+func TestResetPasswordPreventsConcurrentTokenReplay(t *testing.T) {
+	f := newAuthFixture(t, false)
+	user := f.seedUser(t, "ana@smartpot.app")
+	ctx := context.Background()
+
+	raw := "one-shot-concurrent-reset"
+	if err := f.tokens.Insert(ctx, &PasswordResetToken{
+		TokenHash: sha256Hex(raw),
+		UserID:    user.ID,
+		CreatedAt: f.now,
+		ExpiresAt: f.now.Add(30 * time.Minute),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	const workers = 8
+	start := make(chan struct{})
+	errs := make(chan error, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			<-start
+			errs <- f.service.ResetPassword(ctx, ResetPasswordRequest{
+				Token:    raw,
+				Password: fmt.Sprintf("Password%04d!", idx),
+			})
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+
+	successes := 0
+	for err := range errs {
+		if err == nil {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("exactly 1 concurrent reset must succeed, got %d", successes)
 	}
 }

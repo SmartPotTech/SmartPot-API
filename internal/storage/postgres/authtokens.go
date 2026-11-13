@@ -23,14 +23,24 @@ func NewTokenRepository(pool *pgxpool.Pool) *TokenRepository {
 
 // FindByTokenHash busca un token por su hash, o nil si no existe.
 func (r *TokenRepository) FindByTokenHash(ctx context.Context, hash string) (*auth.PasswordResetToken, error) {
+	return r.scanTokenRow(r.pool.QueryRow(ctx,
+		"SELECT id, token_hash, user_id, expires_at, created_at FROM password_reset_tokens WHERE token_hash = $1", hash))
+}
+
+// ConsumeByTokenHash borra y devuelve un token vigente de forma atómica para evitar uso doble concurrente.
+func (r *TokenRepository) ConsumeByTokenHash(ctx context.Context, hash string, now time.Time) (*auth.PasswordResetToken, error) {
+	return r.scanTokenRow(r.pool.QueryRow(ctx,
+		"DELETE FROM password_reset_tokens WHERE token_hash = $1 AND expires_at > $2 "+
+			"RETURNING id, token_hash, user_id, expires_at, created_at", hash, now))
+}
+
+func (r *TokenRepository) scanTokenRow(row pgx.Row) (*auth.PasswordResetToken, error) {
 	var (
 		t         auth.PasswordResetToken
 		id, uid   string
 		createdAt *time.Time
 	)
-	err := r.pool.QueryRow(ctx,
-		"SELECT id, token_hash, user_id, expires_at, created_at FROM password_reset_tokens WHERE token_hash = $1", hash).
-		Scan(&id, &t.TokenHash, &uid, &t.ExpiresAt, &createdAt)
+	err := row.Scan(&id, &t.TokenHash, &uid, &t.ExpiresAt, &createdAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}

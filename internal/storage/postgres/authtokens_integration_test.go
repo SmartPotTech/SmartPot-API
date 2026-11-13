@@ -98,4 +98,22 @@ func TestIntegrationPasswordResetTokens(t *testing.T) {
 	if err := repo.DeleteByUserID(ctx, "invalid-id"); err != nil {
 		t.Fatalf("an invalid user id must be ignored: %v", err)
 	}
+
+	singleUse := &auth.PasswordResetToken{
+		TokenHash: "consume-" + primitive.NewObjectID().Hex(),
+		UserID:    userID,
+		ExpiresAt: now.Add(time.Hour),
+		CreatedAt: now,
+	}
+	if err := repo.Insert(ctx, singleUse); err != nil {
+		t.Fatalf("insert singleUse token: %v", err)
+	}
+	consumed, err := repo.ConsumeByTokenHash(ctx, singleUse.TokenHash, now)
+	if err != nil || consumed == nil || consumed.TokenHash != singleUse.TokenHash {
+		t.Fatalf("first ConsumeByTokenHash failed: consumed=%+v err=%v", consumed, err)
+	}
+	again, err := repo.ConsumeByTokenHash(ctx, singleUse.TokenHash, now)
+	if err != nil || again != nil {
+		t.Fatalf("second ConsumeByTokenHash must return nil: again=%+v err=%v", again, err)
+	}
 }

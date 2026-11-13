@@ -73,6 +73,9 @@ type fakeTokenRepo struct{}
 func (fakeTokenRepo) FindByTokenHash(context.Context, string) (*PasswordResetToken, error) {
 	return nil, nil
 }
+func (fakeTokenRepo) ConsumeByTokenHash(context.Context, string, time.Time) (*PasswordResetToken, error) {
+	return nil, nil
+}
 func (fakeTokenRepo) Insert(context.Context, *PasswordResetToken) error { return nil }
 func (fakeTokenRepo) DeleteByUserID(context.Context, string) error      { return nil }
 func (fakeTokenRepo) DeleteExpired(context.Context, time.Time) (int64, error) {
