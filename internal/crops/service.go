@@ -321,13 +321,22 @@ func (s *Service) SetAutomationBulk(ctx context.Context, ownerID string, cropIDs
 			crops = append(crops, *crop)
 		}
 	}
+	if len(crops) == 0 {
+		return crops, nil
+	}
+	ownerOID, ok := objectid.Parse(ownerID)
+	if !ok {
+		return nil, apperr.Unauthorized("Log in to continue")
+	}
 	now := s.clock()
+	ids := make([]primitive.ObjectID, len(crops))
 	for i := range crops {
 		crops[i].AutomationEnabled = enabled
 		crops[i].UpdatedAt = now
-		if err := s.repo.Save(ctx, &crops[i]); err != nil {
-			return nil, err
-		}
+		ids[i] = crops[i].ID
+	}
+	if err := s.repo.UpdateAutomation(ctx, ownerOID, ids, enabled, now); err != nil {
+		return nil, err
 	}
 	return crops, nil
 }

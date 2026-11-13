@@ -161,6 +161,9 @@ func (r *handlerCropsRepo) UpdateDeviceKey(context.Context, primitive.ObjectID, 
 func (r *handlerCropsRepo) UpdateHealth(context.Context, primitive.ObjectID, *CropHealth) error {
 	return nil
 }
+func (r *handlerCropsRepo) UpdateAutomation(context.Context, primitive.ObjectID, []primitive.ObjectID, bool, time.Time) error {
+	return nil
+}
 func (r *handlerCropsRepo) BackfillKind(context.Context, []primitive.ObjectID, CropKind) error {
 	return nil
 }

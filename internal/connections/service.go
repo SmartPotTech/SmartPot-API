@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -23,6 +24,9 @@ const (
 	// prefixLength es lo que se muestra del token para reconocerlo (spt_ + 8 caracteres).
 	prefixLength = len(TokenPrefix) + 8
 )
+
+// ErrConnectionLimit indica que la cuenta alcanzó el máximo permitido de conexiones.
+var ErrConnectionLimit = errors.New("connection limit reached for this user")
 
 // Service crea, lista, revoca y verifica conexiones.
 type Service struct {
@@ -56,17 +60,6 @@ func (s *Service) Create(ctx context.Context, userID string, req CreateRequest) 
 	if err != nil {
 		return nil, apperr.Unauthorized("Log in to continue")
 	}
-	count, err := s.repo.CountByUser(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-	maxConn := s.maxConnections()
-	if count >= int64(maxConn) {
-		if maxConn == 10 {
-			return nil, apperr.Conflict("You reached the limit of 10 connections; revoke one to create a new one")
-		}
-		return nil, apperr.Conflict(fmt.Sprintf("You reached the limit of %d connections; revoke one to create a new one", maxConn))
-	}
 	raw, err := newToken()
 	if err != nil {
 		return nil, err
@@ -85,7 +78,11 @@ func (s *Service) Create(ctx context.Context, userID string, req CreateRequest) 
 		expires := now.Add(time.Duration(*req.ExpiresInDays) * 24 * time.Hour)
 		t.ExpiresAt = &expires
 	}
-	if err := s.repo.Insert(ctx, &t); err != nil {
+	maxConn := s.maxConnections()
+	if err := s.repo.InsertWithQuota(ctx, &t, maxConn); err != nil {
+		if errors.Is(err, ErrConnectionLimit) {
+			return nil, apperr.Conflict(fmt.Sprintf("You reached the limit of %d connections; revoke one to create a new one", maxConn))
+		}
 		return nil, err
 	}
 	return &CreatedResponse{Connection: ToResponse(t), Token: raw}, nil

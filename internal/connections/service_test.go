@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 type memRepo struct {
+	mu      sync.Mutex
 	items   map[primitive.ObjectID]AccessToken
 	touches int
 }
@@ -19,6 +21,24 @@ type memRepo struct {
 func newMemRepo() *memRepo { return &memRepo{items: map[primitive.ObjectID]AccessToken{}} }
 
 func (m *memRepo) Insert(_ context.Context, t *AccessToken) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.items[t.ID] = *t
+	return nil
+}
+
+func (m *memRepo) InsertWithQuota(_ context.Context, t *AccessToken, max int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var count int
+	for _, item := range m.items {
+		if item.UserID == t.UserID {
+			count++
+		}
+	}
+	if count >= max {
+		return ErrConnectionLimit
+	}
 	m.items[t.ID] = *t
 	return nil
 }
@@ -184,5 +204,40 @@ func TestCreateRequestValidation(t *testing.T) {
 	}
 	if f := (CreateRequest{Name: "Asistente", Scope: ScopeControl}).Validate(); len(f) != 0 {
 		t.Errorf("petición válida rechazada: %v", f)
+	}
+}
+
+func TestCreateEnforcesQuotaAtomicallyUnderConcurrency(t *testing.T) {
+	repo := newMemRepo()
+	svc := NewService(repo, time.Now)
+	svc.SetMaxPerUser(3)
+	user := primitive.NewObjectID().Hex()
+
+	const workers = 8
+	errs := make(chan error, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := svc.Create(context.Background(), user, CreateRequest{Name: "Concurrent", Scope: ScopeRead})
+			errs <- err
+		}()
+	}
+	wg.Wait()
+	close(errs)
+
+	var okCount, conflictCount int
+	for err := range errs {
+		if err == nil {
+			okCount++
+		} else if status(err) == 409 {
+			conflictCount++
+		} else {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+	if okCount != 3 || conflictCount != workers-3 {
+		t.Fatalf("expected 3 created and %d conflicts, got ok=%d conflict=%d", workers-3, okCount, conflictCount)
 	}
 }

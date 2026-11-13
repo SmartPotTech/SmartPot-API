@@ -10,6 +10,9 @@ import (
 // Repository es el puerto de almacenamiento de las conexiones; lo implementa el adaptador de PostgreSQL.
 type Repository interface {
 	Insert(ctx context.Context, t *AccessToken) error
+	// InsertWithQuota verifica el límite y crea la conexión en una sola transacción
+	// con bloqueo asesor por cuenta.
+	InsertWithQuota(ctx context.Context, t *AccessToken, max int) error
 	ListByUser(ctx context.Context, userID primitive.ObjectID) ([]AccessToken, error)
 	CountByUser(ctx context.Context, userID primitive.ObjectID) (int64, error)
 	FindByHash(ctx context.Context, hash string) (*AccessToken, error)

@@ -217,6 +217,17 @@ func (r *CropRepository) Save(ctx context.Context, crop *crops.Crop) error {
 	return err
 }
 
+// UpdateAutomation cambia el modo automático de varios cultivos del dueño en una sola sentencia.
+func (r *CropRepository) UpdateAutomation(ctx context.Context, ownerID primitive.ObjectID, ids []primitive.ObjectID, enabled bool, now time.Time) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	_, err := r.pool.Exec(ctx,
+		"UPDATE crops SET automation_enabled = $3, updated_at = $4 WHERE owner_id = $1 AND id = ANY($2)",
+		hexOf(ownerID), hexSlice(ids), enabled, now)
+	return err
+}
+
 // UpdateDeviceKey guarda la clave cifrada y la fecha de rotación sin tocar el
 // resto del subdocumento device (online y lastSeenAt).
 func (r *CropRepository) UpdateDeviceKey(ctx context.Context, id primitive.ObjectID, ciphertext string, rotatedAt, now time.Time) error {

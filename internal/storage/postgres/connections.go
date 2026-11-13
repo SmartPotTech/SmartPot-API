@@ -53,6 +53,35 @@ func (r *AccessTokenRepository) Insert(ctx context.Context, t *connections.Acces
 	return err
 }
 
+// InsertWithQuota crea la conexión dentro de una transacción con bloqueo asesor
+// por cuenta, evitando carreras al superar el cupo en peticiones concurrentes.
+func (r *AccessTokenRepository) InsertWithQuota(ctx context.Context, t *connections.AccessToken, max int) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx,
+		"SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", "connections:"+hexOf(t.UserID)); err != nil {
+		return err
+	}
+	var count int64
+	if err := tx.QueryRow(ctx, "SELECT count(*) FROM access_tokens WHERE user_id = $1", hexOf(t.UserID)).Scan(&count); err != nil {
+		return err
+	}
+	if count >= int64(max) {
+		return connections.ErrConnectionLimit
+	}
+	if _, err := tx.Exec(ctx,
+		"INSERT INTO access_tokens ("+accessTokenColumns+") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		hexOf(t.ID), hexOf(t.UserID), t.Name, t.TokenHash, t.Prefix, string(t.Scope), t.CreatedAt, t.LastUsedAt,
+		t.ExpiresAt); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 // ListByUser devuelve las conexiones de una cuenta, de la más nueva a la más antigua.
 func (r *AccessTokenRepository) ListByUser(ctx context.Context, userID primitive.ObjectID) ([]connections.AccessToken, error) {
 	rows, err := r.pool.Query(ctx,

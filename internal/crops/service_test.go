@@ -28,6 +28,8 @@ type fakeRepo struct {
 	markSeen         int
 	deviceKeyUpdates int
 	saveCalls        int
+	bulkAutoCalls    int
+	bulkAutoIDs      []primitive.ObjectID
 }
 
 func (r *fakeRepo) ListByOwner(context.Context, primitive.ObjectID) ([]Crop, error) {
@@ -69,6 +71,16 @@ func (r *fakeRepo) Save(context.Context, *Crop) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.saveCalls++
+	return nil
+}
+func (r *fakeRepo) UpdateAutomation(_ context.Context, _ primitive.ObjectID, ids []primitive.ObjectID, enabled bool, _ time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.bulkAutoCalls++
+	r.bulkAutoIDs = append([]primitive.ObjectID(nil), ids...)
+	if r.crop != nil {
+		r.crop.AutomationEnabled = enabled
+	}
 	return nil
 }
 func (r *fakeRepo) UpdateDeviceKey(context.Context, primitive.ObjectID, string, time.Time, time.Time) error {
@@ -246,5 +258,24 @@ func TestExistsPropagatesDatabaseError(t *testing.T) {
 	exists, err := svc.Exists(context.Background(), primitive.NewObjectID().Hex())
 	if exists || err == nil {
 		t.Fatalf("a database error must not be reported as a missing crop: exists=%v err=%v", exists, err)
+	}
+}
+
+func TestSetAutomationBulkUsesSingleAtomicUpdate(t *testing.T) {
+	owner := primitive.NewObjectID()
+	crop := &Crop{ID: primitive.NewObjectID(), OwnerID: owner, Name: "Lettuce", Type: TypeLettuce, Kind: KindReal}
+	repo := &fakeRepo{crop: crop}
+	svc, _ := testService(t, repo, &fakeNotifier{})
+
+	updated, err := svc.SetAutomationBulk(context.Background(), owner.Hex(), []string{crop.HexID(), crop.HexID()}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated) != 1 || !updated[0].AutomationEnabled {
+		t.Fatalf("expected updated crop with automation enabled, got %+v", updated)
+	}
+	if repo.bulkAutoCalls != 1 || len(repo.bulkAutoIDs) != 1 || repo.saveCalls != 0 {
+		t.Fatalf("expected 1 bulk update without Save loops; bulk=%d ids=%d saves=%d",
+			repo.bulkAutoCalls, len(repo.bulkAutoIDs), repo.saveCalls)
 	}
 }

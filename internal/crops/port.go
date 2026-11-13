@@ -21,6 +21,8 @@ type Repository interface {
 	// por dueño, de modo que dos peticiones concurrentes no superan los cupos.
 	InsertWithQuota(ctx context.Context, crop *Crop, maxTotal, maxVirtual int) error
 	Save(ctx context.Context, crop *Crop) error
+	// UpdateAutomation actualiza el modo automático de varios cultivos del dueño en una sentencia atómica.
+	UpdateAutomation(ctx context.Context, ownerID primitive.ObjectID, ids []primitive.ObjectID, enabled bool, now time.Time) error
 	// UpdateDeviceKey guarda solo la clave cifrada del dispositivo y su rotación.
 	UpdateDeviceKey(ctx context.Context, id primitive.ObjectID, ciphertext string, rotatedAt, now time.Time) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
