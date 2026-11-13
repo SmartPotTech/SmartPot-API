@@ -18,6 +18,9 @@ type fakeRepo struct {
 func (r *fakeRepo) ListByCrop(context.Context, primitive.ObjectID) ([]Actuator, error) {
 	return nil, nil
 }
+func (r *fakeRepo) ListByCrops(context.Context, []primitive.ObjectID) (map[string][]Actuator, error) {
+	return map[string][]Actuator{}, nil
+}
 func (r *fakeRepo) FindByIDAndCrop(context.Context, primitive.ObjectID, primitive.ObjectID) (*Actuator, error) {
 	return nil, nil
 }

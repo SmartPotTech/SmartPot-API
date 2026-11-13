@@ -70,6 +70,29 @@ func (r *ActuatorRepository) ListByCrop(ctx context.Context, cropID primitive.Ob
 	return out, rows.Err()
 }
 
+// ListByCrops devuelve los actuadores de varios cultivos agrupados por id de cultivo.
+func (r *ActuatorRepository) ListByCrops(ctx context.Context, cropIDs []primitive.ObjectID) (map[string][]actuators.Actuator, error) {
+	out := make(map[string][]actuators.Actuator, len(cropIDs))
+	if len(cropIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.pool.Query(ctx,
+		"SELECT "+actuatorColumns+" FROM actuators WHERE crop_id = ANY($1) ORDER BY created_at ASC", hexSlice(cropIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		a, err := scanActuator(rows)
+		if err != nil {
+			return nil, err
+		}
+		key := a.CropID.Hex()
+		out[key] = append(out[key], *a)
+	}
+	return out, rows.Err()
+}
+
 // FindByIDAndCrop busca un actuador del cultivo.
 func (r *ActuatorRepository) FindByIDAndCrop(ctx context.Context, id, cropID primitive.ObjectID) (*actuators.Actuator, error) {
 	return r.findOne(ctx, "id = $1 AND crop_id = $2", hexOf(id), hexOf(cropID))

@@ -74,13 +74,25 @@ func (r *fakeReadingsRepo) SeriesAverages(_ context.Context, cropIDs []primitive
 
 type fakeActuatorsRepo struct {
 	actuators.Repository
-	byCrop map[string][]actuators.Actuator
-	hits   int
+	byCrop    map[string][]actuators.Actuator
+	hits      int
+	batchHits int
 }
 
 func (r *fakeActuatorsRepo) ListByCrop(_ context.Context, cropID primitive.ObjectID) ([]actuators.Actuator, error) {
 	r.hits++
 	return r.byCrop[cropID.Hex()], nil
+}
+
+func (r *fakeActuatorsRepo) ListByCrops(_ context.Context, cropIDs []primitive.ObjectID) (map[string][]actuators.Actuator, error) {
+	r.batchHits++
+	out := make(map[string][]actuators.Actuator, len(cropIDs))
+	for _, id := range cropIDs {
+		if items, ok := r.byCrop[id.Hex()]; ok {
+			out[id.Hex()] = items
+		}
+	}
+	return out, nil
 }
 
 type fakeCommandsRepo struct {
@@ -506,6 +518,9 @@ func TestFleetBuildsAIInputWithReadingsAndActuators(t *testing.T) {
 	}
 	if res.AverageHealth == nil || *res.AverageHealth != 82.5 || len(res.Crops) != 1 || res.Summary == "" {
 		t.Fatalf("unexpected fleet response: %+v", res)
+	}
+	if f.actuatorsRepo.batchHits != 1 || f.actuatorsRepo.hits != 0 {
+		t.Fatalf("expected single batched actuator query (batch=%d, perCrop=%d)", f.actuatorsRepo.batchHits, f.actuatorsRepo.hits)
 	}
 }
 

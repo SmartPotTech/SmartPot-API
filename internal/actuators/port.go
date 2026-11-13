@@ -11,6 +11,7 @@ import (
 // implementa el adaptador de PostgreSQL (internal/storage/postgres).
 type Repository interface {
 	ListByCrop(ctx context.Context, cropID primitive.ObjectID) ([]Actuator, error)
+	ListByCrops(ctx context.Context, cropIDs []primitive.ObjectID) (map[string][]Actuator, error)
 	FindByIDAndCrop(ctx context.Context, id, cropID primitive.ObjectID) (*Actuator, error)
 	FindByCropAndType(ctx context.Context, cropID primitive.ObjectID, t Type) (*Actuator, error)
 	ExistsByCropAndType(ctx context.Context, cropID primitive.ObjectID, t Type) (bool, error)

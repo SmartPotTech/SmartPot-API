@@ -189,6 +189,10 @@ func (s *Service) Fleet(ctx context.Context, ownerID string) (*ai.FleetResponse,
 	if err != nil {
 		return nil, err
 	}
+	actuatorsByID, err := s.actuators.ListForCrops(ctx, oids)
+	if err != nil {
+		return nil, err
+	}
 	input := make([]ai.FleetCrop, 0, len(cropsList))
 	for i := range cropsList {
 		crop := &cropsList[i]
@@ -197,10 +201,7 @@ func (s *Service) Fleet(ctx context.Context, ownerID string) (*ai.FleetResponse,
 		if latest != nil {
 			measures = &latest.Measures
 		}
-		actuatorsList, err := s.actuators.ListForCrop(ctx, crop.HexID())
-		if err != nil {
-			return nil, err
-		}
+		actuatorsList := actuatorsByID[crop.HexID()]
 		types := make([]string, 0, len(actuatorsList))
 		for j := range actuatorsList {
 			types = append(types, string(actuatorsList[j].Type))

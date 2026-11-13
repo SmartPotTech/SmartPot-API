@@ -7,6 +7,7 @@ import (
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const notFound = "Actuator does not exist in this crop"
@@ -43,6 +44,11 @@ func (s *Service) ListForCrop(ctx context.Context, cropID string) ([]Actuator, e
 		return nil, nil
 	}
 	return s.repo.ListByCrop(ctx, oid)
+}
+
+// ListForCrops devuelve los actuadores de varios cultivos en una sola consulta.
+func (s *Service) ListForCrops(ctx context.Context, cropIDs []primitive.ObjectID) (map[string][]Actuator, error) {
+	return s.repo.ListByCrops(ctx, cropIDs)
 }
 
 // Add agrega un actuador al cultivo (uno por tipo).
