@@ -9,6 +9,7 @@ import (
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/readings"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -91,6 +92,10 @@ func (r *ReadingRepository) Insert(ctx context.Context, reading *readings.Readin
 		"INSERT INTO readings ("+readingColumns+") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
 		hexOf(reading.ID), hexOf(reading.CropID), reading.MeasuredAt, nullEnum(string(reading.Source)),
 		m.Temperature, m.Humidity, m.Brightness, m.Ph, m.Tds, m.Atmosphere, m.SoilMoisture)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		return readings.ErrCropNotFound
+	}
 	return err
 }
 

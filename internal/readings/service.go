@@ -3,6 +3,7 @@ package readings
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -17,6 +18,9 @@ import (
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/objectid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+// ErrCropNotFound indica que el cultivo fue eliminado antes de persistir la lectura (clave foránea).
+var ErrCropNotFound = errors.New("crop does not exist")
 
 const exportLimit = 50000
 
@@ -168,6 +172,10 @@ func (s *Service) StartBatchWorker(ctx context.Context) {
 				itemErr := s.repo.Insert(itemCtx, &all[i])
 				itemCancel()
 				if itemErr != nil {
+					if errors.Is(itemErr, ErrCropNotFound) {
+						slog.Warn("dropping reading for deleted crop", "cropId", all[i].CropID.Hex())
+						continue
+					}
 					failed = append(failed, all[i])
 					continue
 				}
@@ -332,7 +340,10 @@ func (s *Service) RecordManual(ctx context.Context, ownerID, cropID string, meas
 	}
 	reading, err := s.store(ctx, cropID, measures, SourceHTTP)
 	if err != nil {
-		return nil, apperr.BadRequest(err.Error())
+		if errors.Is(err, ErrCropNotFound) {
+			return nil, apperr.NotFound("Crop does not exist")
+		}
+		return nil, err
 	}
 	return reading, nil
 }
@@ -570,7 +581,7 @@ func (s *Service) newReading(cropID primitive.ObjectID, measures Measures, sourc
 
 func (s *Service) store(ctx context.Context, cropID string, measures Measures, source Source) (*Reading, error) {
 	if err := ValidateRanges(measures); err != nil {
-		return nil, err
+		return nil, apperr.BadRequest(err.Error())
 	}
 	oid, ok := objectid.Parse(cropID)
 	if !ok {

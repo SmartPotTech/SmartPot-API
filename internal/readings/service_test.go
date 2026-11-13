@@ -3,6 +3,7 @@ package readings
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -23,15 +24,25 @@ type fakeRepo struct {
 	mu         sync.Mutex
 	saved      []Reading
 	failBatch  bool
+	insertErr  error
 	rejectTemp float64
+	dropTemp   float64
 	latestHit  int
 }
 
 func (r *fakeRepo) Insert(_ context.Context, reading *Reading) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if t := reading.Measures.Temperature; t != nil && *t == r.rejectTemp {
-		return errors.New("invalid row")
+	if r.insertErr != nil {
+		return r.insertErr
+	}
+	if t := reading.Measures.Temperature; t != nil {
+		if r.dropTemp != 0 && *t == r.dropTemp {
+			return ErrCropNotFound
+		}
+		if *t == r.rejectTemp {
+			return errors.New("invalid row")
+		}
 	}
 	r.saved = append(r.saved, *reading)
 	return nil
@@ -167,4 +178,47 @@ func TestRecordManualRejectsRealCrops(t *testing.T) {
 	if err.Error() != "Manual readings are only allowed for virtual crops" {
 		t.Fatalf("unexpected error message: %v", err)
 	}
+}
+
+func TestRecordManualPreservesDatabaseErrorAsInternal(t *testing.T) {
+	dbErr := errors.New("connection refused")
+	svc := NewService(&fakeRepo{insertErr: dbErr}, fakeCrops{}, cache.NewStore(nil), events.NewBus(), time.Now, 0, 100)
+	_, err := svc.RecordManual(context.Background(), "owner1", primitive.NewObjectID().Hex(), temp(20))
+	if !errors.Is(err, dbErr) {
+		t.Fatalf("expected raw database error so handler returns 500, got %v", err)
+	}
+
+	outOfRange := temp(999)
+	_, err = svc.RecordManual(context.Background(), "owner1", primitive.NewObjectID().Hex(), outOfRange)
+	if err == nil || !strings.Contains(err.Error(), "out of range") {
+		t.Fatalf("expected range validation 400 error, got %v", err)
+	}
+}
+
+func TestBatchWorkerDropsOrphanedReadingsWithoutRetrying(t *testing.T) {
+	repo := &fakeRepo{failBatch: true, dropTemp: 24}
+	bus := events.NewBus()
+	published := make(chan Reading, 4)
+	events.Subscribe(bus, func(e ReadingRecordedEvent) { published <- e.Reading })
+	svc := NewService(repo, fakeCrops{}, cache.NewStore(nil), bus, time.Now, 0, 100)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	svc.StartBatchWorker(ctx)
+
+	if _, err := svc.store(ctx, primitive.NewObjectID().Hex(), temp(24), SourceMQTT); err != nil {
+		t.Fatal(err)
+	}
+	good, err := svc.store(ctx, primitive.NewObjectID().Hex(), temp(21), SourceMQTT)
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case r := <-published:
+		if r.ID != good.ID {
+			t.Fatalf("expected saved reading %s, got %s", good.ID.Hex(), r.ID.Hex())
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("valid reading was not published")
+	}
+	svc.StopBatchWorker()
 }
