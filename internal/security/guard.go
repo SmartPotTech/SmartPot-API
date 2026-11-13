@@ -233,7 +233,7 @@ func connectionAllowed(method, path, scope string) error {
 		return apperr.Forbidden("Connections can only be managed from the application")
 	case strings.HasPrefix(path, "/api/v1/users/me") && !read:
 		return apperr.Forbidden("Account details can only be changed from the application")
-	case strings.HasPrefix(path, "/api/v1/channels") && !read:
+	case strings.HasPrefix(path, "/api/v1/channels"):
 		return apperr.Forbidden("Notification channels can only be configured from the application")
 	case strings.HasPrefix(path, "/api/v1/crops/") && hasSegment(path, "channels"):
 		// Los canales por cultivo exponen datos de otras cuentas y no forman

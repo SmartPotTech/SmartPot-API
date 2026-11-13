@@ -196,13 +196,23 @@ func (s *TokenService) BumpUserVersion(userID string) {
 	s.sessions.Put(userVersionKey+userID, strconv.Itoa(next), ttl)
 }
 
-// ForgetUser borra la versión de sesión de una cuenta eliminada: sin la cuenta,
-// la clave no vuelve a usarse y no debe quedar como rastro en la caché.
+// deletedUserVersion marca cuentas eliminadas para seguir rechazando sus tokens en caché.
+const (
+	deletedUserVersion = -1
+	deletedUserValue   = "-1"
+)
+
+// ForgetUser marca como eliminada la versión de sesión de la cuenta para que los
+// JWT ya emitidos sigan rechazándose hasta expirar sin conservar datos personales.
 func (s *TokenService) ForgetUser(userID string) {
 	if s.sessions == nil || userID == "" {
 		return
 	}
-	s.sessions.Delete(userVersionKey + userID)
+	ttl := sessionVersionTTL
+	if s.expiration > ttl {
+		ttl = s.expiration
+	}
+	s.sessions.Put(userVersionKey+userID, deletedUserValue, ttl)
 }
 
 func (s *TokenService) userVersion(userID string) int {
@@ -212,6 +222,9 @@ func (s *TokenService) userVersion(userID string) int {
 	raw, ok := s.sessions.Get(userVersionKey + userID)
 	if !ok {
 		return 0
+	}
+	if raw == deletedUserValue {
+		return deletedUserVersion
 	}
 	version, err := strconv.Atoi(raw)
 	if err != nil {

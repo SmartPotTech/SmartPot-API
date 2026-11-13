@@ -153,3 +153,26 @@ func TestGuardCookieAndCSRF(t *testing.T) {
 		}
 	}
 }
+
+func TestGuardRejectsChannelReadsForConnectionTokens(t *testing.T) {
+	svc := NewTokenService("0123456789abcdef0123456789abcdef", time.Hour)
+	svc.UseConnections(fakeConnections{
+		"spt_test_token": {ConnectionID: "c1", UserID: "user-123", Scope: "CONTROL"},
+	})
+
+	e := httpserver.New(discardLogger())
+	g := e.Group("/api/v1")
+	g.Use(svc.Guard())
+	g.GET("/channels/links", func(c echo.Context) error { return c.String(http.StatusOK, "links") })
+	g.GET("/channels/telegram/setup", func(c echo.Context) error { return c.String(http.StatusOK, "setup") })
+
+	for _, path := range []string{"/api/v1/channels/links", "/api/v1/channels/telegram/setup"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Authorization", "Bearer spt_test_token")
+		rec := httptest.NewRecorder()
+		e.ServeHTTP(rec, req)
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("%s with connection token = %d, want 403", path, rec.Code)
+		}
+	}
+}
