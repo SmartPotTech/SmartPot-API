@@ -30,7 +30,9 @@ const (
 	profilesTTL    = time.Hour
 	// El estado del aprendizaje cambia rápido al recuperarse el Trainer; 60 s en
 	// Valkey más 60 s en el navegador dejaban la API en enabled:false hasta 2 min.
-	learningTTL = 10 * time.Second
+	learningTTL      = 10 * time.Second
+	staleCacheSuffix = ":stale"
+	minStaleTTL      = 15 * time.Minute
 	// La salud positiva se cachea poco y la negativa menos aún: no se puede
 	// reportar ai:DOWN durante 26 s después de que la IA ya se recuperó.
 	healthUpTTL     = 10 * time.Second
@@ -319,21 +321,40 @@ func (c *Client) cachedGet(ctx context.Context, key, path string, ttl time.Durat
 	}
 
 	// Singleflight: si hay múltiples solicitudes concurrentes, solo una hace la petición HTTP
+	// y no hereda la cancelación de un llamador aislado hacia el resto de seguidores.
 	val, err := c.sf.Do(key, func() (any, error) {
 		if cached, ok := c.cache.Get(key); ok {
 			return cached, nil
 		}
-		body, err := c.getRaw(ctx, path)
+		opTimeout := c.timeout * 2
+		if opTimeout < 10*time.Second {
+			opTimeout = 10 * time.Second
+		}
+		opCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), opTimeout)
+		defer cancel()
+		body, err := c.getRaw(opCtx, path)
 		if err != nil {
 			return "", err
 		}
 		c.cache.Put(key, body, ttl)
+		c.cache.Put(key+staleCacheSuffix, body, staleTTLFor(ttl))
 		return body, nil
 	})
 	if err != nil {
+		if stale, ok := c.cache.Get(key + staleCacheSuffix); ok {
+			slog.Warn("serving stale AI cache after upstream error", "path", path, "err", err)
+			return stale, nil
+		}
 		return "", err
 	}
 	return val.(string), nil
+}
+
+func staleTTLFor(ttl time.Duration) time.Duration {
+	if s := ttl * 30; s > minStaleTTL {
+		return s
+	}
+	return minStaleTTL
 }
 
 func (c *Client) getRaw(ctx context.Context, path string) (string, error) {
@@ -352,7 +373,7 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 // transitorios. Un 4xx del cliente no se reintenta ni lo cuenta el breaker.
 func (c *Client) doRawWithRetry(ctx context.Context, method, path string, body, out any) error {
 	isIdempotent := method == http.MethodGet
-	return RetryWithBackoff(ctx, 3, 50*time.Millisecond, func(err error) bool {
+	return RetryWithBackoff(ctx, 2, 50*time.Millisecond, func(err error) bool {
 		return isIdempotent && isTransientError(err)
 	}, func() error {
 		return c.doRaw(ctx, method, path, body, out)
@@ -387,7 +408,11 @@ func (c *Client) doRaw(ctx context.Context, method, path string, body, out any) 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		// Se preserva el código real (400, 401, 404…) en vez de colapsarlo a 503.
+		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			slog.Error("AI service authentication failed", "status", resp.StatusCode, "path", path)
+			return apperr.Unavailable(unavailableMsg)
+		}
+		// Se preserva el código real (400, 404…) en vez de colapsarlo a 503.
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 		return apperr.New(resp.StatusCode, upstreamMessage(raw, resp.StatusCode))
 	}

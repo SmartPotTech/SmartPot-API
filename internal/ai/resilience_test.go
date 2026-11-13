@@ -153,3 +153,74 @@ func TestLearnRequeuesWhenTrainerStoredNothing(t *testing.T) {
 		t.Fatalf("stored readings should succeed: %v", err)
 	}
 }
+
+func TestDoRawMapsUpstreamAuthErrorTo503(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer srv.Close()
+
+	client := NewClient(config.AI{Enabled: true, BaseURL: srv.URL, Token: "bad-internal-token", Timeout: 2 * time.Second},
+		cache.NewStore(nil), time.Now)
+	_, err := client.LearningStatusJSON(context.Background())
+	var apiErr *apperr.Error
+	if !errors.As(err, &apiErr) || apiErr.Status != http.StatusServiceUnavailable {
+		t.Fatalf("upstream 401 must map to 503 Unavailable, got %v", err)
+	}
+}
+
+func TestCachedGetFallsBackToStaleAndIsolatesLeaderCancel(t *testing.T) {
+	var failUpstream atomic.Bool
+	var upstreamCalls atomic.Int32
+	entered := make(chan struct{}, 1)
+	release := make(chan struct{})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upstreamCalls.Add(1)
+		if failUpstream.Load() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+		<-release
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"samples":12}`))
+	}))
+	defer srv.Close()
+
+	store := cache.NewStore(nil)
+	client := NewClient(config.AI{Enabled: true, BaseURL: srv.URL, Token: "token", Timeout: 2 * time.Second},
+		store, time.Now)
+
+	// 1. Leader cancels while in flight; follower sharing the singleflight call must still succeed.
+	leaderCtx, cancelLeader := context.WithCancel(context.Background())
+	followerDone := make(chan error, 1)
+	go func() {
+		_, err := client.cachedGet(leaderCtx, "test:key", "/v1/learning/status", time.Millisecond)
+		_ = err
+	}()
+	<-entered
+	go func() {
+		body, err := client.cachedGet(context.Background(), "test:key", "/v1/learning/status", time.Millisecond)
+		if err == nil && body != `{"samples":12}` {
+			err = errors.New("unexpected body: " + body)
+		}
+		followerDone <- err
+	}()
+	cancelLeader()
+	close(release)
+	if err := <-followerDone; err != nil {
+		t.Fatalf("follower failed after leader canceled: %v", err)
+	}
+
+	// 2. When fresh key expires and upstream fails, stale cache is returned.
+	store.Delete("test:key")
+	failUpstream.Store(true)
+	staleBody, err := client.cachedGet(context.Background(), "test:key", "/v1/learning/status", time.Millisecond)
+	if err != nil || staleBody != `{"samples":12}` {
+		t.Fatalf("expected stale fallback, got body=%q err=%v", staleBody, err)
+	}
+}

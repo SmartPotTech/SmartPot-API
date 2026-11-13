@@ -10,15 +10,31 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/config"
 	"github.com/SmartPotTech/SmartPot-API-Go/internal/platform/apperr"
 )
 
 const (
-	simUnavailable = "The virtual crop simulator is not available at this moment"
-	simDisabled    = "Virtual crops are not enabled on this server"
+	simUnavailable   = "The virtual crop simulator is not available at this moment"
+	simDisabled      = "Virtual crops are not enabled on this server"
+	placesFreshTTL   = 15 * time.Minute
+	placesStaleTTL   = 24 * time.Hour
+	placesMaxEntries = 2048
 )
+
+type cachedPlaces struct {
+	places    []PlaceResponse
+	fetchedAt time.Time
+}
+
+type placesFlight struct {
+	done   chan struct{}
+	places []PlaceResponse
+	err    error
+}
 
 // SimulatorClient es el cliente de la API interna del simulador de dispositivos.
 type SimulatorClient struct {
@@ -26,6 +42,10 @@ type SimulatorClient struct {
 	baseURL   string
 	token     string
 	http      *http.Client
+
+	placesMu       sync.Mutex
+	placesCache    map[string]cachedPlaces
+	placesInflight map[string]*placesFlight
 }
 
 // NewSimulatorClient crea el cliente del simulador.
@@ -97,17 +117,82 @@ func (c *SimulatorClient) Delete(ctx context.Context, cropID string) {
 	}
 }
 
-// Places busca lugares para el modo clima.
+// Places busca lugares para el modo clima, con caché en memoria, fusión de consultas concurrentes y respaldo ante fallos transitorios.
 func (c *SimulatorClient) Places(ctx context.Context, query string) ([]PlaceResponse, error) {
 	if err := c.requireAvailable(); err != nil {
 		return nil, err
 	}
-	var places []PlaceResponse
-	path := "/v1/places?" + url.Values{"q": {query}}.Encode()
-	if _, err := c.do(ctx, http.MethodGet, path, nil, &places); err != nil {
-		return nil, apperr.Unavailable("Could not query location service")
+	trimmed := strings.TrimSpace(query)
+	key := strings.ToLower(trimmed)
+
+	c.placesMu.Lock()
+	if c.placesCache != nil {
+		if entry, ok := c.placesCache[key]; ok && time.Since(entry.fetchedAt) < placesFreshTTL {
+			c.placesMu.Unlock()
+			return clonePlaces(entry.places), nil
+		}
 	}
-	return places, nil
+	if c.placesInflight != nil {
+		if flight, ok := c.placesInflight[key]; ok {
+			c.placesMu.Unlock()
+			select {
+			case <-flight.done:
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+			if flight.err != nil {
+				return nil, flight.err
+			}
+			return clonePlaces(flight.places), nil
+		}
+	}
+	if c.placesInflight == nil {
+		c.placesInflight = make(map[string]*placesFlight)
+	}
+	flight := &placesFlight{done: make(chan struct{})}
+	c.placesInflight[key] = flight
+	c.placesMu.Unlock()
+
+	opTimeout := 8 * time.Second
+	if c.http != nil && c.http.Timeout > 0 {
+		opTimeout = c.http.Timeout
+	}
+	opCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), opTimeout)
+	var places []PlaceResponse
+	path := "/v1/places?" + url.Values{"q": {trimmed}}.Encode()
+	_, callErr := c.do(opCtx, http.MethodGet, path, nil, &places)
+	cancel()
+
+	c.placesMu.Lock()
+	delete(c.placesInflight, key)
+	if callErr == nil {
+		if c.placesCache == nil {
+			c.placesCache = make(map[string]cachedPlaces)
+		}
+		if len(c.placesCache) >= placesMaxEntries {
+			c.placesCache = make(map[string]cachedPlaces)
+		}
+		c.placesCache[key] = cachedPlaces{
+			places:    clonePlaces(places),
+			fetchedAt: time.Now(),
+		}
+		flight.places = clonePlaces(places)
+	} else {
+		if entry, ok := c.placesCache[key]; ok && time.Since(entry.fetchedAt) < placesStaleTTL {
+			slog.Warn("serving stale places cache after simulator error", "query", trimmed, "err", callErr)
+			flight.places = clonePlaces(entry.places)
+			callErr = nil
+		} else {
+			flight.err = apperr.Unavailable("Could not query location service")
+		}
+	}
+	close(flight.done)
+	c.placesMu.Unlock()
+
+	if flight.err != nil {
+		return nil, flight.err
+	}
+	return clonePlaces(flight.places), nil
 }
 
 // Weather devuelve el clima de un lugar; nil si no hay simulador o no pudo consultarlo.
@@ -142,6 +227,15 @@ func (c *SimulatorClient) requireAvailable() error {
 		return apperr.Unavailable(simDisabled)
 	}
 	return nil
+}
+
+func clonePlaces(in []PlaceResponse) []PlaceResponse {
+	if len(in) == 0 {
+		return []PlaceResponse{}
+	}
+	out := make([]PlaceResponse, len(in))
+	copy(out, in)
+	return out
 }
 
 // do ejecuta una petición HTTP; devuelve el código de estado y un error si no fue 2xx.

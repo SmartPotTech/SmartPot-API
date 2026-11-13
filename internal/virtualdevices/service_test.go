@@ -815,3 +815,86 @@ func isStatus(err error, status int) bool {
 	var apiErr *apperr.Error
 	return errors.As(err, &apiErr) && apiErr.Status == status
 }
+
+func TestSimulatorClientPlacesCachesCoalescesAndFallsBackToStale(t *testing.T) {
+	var upstreamCalls int
+	var mu sync.Mutex
+	var fail bool
+	entered := make(chan struct{}, 1)
+	release := make(chan struct{})
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		upstreamCalls++
+		shouldFail := fail
+		mu.Unlock()
+		if shouldFail {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		select {
+		case entered <- struct{}{}:
+		default:
+		}
+		<-release
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"name":"Medellin","latitude":6.25,"longitude":-75.56}]`))
+	}))
+	defer srv.Close()
+
+	client := NewSimulatorClient(config.Simulator{
+		Enabled: true,
+		BaseURL: srv.URL,
+		Token:   "sim-token",
+		Timeout: 2 * time.Second,
+	})
+
+	const callers = 6
+	results := make(chan []PlaceResponse, callers)
+	errs := make(chan error, callers)
+	go func() {
+		res, err := client.Places(context.Background(), "Medellin")
+		results <- res
+		errs <- err
+	}()
+	<-entered
+	for i := 1; i < callers; i++ {
+		go func() {
+			res, err := client.Places(context.Background(), " medellin ")
+			results <- res
+			errs <- err
+		}()
+	}
+	time.Sleep(15 * time.Millisecond)
+	close(release)
+	for i := 0; i < callers; i++ {
+		if err := <-errs; err != nil {
+			t.Fatalf("concurrent Places call failed: %v", err)
+		}
+		if res := <-results; len(res) != 1 || res[0].Name != "Medellin" {
+			t.Fatalf("unexpected places result: %+v", res)
+		}
+	}
+	mu.Lock()
+	callsAfterFirstWave := upstreamCalls
+	mu.Unlock()
+	if callsAfterFirstWave != 1 {
+		t.Fatalf("expected concurrent callers to coalesce into 1 call, got %d", callsAfterFirstWave)
+	}
+
+	// Expire freshness, force upstream failure, and verify stale fallback returns 200.
+	client.placesMu.Lock()
+	entry := client.placesCache["medellin"]
+	entry.fetchedAt = time.Now().Add(-20 * time.Minute)
+	client.placesCache["medellin"] = entry
+	client.placesMu.Unlock()
+
+	mu.Lock()
+	fail = true
+	mu.Unlock()
+
+	res, err := client.Places(context.Background(), "Medellin")
+	if err != nil || len(res) != 1 || res[0].Name != "Medellin" {
+		t.Fatalf("expected stale places fallback, got res=%+v err=%v", res, err)
+	}
+}
