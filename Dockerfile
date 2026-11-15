@@ -1,5 +1,5 @@
 # Etapa de compilación: aquí se arma el binario estático.
-FROM golang:1.27.3-alpine AS build
+FROM golang:1.27.4-alpine AS build
 
 WORKDIR /src
 
