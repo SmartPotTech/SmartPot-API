@@ -7,7 +7,7 @@ toolchain go1.27.3
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/pgx/v5 v5.13.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.16.3
 	github.com/redis/go-redis/v9 v9.23.0
